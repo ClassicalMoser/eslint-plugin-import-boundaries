@@ -11,6 +11,9 @@ importers:
       '@antfu/eslint-config':
         specifier: ^6.4.2
         version: 6.5.1(@vue/compiler-sfc@3.5.25)(eslint@9.39.1)(typescript@5.9.3)(vitest@4.0.15(@types/node@24.10.2)(yaml@2.8.2))
+      '@rolldown/binding-darwin-x64':
+        specifier: 1.0.0-beta.53
+        version: 1.0.0-beta.53
       '@types/node':
         specifier: ^24.10.1
         version: 24.10.2
@@ -2319,8 +2322,7 @@ snapshots:
   '@rolldown/binding-darwin-arm64@1.0.0-beta.53':
     optional: true
 
-  '@rolldown/binding-darwin-x64@1.0.0-beta.53':
-    optional: true
+  '@rolldown/binding-darwin-x64@1.0.0-beta.53': {}
 
   '@rolldown/binding-freebsd-x64@1.0.0-beta.53':
     optional: true

@@ -456,10 +456,7 @@ const rule = {
 		};
 	}
 };
+var eslint_plugin_import_boundaries_default = { rules: { enforce: rule } };
+
 //#endregion
-// ESLint plugins must export an object with a 'rules' property
-export default {
-	rules: {
-		enforce: rule
-	}
-};
+export { eslint_plugin_import_boundaries_default as default };
