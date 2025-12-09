@@ -68,7 +68,7 @@ export function handleImport(options: HandleImportOptions): boolean {
     rootDir,
     cwd,
     barrelFileName,
-    fileExtensions,
+    fileExtensions
   );
 
   // Skip checking for external packages (node_modules, etc.)
@@ -83,7 +83,7 @@ export function handleImport(options: HandleImportOptions): boolean {
     const aliasSubpathCheck = checkAliasSubpath(rawSpec, boundaries);
     if (aliasSubpathCheck.isSubpath) {
       const targetBoundary = boundaries.find(
-        (b) => b.alias === aliasSubpathCheck.baseAlias,
+        (b) => b.alias === aliasSubpathCheck.baseAlias
       );
       if (
         targetBoundary &&
@@ -127,7 +127,7 @@ export function handleImport(options: HandleImportOptions): boolean {
       fileBoundary,
       targetBoundary,
       boundaries,
-      isTypeOnly,
+      isTypeOnly
     );
     if (violation) {
       const severity = fileBoundary.severity || defaultSeverity;
@@ -156,7 +156,7 @@ export function handleImport(options: HandleImportOptions): boolean {
     cwd,
     crossBoundaryStyle,
     barrelFileName,
-    fileExtensions,
+    fileExtensions
   );
 
   if (!correctPath) {

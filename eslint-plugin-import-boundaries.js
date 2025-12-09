@@ -100,22 +100,6 @@ function resolveToBoundary(filename, boundaries) {
 	return null;
 }
 /**
-* Resolve a file to the nearest boundary that has rules specified.
-* If no boundaries with rules are found, returns null.
-* Used for file boundaries - allows inheritance from ancestors with rules.
-*
-* @param filename - Absolute filename
-* @param boundaries - Array of all boundaries
-* @returns The nearest boundary with rules, or null if none found
-*/
-function resolveToSpecifiedBoundary(filename, boundaries) {
-	const specifiedBoundaries = boundaries.filter((b) => isInsideDir(b.absDir, filename)).filter((b) => b.allowImportsFrom !== void 0 || b.denyImportsFrom !== void 0 || b.allowTypeImportsFrom !== void 0);
-	if (specifiedBoundaries.length > 0) return specifiedBoundaries.sort((a, b) => b.absDir.length - a.absDir.length)[0];
-	const ancestors = boundaries.filter((b) => b.allowImportsFrom !== void 0 || b.denyImportsFrom !== void 0 || b.allowTypeImportsFrom !== void 0).filter((b) => isInsideDir(b.absDir, filename));
-	if (ancestors.length > 0) return ancestors.sort((a, b) => b.absDir.length - a.absDir.length)[0];
-	return null;
-}
-/**
 * Get metadata about the current file being linted.
 * Results are cached per file to avoid recomputation.
 *
@@ -128,7 +112,7 @@ function getFileData(filename, boundaries) {
 	return {
 		isValid: true,
 		fileDir: path.dirname(filename),
-		fileBoundary: resolveToSpecifiedBoundary(filename, boundaries)
+		fileBoundary: resolveToBoundary(filename, boundaries)
 	};
 }
 
