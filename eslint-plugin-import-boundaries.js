@@ -25,6 +25,45 @@ function isInsideDir(absDir, absPath) {
 	if (rel === "") return true;
 	return !rel.startsWith("..") && !path.isAbsolute(rel);
 }
+/**
+* Check if a path has a file extension.
+* Extension-agnostic - checks for any extension, not just specific ones.
+*
+* @param filePath - Path to check
+* @param extensions - Optional list of extensions to check for (if provided, only matches these)
+* @returns true if path has an extension
+*
+* Examples:
+* - hasExtension('file.ts') => true
+* - hasExtension('file.tsx') => true
+* - hasExtension('file.js') => true
+* - hasExtension('dir') => false
+* - hasExtension('dir/file') => false
+*/
+function hasExtension(filePath, extensions) {
+	const ext = path.extname(filePath);
+	if (!ext) return false;
+	if (extensions) return extensions.includes(ext);
+	return true;
+}
+/**
+* Get the basename without extension from a file path.
+* Extension-agnostic - strips any extension.
+*
+* @param filePath - File path
+* @returns Basename without extension
+*
+* Examples:
+* - getBasenameWithoutExt('/a/b/file.ts') => 'file'
+* - getBasenameWithoutExt('/a/b/file.tsx') => 'file'
+* - getBasenameWithoutExt('/a/b/file.js') => 'file'
+* - getBasenameWithoutExt('/a/b/index.ts') => 'index'
+*/
+function getBasenameWithoutExt(filePath) {
+	const basename = path.basename(filePath);
+	const ext = path.extname(basename);
+	return ext ? basename.slice(0, -ext.length) : basename;
+}
 
 //#endregion
 //#region eslint-plugin-import-boundaries/boundaryDetection.ts
@@ -41,7 +80,7 @@ function isInsideDir(absDir, absPath) {
 * - checkAliasSubpath('@entities', boundaries) => { isSubpath: false }
 */
 function checkAliasSubpath(spec, boundaries) {
-	for (const b of boundaries) if (spec.startsWith(`${b.alias}/`)) return {
+	for (const b of boundaries) if (b.alias && spec.startsWith(`${b.alias}/`)) return {
 		isSubpath: true,
 		baseAlias: b.alias
 	};
@@ -69,6 +108,21 @@ function getFileData(filename, boundaries) {
 //#endregion
 //#region eslint-plugin-import-boundaries/boundaryRules.ts
 /**
+* Get the identifier for a boundary (alias if present, otherwise dir).
+* Used for allow/deny rules and error messages.
+*/
+function getBoundaryIdentifier(boundary) {
+	return boundary.alias ?? boundary.dir;
+}
+/**
+* Check if a boundary identifier matches a target boundary.
+* Matches by alias (if present) or by dir path.
+*/
+function matchesBoundaryIdentifier(identifier, targetBoundary) {
+	if (targetBoundary.alias && identifier === targetBoundary.alias) return true;
+	return identifier === targetBoundary.dir;
+}
+/**
 * Check if an import from fileBoundary to targetBoundary is allowed.
 * Returns violation info if not allowed, null if allowed.
 *
@@ -83,14 +137,16 @@ function getFileData(filename, boundaries) {
 */
 function checkBoundaryRules(fileBoundary, targetBoundary, allBoundaries, isTypeOnly = false) {
 	if (fileBoundary === targetBoundary) return null;
-	if (isTypeOnly && fileBoundary.allowTypeImportsFrom?.includes(targetBoundary.alias)) return null;
+	const fileIdentifier = getBoundaryIdentifier(fileBoundary);
+	const targetIdentifier = getBoundaryIdentifier(targetBoundary);
+	if (isTypeOnly && fileBoundary.allowTypeImportsFrom?.some((id) => matchesBoundaryIdentifier(id, targetBoundary))) return null;
 	const hasAllowList = fileBoundary.allowImportsFrom && fileBoundary.allowImportsFrom.length > 0;
 	const hasDenyList = fileBoundary.denyImportsFrom && fileBoundary.denyImportsFrom.length > 0;
-	if (hasAllowList && fileBoundary.allowImportsFrom.includes(targetBoundary.alias)) return null;
-	if (hasDenyList && fileBoundary.denyImportsFrom.includes(targetBoundary.alias)) return { reason: `Boundary '${fileBoundary.alias}' explicitly denies imports from '${targetBoundary.alias}'` };
-	if (hasAllowList && !hasDenyList) return { reason: `Cross-boundary import from '${targetBoundary.alias}' to '${fileBoundary.alias}' is not allowed. Add '${targetBoundary.alias}' to 'allowImportsFrom' if this import is intentional.` };
+	if (hasAllowList && fileBoundary.allowImportsFrom.some((id) => matchesBoundaryIdentifier(id, targetBoundary))) return null;
+	if (hasDenyList && fileBoundary.denyImportsFrom.some((id) => matchesBoundaryIdentifier(id, targetBoundary))) return { reason: `Boundary '${fileIdentifier}' explicitly denies imports from '${targetIdentifier}'` };
+	if (hasAllowList && !hasDenyList) return { reason: `Cross-boundary import from '${targetIdentifier}' to '${fileIdentifier}' is not allowed. Add '${targetIdentifier}' to 'allowImportsFrom' if this import is intentional.` };
 	if (hasDenyList && !hasAllowList) return null;
-	return { reason: `Cross-boundary import from '${targetBoundary.alias}' to '${fileBoundary.alias}' is not allowed. Add '${targetBoundary.alias}' to 'allowImportsFrom' if this import is intentional.` };
+	return { reason: `Cross-boundary import from '${targetIdentifier}' to '${fileIdentifier}' is not allowed. Add '${targetIdentifier}' to 'allowImportsFrom' if this import is intentional.` };
 }
 
 //#endregion
@@ -116,44 +172,89 @@ function createFixer(node, newPath) {
 /**
 * Resolve the target path from an import specifier.
 */
-function resolveTargetPath(rawSpec, fileDir, boundaries, rootDir, cwd) {
+function resolveTargetPath(rawSpec, fileDir, boundaries, rootDir, cwd, barrelFileName = "index", fileExtensions = [
+	".ts",
+	".tsx",
+	".js",
+	".jsx",
+	".mjs",
+	".cjs"
+]) {
 	let targetAbs;
 	let targetDir;
 	if (rawSpec.startsWith("@")) {
-		const boundary = boundaries.find((b) => rawSpec === b.alias || rawSpec.startsWith(`${b.alias}/`));
-		if (boundary) {
+		const boundary = boundaries.find((b) => b.alias && (rawSpec === b.alias || rawSpec.startsWith(`${b.alias}/`)));
+		if (boundary && boundary.alias) {
 			const subpath = rawSpec.slice(boundary.alias.length + 1);
-			if (subpath && !subpath.endsWith(".ts")) {
+			if (subpath && !hasExtension(subpath, fileExtensions)) {
 				targetDir = path.resolve(boundary.absDir, subpath);
-				targetAbs = path.join(targetDir, "index.ts");
+				targetAbs = path.join(targetDir, `${barrelFileName}${fileExtensions[0]}`);
 			} else if (subpath) {
 				targetAbs = path.resolve(boundary.absDir, subpath);
 				targetDir = path.dirname(targetAbs);
 			} else {
-				targetAbs = path.join(boundary.absDir, "index.ts");
+				targetAbs = path.join(boundary.absDir, `${barrelFileName}${fileExtensions[0]}`);
 				targetDir = boundary.absDir;
 			}
 		} else {
 			targetAbs = "";
 			targetDir = "";
 		}
-	} else if (rawSpec.startsWith(".")) if (!rawSpec.endsWith(".ts")) {
+	} else if (rawSpec.startsWith(".")) if (!hasExtension(rawSpec, fileExtensions)) {
 		targetDir = path.resolve(fileDir, rawSpec);
-		targetAbs = path.join(targetDir, "index.ts");
+		targetAbs = path.join(targetDir, `${barrelFileName}${fileExtensions[0]}`);
 	} else {
 		targetAbs = path.resolve(fileDir, rawSpec);
 		targetDir = path.dirname(targetAbs);
 	}
-	else if (rawSpec.startsWith(rootDir)) if (!rawSpec.endsWith(".ts")) {
+	else if (rawSpec.startsWith(rootDir)) if (!hasExtension(rawSpec, fileExtensions)) {
 		targetDir = path.resolve(cwd, rawSpec);
-		targetAbs = path.join(targetDir, "index.ts");
+		targetAbs = path.join(targetDir, `${barrelFileName}${fileExtensions[0]}`);
 	} else {
 		targetAbs = path.resolve(cwd, rawSpec);
 		targetDir = path.dirname(targetAbs);
 	}
 	else {
-		targetAbs = "";
-		targetDir = "";
+		const matchingBoundary = boundaries.find((b) => {
+			if (rawSpec === b.dir || rawSpec.startsWith(`${b.dir}/`)) return true;
+			const boundaryParts = b.dir.split("/");
+			if (rawSpec.split("/").length > 0 && boundaryParts.length > 0) for (let i = boundaryParts.length - 1; i >= 0; i--) {
+				const boundarySuffix = boundaryParts.slice(i).join("/");
+				if (rawSpec === boundarySuffix || rawSpec.startsWith(`${boundarySuffix}/`)) return true;
+			}
+			return false;
+		});
+		if (matchingBoundary) {
+			let subpath = "";
+			if (rawSpec === matchingBoundary.dir) subpath = "";
+			else if (rawSpec.startsWith(`${matchingBoundary.dir}/`)) subpath = rawSpec.slice(matchingBoundary.dir.length + 1);
+			else {
+				const boundaryParts = matchingBoundary.dir.split("/");
+				for (let i = boundaryParts.length - 1; i >= 0; i--) {
+					const boundarySuffix = boundaryParts.slice(i).join("/");
+					if (rawSpec.startsWith(`${boundarySuffix}/`)) {
+						subpath = rawSpec.slice(boundarySuffix.length + 1);
+						break;
+					} else if (rawSpec === boundarySuffix) {
+						subpath = "";
+						break;
+					}
+				}
+			}
+			if (subpath && !hasExtension(subpath, fileExtensions)) {
+				targetDir = path.resolve(matchingBoundary.absDir, subpath);
+				targetAbs = path.join(targetDir, `${barrelFileName}${fileExtensions[0]}`);
+			} else if (subpath) {
+				targetAbs = path.resolve(matchingBoundary.absDir, subpath);
+				targetDir = path.dirname(targetAbs);
+			} else {
+				targetAbs = path.join(matchingBoundary.absDir, `${barrelFileName}${fileExtensions[0]}`);
+				targetDir = matchingBoundary.absDir;
+			}
+		} else {
+			targetAbs = "";
+			targetDir = "";
+		}
 	}
 	return {
 		targetAbs,
@@ -163,31 +264,47 @@ function resolveTargetPath(rawSpec, fileDir, boundaries, rootDir, cwd) {
 /**
 * Calculate the correct import path using the simplified algorithm.
 */
-function calculateCorrectImportPath(rawSpec, fileDir, fileBoundary, boundaries, rootDir, cwd, crossBoundaryStyle = "alias") {
-	const { targetAbs, targetDir } = resolveTargetPath(rawSpec, fileDir, boundaries, rootDir, cwd);
+function calculateCorrectImportPath(rawSpec, fileDir, fileBoundary, boundaries, rootDir, cwd, crossBoundaryStyle = "alias", barrelFileName = "index", fileExtensions = [
+	".ts",
+	".tsx",
+	".js",
+	".jsx",
+	".mjs",
+	".cjs"
+]) {
+	const { targetAbs, targetDir } = resolveTargetPath(rawSpec, fileDir, boundaries, rootDir, cwd, barrelFileName, fileExtensions);
 	const targetBoundary = boundaries.find((b) => isInsideDir(b.absDir, targetAbs)) ?? null;
 	if (!fileBoundary || targetBoundary !== fileBoundary) {
 		if (targetBoundary) {
 			if (crossBoundaryStyle === "absolute") return path.join(rootDir, targetBoundary.dir).replace(/\\/g, "/");
+			if (!targetBoundary.alias) return path.join(rootDir, targetBoundary.dir).replace(/\\/g, "/");
 			return targetBoundary.alias;
 		}
 		return "UNKNOWN_BOUNDARY";
 	}
-	if (rawSpec === fileBoundary.alias) return null;
+	if (crossBoundaryStyle === "alias") {
+		if (fileBoundary.alias && rawSpec === fileBoundary.alias) return null;
+	} else {
+		const boundaryAbsPath = path.join(rootDir, fileBoundary.dir).replace(/\\/g, "/");
+		if (rawSpec === boundaryAbsPath || rawSpec === `${boundaryAbsPath}/`) return null;
+	}
 	const targetRelativeToBoundary = path.relative(fileBoundary.absDir, targetDir);
 	const fileRelativeToBoundary = path.relative(fileBoundary.absDir, fileDir);
 	const targetParts = targetRelativeToBoundary === "" || targetRelativeToBoundary === "." ? [] : targetRelativeToBoundary.split(path.sep).filter((p) => p && p !== ".");
 	const fileParts = fileRelativeToBoundary === "" || fileRelativeToBoundary === "." ? [] : fileRelativeToBoundary.split(path.sep).filter((p) => p && p !== ".");
 	if (targetParts.length === 0) {
-		const targetBasename = path.basename(targetAbs, ".ts");
-		if (targetBasename !== "index") return `${fileBoundary.alias}/${targetBasename}`;
+		const targetBasename = getBasenameWithoutExt(targetAbs);
+		if (targetBasename !== barrelFileName) {
+			if (fileBoundary.alias) return `${fileBoundary.alias}/${targetBasename}`;
+			return path.join(rootDir, fileBoundary.dir, targetBasename).replace(/\\/g, "/");
+		}
 		return null;
 	}
 	let firstDifferingIndex = 0;
 	while (firstDifferingIndex < targetParts.length && firstDifferingIndex < fileParts.length && targetParts[firstDifferingIndex] === fileParts[firstDifferingIndex]) firstDifferingIndex++;
 	if (firstDifferingIndex >= targetParts.length && firstDifferingIndex >= fileParts.length) {
-		const targetBasename = path.basename(targetAbs, ".ts");
-		if (targetBasename !== "index") return `./${targetBasename}`;
+		const targetBasename = getBasenameWithoutExt(targetAbs);
+		if (targetBasename !== barrelFileName) return `./${targetBasename}`;
 		return null;
 	}
 	const firstDifferingSegment = targetParts[firstDifferingIndex];
@@ -196,7 +313,8 @@ function calculateCorrectImportPath(rawSpec, fileDir, fileBoundary, boundaries, 
 	if (firstDifferingIndex === fileParts.length - 1) {
 		if (!(firstDifferingIndex === 0)) return `../${firstDifferingSegment}`;
 	}
-	return `${fileBoundary.alias}/${firstDifferingSegment}`;
+	if (fileBoundary.alias) return `${fileBoundary.alias}/${firstDifferingSegment}`;
+	return path.join(rootDir, fileBoundary.dir, firstDifferingSegment).replace(/\\/g, "/");
 }
 
 //#endregion
@@ -208,11 +326,16 @@ function calculateCorrectImportPath(rawSpec, fileDir, fileBoundary, boundaries, 
 * @returns true if a violation was reported, false otherwise
 */
 function handleImport(options) {
-	const { node, rawSpec, fileDir, fileBoundary, boundaries, rootDir, cwd, context, crossBoundaryStyle = "alias", defaultSeverity, allowUnknownBoundaries = false, isTypeOnly = false, skipBoundaryRules = false } = options;
-	const isRelative = rawSpec.startsWith(".");
-	const matchesBoundaryAlias = boundaries.some((b) => rawSpec === b.alias || rawSpec.startsWith(`${b.alias}/`));
-	const isAbsoluteInRoot = rawSpec.startsWith(rootDir) || rawSpec.startsWith(`/${rootDir}`);
-	if (!isRelative && !matchesBoundaryAlias && !isAbsoluteInRoot) return false;
+	const { node, rawSpec, fileDir, fileBoundary, boundaries, rootDir, cwd, context, crossBoundaryStyle = "alias", defaultSeverity, allowUnknownBoundaries = false, isTypeOnly = false, skipBoundaryRules = false, barrelFileName = "index", fileExtensions = [
+		".ts",
+		".tsx",
+		".js",
+		".jsx",
+		".mjs",
+		".cjs"
+	] } = options;
+	const { targetAbs } = resolveTargetPath(rawSpec, fileDir, boundaries, rootDir, cwd, barrelFileName, fileExtensions);
+	if (!targetAbs) return false;
 	if (crossBoundaryStyle === "alias") {
 		const aliasSubpathCheck = checkAliasSubpath(rawSpec, boundaries);
 		if (aliasSubpathCheck.isSubpath) {
@@ -235,7 +358,6 @@ function handleImport(options) {
 			}
 		}
 	}
-	const { targetAbs } = resolveTargetPath(rawSpec, fileDir, boundaries, rootDir, cwd);
 	const targetBoundary = boundaries.find((b) => isInsideDir(b.absDir, targetAbs)) ?? null;
 	if (!skipBoundaryRules && fileBoundary && targetBoundary && fileBoundary !== targetBoundary) {
 		const violation = checkBoundaryRules(fileBoundary, targetBoundary, boundaries, isTypeOnly);
@@ -245,8 +367,8 @@ function handleImport(options) {
 				node,
 				messageId: "boundaryViolation",
 				data: {
-					from: fileBoundary.alias,
-					to: targetBoundary.alias,
+					from: getBoundaryIdentifier(fileBoundary),
+					to: getBoundaryIdentifier(targetBoundary),
 					reason: violation.reason
 				},
 				...severity$1 && { severity: severity$1 === "warn" ? 1 : 2 }
@@ -255,18 +377,20 @@ function handleImport(options) {
 			return true;
 		}
 	}
-	const correctPath = calculateCorrectImportPath(rawSpec, fileDir, fileBoundary, boundaries, rootDir, cwd, crossBoundaryStyle);
+	const correctPath = calculateCorrectImportPath(rawSpec, fileDir, fileBoundary, boundaries, rootDir, cwd, crossBoundaryStyle, barrelFileName, fileExtensions);
 	if (!correctPath) {
-		if (fileBoundary && rawSpec === fileBoundary.alias) {
-			const severity$1 = fileBoundary.severity || defaultSeverity;
-			const reportOptions$1 = {
-				node,
-				messageId: "ancestorBarrelImport",
-				data: { alias: fileBoundary.alias },
-				...severity$1 && { severity: severity$1 === "warn" ? 1 : 2 }
-			};
-			context.report(reportOptions$1);
-			return true;
+		if (fileBoundary) {
+			if (crossBoundaryStyle === "alias" ? fileBoundary.alias && rawSpec === fileBoundary.alias : rawSpec === `${rootDir}/${fileBoundary.dir}`.replace(/\\/g, "/") || rawSpec === `${rootDir}/${fileBoundary.dir}/`.replace(/\\/g, "/")) {
+				const severity$1 = fileBoundary.severity || defaultSeverity;
+				const reportOptions$1 = {
+					node,
+					messageId: "ancestorBarrelImport",
+					data: { alias: getBoundaryIdentifier(fileBoundary) },
+					...severity$1 && { severity: severity$1 === "warn" ? 1 : 2 }
+				};
+				context.report(reportOptions$1);
+				return true;
+			}
 		}
 		return false;
 	}
@@ -345,7 +469,7 @@ const rule = {
 								enum: ["error", "warn"]
 							}
 						},
-						required: ["dir", "alias"]
+						required: ["dir"]
 					},
 					minItems: 1
 				},
@@ -365,6 +489,22 @@ const rule = {
 				skipBoundaryRulesForTestFiles: {
 					type: "boolean",
 					default: true
+				},
+				barrelFileName: {
+					type: "string",
+					default: "index"
+				},
+				fileExtensions: {
+					type: "array",
+					items: { type: "string" },
+					default: [
+						".ts",
+						".tsx",
+						".js",
+						".jsx",
+						".mjs",
+						".cjs"
+					]
 				}
 			},
 			required: ["boundaries"]
@@ -378,8 +518,22 @@ const rule = {
 	},
 	create(context) {
 		if (!context.options || context.options.length === 0) throw new Error("boundary-alias-vs-relative requires boundaries configuration");
-		const { rootDir = "src", boundaries, crossBoundaryStyle = "alias", defaultSeverity, allowUnknownBoundaries = false, skipBoundaryRulesForTestFiles = true } = context.options[0];
+		const { rootDir = "src", boundaries, crossBoundaryStyle = "alias", defaultSeverity, allowUnknownBoundaries = false, skipBoundaryRulesForTestFiles = true, barrelFileName = "index", fileExtensions = [
+			".ts",
+			".tsx",
+			".js",
+			".jsx",
+			".mjs",
+			".cjs"
+		] } = context.options[0];
 		const cwd = context.getCwd?.() ?? process.cwd();
+		if (crossBoundaryStyle === "alias") {
+			const boundariesWithoutAlias = boundaries.filter((b) => !b.alias);
+			if (boundariesWithoutAlias.length > 0) {
+				const missingAliases = boundariesWithoutAlias.map((b) => b.dir).join(", ");
+				throw new Error(`When crossBoundaryStyle is 'alias', all boundaries must have an 'alias' property. Missing aliases for: ${missingAliases}`);
+			}
+		}
 		const resolvedBoundaries = boundaries.map((b) => ({
 			dir: b.dir,
 			alias: b.alias,
@@ -427,7 +581,9 @@ const rule = {
 				defaultSeverity,
 				allowUnknownBoundaries,
 				isTypeOnly,
-				skipBoundaryRules: skipBoundaryRulesForTestFiles
+				skipBoundaryRules: skipBoundaryRulesForTestFiles,
+				barrelFileName,
+				fileExtensions
 			});
 		}
 		return {
