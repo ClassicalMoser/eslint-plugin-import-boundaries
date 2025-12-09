@@ -87,8 +87,22 @@ function checkAliasSubpath(spec, boundaries) {
 	return { isSubpath: false };
 }
 /**
+* Resolve a file/path to the nearest boundary (regardless of rules).
+* Used for target boundaries - returns the boundary if it exists, even without rules.
+*
+* @param filename - Absolute filename
+* @param boundaries - Array of all boundaries
+* @returns The nearest boundary, or null if none found
+*/
+function resolveToBoundary(filename, boundaries) {
+	const matchingBoundaries = boundaries.filter((b) => isInsideDir(b.absDir, filename));
+	if (matchingBoundaries.length > 0) return matchingBoundaries.sort((a, b) => b.absDir.length - a.absDir.length)[0];
+	return null;
+}
+/**
 * Resolve a file to the nearest boundary that has rules specified.
 * If no boundaries with rules are found, returns null.
+* Used for file boundaries - allows inheritance from ancestors with rules.
 *
 * @param filename - Absolute filename
 * @param boundaries - Array of all boundaries
@@ -286,7 +300,7 @@ function calculateCorrectImportPath(rawSpec, fileDir, fileBoundary, boundaries, 
 	".cjs"
 ]) {
 	const { targetAbs, targetDir } = resolveTargetPath(rawSpec, fileDir, boundaries, rootDir, cwd, barrelFileName, fileExtensions);
-	const targetBoundary = resolveToSpecifiedBoundary(targetAbs, boundaries);
+	const targetBoundary = resolveToBoundary(targetAbs, boundaries);
 	if (!fileBoundary || targetBoundary !== fileBoundary) {
 		if (targetBoundary) {
 			if (crossBoundaryStyle === "absolute") return path.join(rootDir, targetBoundary.dir).replace(/\\/g, "/");
@@ -371,7 +385,7 @@ function handleImport(options) {
 			}
 		}
 	}
-	const targetBoundary = resolveToSpecifiedBoundary(targetAbs, boundaries);
+	const targetBoundary = resolveToBoundary(targetAbs, boundaries);
 	if (!skipBoundaryRules && fileBoundary && targetBoundary && fileBoundary !== targetBoundary) {
 		const violation = checkBoundaryRules(fileBoundary, targetBoundary, boundaries, isTypeOnly);
 		if (violation) {

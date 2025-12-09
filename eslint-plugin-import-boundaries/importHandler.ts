@@ -8,6 +8,7 @@ import type { Rule } from "eslint";
 import type { Boundary } from "./types";
 import {
   checkAliasSubpath,
+  resolveToBoundary,
   resolveToSpecifiedBoundary,
 } from "./boundaryDetection";
 import { checkBoundaryRules, getBoundaryIdentifier } from "./boundaryRules";
@@ -71,7 +72,7 @@ export function handleImport(options: HandleImportOptions): boolean {
     rootDir,
     cwd,
     barrelFileName,
-    fileExtensions,
+    fileExtensions
   );
 
   // Skip checking for external packages (node_modules, etc.)
@@ -86,7 +87,7 @@ export function handleImport(options: HandleImportOptions): boolean {
     const aliasSubpathCheck = checkAliasSubpath(rawSpec, boundaries);
     if (aliasSubpathCheck.isSubpath) {
       const targetBoundary = boundaries.find(
-        (b) => b.alias === aliasSubpathCheck.baseAlias,
+        (b) => b.alias === aliasSubpathCheck.baseAlias
       );
       if (
         targetBoundary &&
@@ -113,8 +114,9 @@ export function handleImport(options: HandleImportOptions): boolean {
     }
   }
 
-  // Resolve target to nearest specified boundary (one with rules)
-  const targetBoundary = resolveToSpecifiedBoundary(targetAbs, boundaries);
+  // Resolve target to nearest boundary (even if it has no rules)
+  // Target boundaries should be returned as-is, rules are checked separately
+  const targetBoundary = resolveToBoundary(targetAbs, boundaries);
 
   // Check allow/deny rules if both boundaries exist and are different
   // Skip this check for test files if skipBoundaryRules is true (but still enforce path format)
@@ -128,7 +130,7 @@ export function handleImport(options: HandleImportOptions): boolean {
       fileBoundary,
       targetBoundary,
       boundaries,
-      isTypeOnly,
+      isTypeOnly
     );
     if (violation) {
       const severity = fileBoundary.severity || defaultSeverity;
@@ -157,7 +159,7 @@ export function handleImport(options: HandleImportOptions): boolean {
     cwd,
     crossBoundaryStyle,
     barrelFileName,
-    fileExtensions,
+    fileExtensions
   );
 
   if (!correctPath) {

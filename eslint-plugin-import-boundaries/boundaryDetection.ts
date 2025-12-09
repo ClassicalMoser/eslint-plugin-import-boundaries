@@ -31,8 +31,36 @@ export function checkAliasSubpath(
 }
 
 /**
+ * Resolve a file/path to the nearest boundary (regardless of rules).
+ * Used for target boundaries - returns the boundary if it exists, even without rules.
+ *
+ * @param filename - Absolute filename
+ * @param boundaries - Array of all boundaries
+ * @returns The nearest boundary, or null if none found
+ */
+export function resolveToBoundary(
+  filename: string,
+  boundaries: Boundary[],
+): Boundary | null {
+  // Find all boundaries where the file is inside the boundary's directory
+  const matchingBoundaries = boundaries.filter((b) =>
+    isInsideDir(b.absDir, filename),
+  );
+
+  if (matchingBoundaries.length > 0) {
+    // Return the most specific (longest path) boundary
+    return matchingBoundaries.sort(
+      (a, b) => b.absDir.length - a.absDir.length,
+    )[0]!;
+  }
+
+  return null;
+}
+
+/**
  * Resolve a file to the nearest boundary that has rules specified.
  * If no boundaries with rules are found, returns null.
+ * Used for file boundaries - allows inheritance from ancestors with rules.
  *
  * @param filename - Absolute filename
  * @param boundaries - Array of all boundaries
