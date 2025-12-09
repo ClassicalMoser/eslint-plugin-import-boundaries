@@ -139,8 +139,8 @@ function matchesBoundaryIdentifier(identifier, targetBoundary) {
 *
 * Semantics:
 * - If both allowImportsFrom and denyImportsFrom are specified, they work as:
-*   - allowImportsFrom: explicit allow list (overrides deny for those items)
-*   - denyImportsFrom: explicit deny list (overrides default allow for those items)
+*   - Both lists apply independently (allow applies to items in allow list, deny applies to items in deny list)
+*   - If the same identifier appears in both lists (configuration error), denyImportsFrom takes precedence for safety
 * - If only allowImportsFrom: only those boundaries are allowed (deny-all by default)
 * - If only denyImportsFrom: all boundaries allowed except those (allow-all by default)
 * - If neither: deny-all by default (strictest)
@@ -153,8 +153,8 @@ function checkBoundaryRules(fileBoundary, targetBoundary, allBoundaries, isTypeO
 	if (isTypeOnly && fileBoundary.allowTypeImportsFrom?.some((id) => matchesBoundaryIdentifier(id, targetBoundary))) return null;
 	const hasAllowList = fileBoundary.allowImportsFrom && fileBoundary.allowImportsFrom.length > 0;
 	const hasDenyList = fileBoundary.denyImportsFrom && fileBoundary.denyImportsFrom.length > 0;
+	if (hasDenyList && fileBoundary.denyImportsFrom.some((id) => matchesBoundaryIdentifier(id, targetBoundary))) return { reason: hasAllowList && fileBoundary.allowImportsFrom.some((id) => matchesBoundaryIdentifier(id, targetBoundary)) ? `Boundary '${fileIdentifier}' explicitly denies imports from '${targetIdentifier}' (deny takes precedence over allow)` : `Boundary '${fileIdentifier}' explicitly denies imports from '${targetIdentifier}'` };
 	if (hasAllowList && fileBoundary.allowImportsFrom.some((id) => matchesBoundaryIdentifier(id, targetBoundary))) return null;
-	if (hasDenyList && fileBoundary.denyImportsFrom.some((id) => matchesBoundaryIdentifier(id, targetBoundary))) return { reason: `Boundary '${fileIdentifier}' explicitly denies imports from '${targetIdentifier}'` };
 	if (hasAllowList && !hasDenyList) return { reason: `Cross-boundary import from '${targetIdentifier}' to '${fileIdentifier}' is not allowed. Add '${targetIdentifier}' to 'allowImportsFrom' if this import is intentional.` };
 	if (hasDenyList && !hasAllowList) return null;
 	return { reason: `Cross-boundary import from '${targetIdentifier}' to '${fileIdentifier}' is not allowed. Add '${targetIdentifier}' to 'allowImportsFrom' if this import is intentional.` };
