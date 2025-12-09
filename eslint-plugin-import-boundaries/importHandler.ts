@@ -6,7 +6,7 @@
 
 import type { Rule } from "eslint";
 import type { Boundary } from "./types";
-import { checkAliasSubpath } from "./boundaryDetection";
+import { checkAliasSubpath, resolveToSpecifiedBoundary } from "./boundaryDetection";
 import { checkBoundaryRules, getBoundaryIdentifier } from "./boundaryRules";
 import { createFixer } from "./fixer";
 import { isInsideDir } from "./pathUtils";
@@ -111,9 +111,8 @@ export function handleImport(options: HandleImportOptions): boolean {
     }
   }
 
-  // Find target boundary
-  const targetBoundary =
-    boundaries.find((b) => isInsideDir(b.absDir, targetAbs)) ?? null;
+  // Resolve target to nearest specified boundary (one with rules)
+  const targetBoundary = resolveToSpecifiedBoundary(targetAbs, boundaries);
 
   // Check allow/deny rules if both boundaries exist and are different
   // Skip this check for test files if skipBoundaryRules is true (but still enforce path format)

@@ -46,6 +46,7 @@ describe('importHandler', () => {
       dir: 'domain/events',
       alias: '@events',
       absDir: path.resolve(cwd, rootDir, 'domain/events'),
+      allowImportsFrom: [], // Has rules (empty allow list = deny all by default)
     };
 
     boundaries = [entitiesBoundary, queriesBoundary, eventsBoundary];

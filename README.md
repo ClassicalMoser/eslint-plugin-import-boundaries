@@ -5,17 +5,19 @@
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-import-boundaries)](https://www.npmjs.com/package/eslint-plugin-import-boundaries)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 
-**Note: This is a beta release developed for a personal project. It is not yet stable and may have breaking changes.**
+**Note: This is a beta release, originally developed for a personal project. It is not yet stable and may have breaking changes.**
 
 An opinionated ESLint rule that enforces architectural boundaries using deterministic import path rules. This rule determines when to use alias vs relative imports based on your architecture, rather than enforcing a single pattern for all imports.
+
+**Important:** This rule expects an index or barrel file at every directory level. This barrel file represents the external accessibility of the module as a boundary interface, enabling zero I/O path resolution.
 
 ## Features
 
 - **Deterministic**: One correct path for every import
 - **Explicit Exports**: Ensures every directory is explicit about what it exports (via barrel files)
-- **Readable Paths**: Resolves to logical, readable filepaths (no `../../../../../../` chains)
-- **Architectural Boundaries**: Enforce clean architecture, hexagonal architecture, or any non-nested boundary pattern (nested boundaries planned but not yet implemented)
-- **Auto-fixable**: Most violations are automatically fixable
+- **Readable Paths**: Always resolves to the most readable filepath (no `../../../../../../` chains)
+- **Architectural Boundaries**: Enforce clean architecture, hexagonal architecture, feature-sliced design, or any other boundary pattern (including nested boundaries)
+- **Auto-fixable**: Legal import paths are auto-fixable and will always converge to the correct import string.
 - **Zero I/O**: Pure path math and AST analysis - fast even on large codebases
 - **Type-aware**: Different rules for type-only imports vs value imports
 - **Circular Dependency Prevention**: Blocks ancestor barrel imports
@@ -128,6 +130,41 @@ import { Database } from "@infrastructure";
 // Error: Cannot import from '@infrastructure' to '@application': Import not allowed
 ```
 
+#### Nested Boundaries
+
+Boundaries can be nested, and each boundary must explicitly declare its import rules:
+
+```javascript
+{
+  boundaries: [
+    {
+      dir: 'application',
+      alias: '@application',
+      allowImportsFrom: ['@domain'],
+    },
+    {
+      dir: 'application/ports',
+      alias: '@ports',
+      allowImportsFrom: ['@infrastructure', '@domain'], // Can import from infrastructure even though parent cannot
+    },
+    {
+      dir: 'interface',
+      alias: '@interface',
+      allowImportsFrom: ['@application', '@public-use-cases'],
+      denyImportsFrom: ['@use-cases'], // Can allow parent and specific child, but deny intermediate boundary
+    },
+  ],
+}
+```
+
+**Key behaviors:**
+
+- Each boundary must explicitly declare its rules (no inheritance)
+- Files in boundaries without rules resolve to their nearest ancestor with rules (or are rejected if no ancestor has rules)
+- Rules work the same regardless of nesting depth (flat rule checking)
+- You can selectively allow/deny specific nested boundaries
+- A boundary is considered to have rules if it defines `allowImportsFrom`, `denyImportsFrom`, or `allowTypeImportsFrom` (even if empty arrays)
+
 ### 4. Type-Only Imports
 
 Different rules for types vs values (types don't create runtime dependencies):
@@ -178,6 +215,7 @@ import { something } from "@application"; // When inside @application boundary
       dir: 'domain',                // Required: Relative directory path
       alias: '@domain',             // Required when crossBoundaryStyle is 'alias', optional when 'absolute'
       denyImportsFrom: ['@application', '@infrastructure', '@interface', '@composition'], // Domain is pure
+      severity: 'error',             // Optional: 'error' | 'warn' (overrides defaultSeverity for this boundary)
     },
     {
       dir: 'application',
@@ -316,9 +354,9 @@ This plugin uses a different approach:
 
 By assuming barrel files at every directory, this plugin can determine correct paths using pure path math - no file system access needed. This makes it faster and more reliable. The barrel file pattern also enforces clear module interfaces (you must go through the barrel), which is good architecture. Because paths are deterministic, there's no debugging overhead - you always know exactly where a module comes from.
 
-## Roadmap
+## Examples
 
-- **Nested Boundaries**: Support for nested boundaries where sub-boundaries can have broader allow patterns than their parents (e.g., `@ports` nested in `@application` can import from `@infrastructure` even though `@application` cannot). This is required for proper hexagonal architecture support. See [Nested Boundaries Design](./NESTED_BOUNDARIES_DESIGN.md) for the design document.
+See [Hexagonal Architecture Defaults](./HEXAGONAL_DEFAULTS.md) for a complete example configuration for hexagonal architecture (ports and adapters) projects.
 
 ## License
 

@@ -25,18 +25,21 @@ describe('relationshipDetection', () => {
       dir: 'domain/entities',
       alias: '@entities',
       absDir: path.resolve(cwd, rootDir, 'domain/entities'),
+      allowImportsFrom: [], // Has rules (empty allow list = deny all by default)
     };
 
     queriesBoundary = {
       dir: 'domain/queries',
       alias: '@queries',
       absDir: path.resolve(cwd, rootDir, 'domain/queries'),
+      allowImportsFrom: [], // Has rules (empty allow list = deny all by default)
     };
 
     transformsBoundary = {
       dir: 'domain/transforms',
       alias: '@transforms',
       absDir: path.resolve(cwd, rootDir, 'domain/transforms'),
+      allowImportsFrom: [], // Has rules (empty allow list = deny all by default)
     };
   });
 
@@ -526,11 +529,13 @@ describe('relationshipDetection', () => {
     });
 
     it('should handle Windows paths correctly', () => {
-      const windowsCwd = 'C:\\project';
+      // Use a Unix-style path for cross-platform compatibility
+      const windowsCwd = '/C/project';
       const windowsEntitiesBoundary: Boundary = {
         dir: 'domain/entities',
         alias: '@entities',
         absDir: path.resolve(windowsCwd, rootDir, 'domain/entities'),
+        allowImportsFrom: [], // Has rules (empty allow list = deny all by default)
       };
       const windowsBoundaries = [windowsEntitiesBoundary, queriesBoundary];
 

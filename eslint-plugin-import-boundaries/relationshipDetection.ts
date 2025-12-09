@@ -8,6 +8,7 @@
 
 import type { Boundary } from "./types";
 import path from "node:path";
+import { resolveToSpecifiedBoundary } from "./boundaryDetection";
 import { isInsideDir, hasExtension, getBasenameWithoutExt } from "./pathUtils";
 
 /**
@@ -179,9 +180,8 @@ export function calculateCorrectImportPath(
     fileExtensions
   );
 
-  // Find target boundary
-  const targetBoundary =
-    boundaries.find((b) => isInsideDir(b.absDir, targetAbs)) ?? null;
+  // Resolve target to nearest specified boundary (one with rules)
+  const targetBoundary = resolveToSpecifiedBoundary(targetAbs, boundaries);
 
   // 1. Cross-boundary: use @boundary (no subpath) or absolute path
   if (!fileBoundary || targetBoundary !== fileBoundary) {

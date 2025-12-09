@@ -87,6 +87,21 @@ function checkAliasSubpath(spec, boundaries) {
 	return { isSubpath: false };
 }
 /**
+* Resolve a file to the nearest boundary that has rules specified.
+* If no boundaries with rules are found, returns null.
+*
+* @param filename - Absolute filename
+* @param boundaries - Array of all boundaries
+* @returns The nearest boundary with rules, or null if none found
+*/
+function resolveToSpecifiedBoundary(filename, boundaries) {
+	const specifiedBoundaries = boundaries.filter((b) => isInsideDir(b.absDir, filename)).filter((b) => b.allowImportsFrom !== void 0 || b.denyImportsFrom !== void 0 || b.allowTypeImportsFrom !== void 0);
+	if (specifiedBoundaries.length > 0) return specifiedBoundaries.sort((a, b) => b.absDir.length - a.absDir.length)[0];
+	const ancestors = boundaries.filter((b) => b.allowImportsFrom !== void 0 || b.denyImportsFrom !== void 0 || b.allowTypeImportsFrom !== void 0).filter((b) => isInsideDir(b.absDir, filename));
+	if (ancestors.length > 0) return ancestors.sort((a, b) => b.absDir.length - a.absDir.length)[0];
+	return null;
+}
+/**
 * Get metadata about the current file being linted.
 * Results are cached per file to avoid recomputation.
 *
@@ -96,12 +111,10 @@ function checkAliasSubpath(spec, boundaries) {
 */
 function getFileData(filename, boundaries) {
 	if (!path.isAbsolute(filename)) return { isValid: false };
-	const fileDir = path.dirname(filename);
-	const matchingBoundaries = boundaries.filter((b) => isInsideDir(b.absDir, filename));
 	return {
 		isValid: true,
-		fileDir,
-		fileBoundary: matchingBoundaries.length > 0 ? matchingBoundaries.sort((a, b) => b.absDir.length - a.absDir.length)[0] : null
+		fileDir: path.dirname(filename),
+		fileBoundary: resolveToSpecifiedBoundary(filename, boundaries)
 	};
 }
 
@@ -273,7 +286,7 @@ function calculateCorrectImportPath(rawSpec, fileDir, fileBoundary, boundaries, 
 	".cjs"
 ]) {
 	const { targetAbs, targetDir } = resolveTargetPath(rawSpec, fileDir, boundaries, rootDir, cwd, barrelFileName, fileExtensions);
-	const targetBoundary = boundaries.find((b) => isInsideDir(b.absDir, targetAbs)) ?? null;
+	const targetBoundary = resolveToSpecifiedBoundary(targetAbs, boundaries);
 	if (!fileBoundary || targetBoundary !== fileBoundary) {
 		if (targetBoundary) {
 			if (crossBoundaryStyle === "absolute") return path.join(rootDir, targetBoundary.dir).replace(/\\/g, "/");
@@ -358,7 +371,7 @@ function handleImport(options) {
 			}
 		}
 	}
-	const targetBoundary = boundaries.find((b) => isInsideDir(b.absDir, targetAbs)) ?? null;
+	const targetBoundary = resolveToSpecifiedBoundary(targetAbs, boundaries);
 	if (!skipBoundaryRules && fileBoundary && targetBoundary && fileBoundary !== targetBoundary) {
 		const violation = checkBoundaryRules(fileBoundary, targetBoundary, boundaries, isTypeOnly);
 		if (violation) {

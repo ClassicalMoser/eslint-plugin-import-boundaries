@@ -31,6 +31,64 @@ export function checkAliasSubpath(
 }
 
 /**
+ * Resolve a file to the nearest boundary that has rules specified.
+ * If no boundaries with rules are found, returns null.
+ *
+ * @param filename - Absolute filename
+ * @param boundaries - Array of all boundaries
+ * @returns The nearest boundary with rules, or null if none found
+ */
+export function resolveToSpecifiedBoundary(
+  filename: string,
+  boundaries: Boundary[],
+): Boundary | null {
+  // Find all boundaries where the file is inside the boundary's directory
+  const matchingBoundaries = boundaries.filter((b) =>
+    isInsideDir(b.absDir, filename),
+  );
+
+  // Filter to only boundaries that have rules specified
+  // An empty array counts as having rules (empty allow = deny all, empty deny = allow all)
+  // allowTypeImportsFrom also counts as having rules (even if only for type imports)
+  const specifiedBoundaries = matchingBoundaries.filter(
+    (b) =>
+      b.allowImportsFrom !== undefined ||
+      b.denyImportsFrom !== undefined ||
+      b.allowTypeImportsFrom !== undefined,
+  );
+
+  if (specifiedBoundaries.length > 0) {
+    // Return the most specific (longest path) specified boundary
+    return specifiedBoundaries.sort(
+      (a, b) => b.absDir.length - a.absDir.length,
+    )[0]!;
+  }
+
+  // If no specified boundaries match, find the nearest ancestor with rules
+  // An empty array counts as having rules (empty allow = deny all, empty deny = allow all)
+  // allowTypeImportsFrom also counts as having rules (even if only for type imports)
+  const allSpecifiedBoundaries = boundaries.filter(
+    (b) =>
+      b.allowImportsFrom !== undefined ||
+      b.denyImportsFrom !== undefined ||
+      b.allowTypeImportsFrom !== undefined,
+  );
+
+  // Find ancestors (boundaries that contain the file)
+  const ancestors = allSpecifiedBoundaries.filter((b) =>
+    isInsideDir(b.absDir, filename),
+  );
+
+  if (ancestors.length > 0) {
+    // Return the most specific ancestor (longest path)
+    return ancestors.sort((a, b) => b.absDir.length - a.absDir.length)[0]!;
+  }
+
+  // No specified boundaries found - return null (import will be rejected)
+  return null;
+}
+
+/**
  * Get metadata about the current file being linted.
  * Results are cached per file to avoid recomputation.
  *
@@ -50,16 +108,8 @@ export function getFileData(
 
   const fileDir = path.dirname(filename);
 
-  // Find which boundary (if any) contains this file
-  // If multiple boundaries match, use the most specific (longest path) one
-  // This handles cases where boundaries might overlap (e.g., 'domain/entities' and 'domain/entities/army')
-  const matchingBoundaries = boundaries.filter((b) =>
-    isInsideDir(b.absDir, filename),
-  );
-  const fileBoundary =
-    matchingBoundaries.length > 0
-      ? matchingBoundaries.sort((a, b) => b.absDir.length - a.absDir.length)[0]!
-      : null;
+  // Resolve to nearest specified boundary (one with rules)
+  const fileBoundary = resolveToSpecifiedBoundary(filename, boundaries);
 
   return { isValid: true, fileDir, fileBoundary };
 }

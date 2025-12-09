@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import path from 'node:path';
-import { getFileData, checkAliasSubpath } from './boundaryDetection.js';
+import { getFileData, checkAliasSubpath, resolveToSpecifiedBoundary } from './boundaryDetection.js';
 import type { Boundary } from './types.js';
 
 describe('boundaryDetection', () => {
@@ -62,8 +62,167 @@ describe('boundaryDetection', () => {
     });
   });
 
+  describe('resolveToSpecifiedBoundary', () => {
+    it('should resolve to boundary with rules', () => {
+      const boundaryWithRules: Boundary = {
+        dir: 'domain/application',
+        alias: '@application',
+        absDir: path.resolve(cwd, rootDir, 'domain/application'),
+        allowImportsFrom: ['@domain'],
+      };
+
+      const filename = path.resolve(
+        cwd,
+        rootDir,
+        'domain/application',
+        'file.ts',
+      );
+
+      const result = resolveToSpecifiedBoundary(filename, [boundaryWithRules]);
+
+      expect(result).toBe(boundaryWithRules);
+    });
+
+    it('should resolve to parent boundary when child has no rules', () => {
+      const parentBoundary: Boundary = {
+        dir: 'domain/application',
+        alias: '@application',
+        absDir: path.resolve(cwd, rootDir, 'domain/application'),
+        allowImportsFrom: ['@domain'],
+      };
+
+      const childBoundary: Boundary = {
+        dir: 'domain/application/ports',
+        alias: '@ports',
+        absDir: path.resolve(cwd, rootDir, 'domain/application/ports'),
+        // No rules specified
+      };
+
+      const filename = path.resolve(
+        cwd,
+        rootDir,
+        'domain/application/ports',
+        'file.ts',
+      );
+
+      const result = resolveToSpecifiedBoundary(filename, [parentBoundary, childBoundary]);
+
+      expect(result).toBe(parentBoundary);
+    });
+
+    it('should resolve to most specific boundary with rules', () => {
+      const parentBoundary: Boundary = {
+        dir: 'domain/application',
+        alias: '@application',
+        absDir: path.resolve(cwd, rootDir, 'domain/application'),
+        allowImportsFrom: ['@domain'],
+      };
+
+      const childBoundary: Boundary = {
+        dir: 'domain/application/ports',
+        alias: '@ports',
+        absDir: path.resolve(cwd, rootDir, 'domain/application/ports'),
+        allowImportsFrom: ['@infrastructure'],
+      };
+
+      const filename = path.resolve(
+        cwd,
+        rootDir,
+        'domain/application/ports',
+        'file.ts',
+      );
+
+      const result = resolveToSpecifiedBoundary(filename, [parentBoundary, childBoundary]);
+
+      expect(result).toBe(childBoundary);
+    });
+
+    it('should return null when no boundaries with rules are found', () => {
+      const boundaryWithoutRules: Boundary = {
+        dir: 'domain/application',
+        alias: '@application',
+        absDir: path.resolve(cwd, rootDir, 'domain/application'),
+        // No rules specified
+      };
+
+      const filename = path.resolve(
+        cwd,
+        rootDir,
+        'domain/application',
+        'file.ts',
+      );
+
+      const result = resolveToSpecifiedBoundary(filename, [boundaryWithoutRules]);
+
+      expect(result).toBeNull();
+    });
+
+    it('should return null for files outside all boundaries', () => {
+      const boundary: Boundary = {
+        dir: 'domain/application',
+        alias: '@application',
+        absDir: path.resolve(cwd, rootDir, 'domain/application'),
+        allowImportsFrom: ['@domain'],
+      };
+
+      const filename = path.resolve(cwd, 'other', 'file.ts');
+
+      const result = resolveToSpecifiedBoundary(filename, [boundary]);
+
+      expect(result).toBeNull();
+    });
+
+    it('should handle denyImportsFrom as rules', () => {
+      const boundaryWithDeny: Boundary = {
+        dir: 'domain/application',
+        alias: '@application',
+        absDir: path.resolve(cwd, rootDir, 'domain/application'),
+        denyImportsFrom: ['@infrastructure'],
+      };
+
+      const filename = path.resolve(
+        cwd,
+        rootDir,
+        'domain/application',
+        'file.ts',
+      );
+
+      const result = resolveToSpecifiedBoundary(filename, [boundaryWithDeny]);
+
+      expect(result).toBe(boundaryWithDeny);
+    });
+
+    it('should handle allowTypeImportsFrom as rules', () => {
+      const boundaryWithTypeOnly: Boundary = {
+        dir: 'domain/infrastructure',
+        alias: '@infrastructure',
+        absDir: path.resolve(cwd, rootDir, 'domain/infrastructure'),
+        allowTypeImportsFrom: ['@application'], // Only type imports allowed
+        // No allowImportsFrom or denyImportsFrom
+      };
+
+      const filename = path.resolve(
+        cwd,
+        rootDir,
+        'domain/infrastructure',
+        'file.ts',
+      );
+
+      const result = resolveToSpecifiedBoundary(filename, [boundaryWithTypeOnly]);
+
+      expect(result).toBe(boundaryWithTypeOnly);
+    });
+  });
+
   describe('getFileData', () => {
-    it('should detect file in boundary', () => {
+    it('should detect file in boundary with rules', () => {
+      const boundaryWithRules: Boundary = {
+        dir: 'domain/queries',
+        alias: '@queries',
+        absDir: path.resolve(cwd, rootDir, 'domain/queries'),
+        allowImportsFrom: ['@domain'],
+      };
+
       const filename = path.resolve(
         cwd,
         rootDir,
@@ -71,14 +230,21 @@ describe('boundaryDetection', () => {
         'getLine.ts',
       );
 
-      const result = getFileData(filename, boundaries);
+      const result = getFileData(filename, [boundaryWithRules]);
 
       expect(result.isValid).toBe(true);
       expect(result.fileDir).toBe(path.resolve(cwd, rootDir, 'domain/queries'));
-      expect(result.fileBoundary).toBe(queriesBoundary);
+      expect(result.fileBoundary).toBe(boundaryWithRules);
     });
 
-    it('should detect file in nested directory within boundary', () => {
+    it('should detect file in nested directory within boundary with rules', () => {
+      const boundaryWithRules: Boundary = {
+        dir: 'domain/queries',
+        alias: '@queries',
+        absDir: path.resolve(cwd, rootDir, 'domain/queries'),
+        allowImportsFrom: ['@domain'],
+      };
+
       const filename = path.resolve(
         cwd,
         rootDir,
@@ -88,39 +254,86 @@ describe('boundaryDetection', () => {
         'file.ts',
       );
 
-      const result = getFileData(filename, boundaries);
+      const result = getFileData(filename, [boundaryWithRules]);
 
       expect(result.isValid).toBe(true);
       expect(result.fileDir).toBe(
         path.resolve(cwd, rootDir, 'domain/queries', 'subdir', 'deep'),
       );
-      expect(result.fileBoundary).toBe(queriesBoundary);
+      expect(result.fileBoundary).toBe(boundaryWithRules);
     });
 
     it('should return null boundary for files outside all boundaries', () => {
+      const boundaryWithRules: Boundary = {
+        dir: 'domain/queries',
+        alias: '@queries',
+        absDir: path.resolve(cwd, rootDir, 'domain/queries'),
+        allowImportsFrom: ['@domain'],
+      };
+
       const filename = path.resolve(cwd, 'other', 'file.ts');
 
-      const result = getFileData(filename, boundaries);
+      const result = getFileData(filename, [boundaryWithRules]);
 
       expect(result.isValid).toBe(true);
       expect(result.fileDir).toBe(path.resolve(cwd, 'other'));
       expect(result.fileBoundary).toBeNull();
     });
 
-    it('should return most specific boundary for nested boundaries', () => {
-      // If we had nested boundaries, the most specific (longest path) should win
-      // For now, we test with the existing boundaries
+    it('should resolve to parent when child has no rules', () => {
+      const parentBoundary: Boundary = {
+        dir: 'domain/application',
+        alias: '@application',
+        absDir: path.resolve(cwd, rootDir, 'domain/application'),
+        allowImportsFrom: ['@domain'],
+      };
+
+      const childBoundary: Boundary = {
+        dir: 'domain/application/ports',
+        alias: '@ports',
+        absDir: path.resolve(cwd, rootDir, 'domain/application/ports'),
+        // No rules
+      };
+
       const filename = path.resolve(
         cwd,
         rootDir,
-        'domain/queries',
+        'domain/application/ports',
         'file.ts',
       );
 
-      const result = getFileData(filename, boundaries);
+      const result = getFileData(filename, [parentBoundary, childBoundary]);
 
       expect(result.isValid).toBe(true);
-      expect(result.fileBoundary).toBe(queriesBoundary);
+      expect(result.fileBoundary).toBe(parentBoundary);
+    });
+
+    it('should return most specific boundary with rules for nested boundaries', () => {
+      const parentBoundary: Boundary = {
+        dir: 'domain/application',
+        alias: '@application',
+        absDir: path.resolve(cwd, rootDir, 'domain/application'),
+        allowImportsFrom: ['@domain'],
+      };
+
+      const childBoundary: Boundary = {
+        dir: 'domain/application/ports',
+        alias: '@ports',
+        absDir: path.resolve(cwd, rootDir, 'domain/application/ports'),
+        allowImportsFrom: ['@infrastructure'],
+      };
+
+      const filename = path.resolve(
+        cwd,
+        rootDir,
+        'domain/application/ports',
+        'file.ts',
+      );
+
+      const result = getFileData(filename, [parentBoundary, childBoundary]);
+
+      expect(result.isValid).toBe(true);
+      expect(result.fileBoundary).toBe(childBoundary);
     });
 
     it('should return invalid for non-absolute paths', () => {
@@ -134,12 +347,15 @@ describe('boundaryDetection', () => {
     });
 
     it('should handle Windows paths', () => {
-      const windowsCwd = 'C:\\project';
+      // Use a Unix-style path for cross-platform compatibility
+      // The actual Windows path handling is tested implicitly through path.resolve
+      const windowsCwd = '/C/project';
       const windowsBoundaries: Boundary[] = [
         {
           dir: 'domain/entities',
           alias: '@entities',
           absDir: path.resolve(windowsCwd, rootDir, 'domain/entities'),
+          allowImportsFrom: [], // Has rules (empty allow list = deny all by default)
         },
       ];
 
