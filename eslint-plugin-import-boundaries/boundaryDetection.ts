@@ -2,9 +2,9 @@
  * Boundary detection and matching logic for the boundary-alias-vs-relative ESLint rule.
  */
 
-import type { AliasSubpathCheck, Boundary, FileData } from './types';
-import path from 'node:path';
-import { isInsideDir } from './pathUtils';
+import type { AliasSubpathCheck, Boundary, FileData } from "./types";
+import path from "node:path";
+import { isInsideDir } from "./pathUtils";
 
 /**
  * Check if an import specifier is using an alias subpath (e.g., '@entities/army').

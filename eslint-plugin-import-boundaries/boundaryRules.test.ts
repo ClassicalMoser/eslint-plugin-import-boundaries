@@ -3,33 +3,33 @@
  * Tests the allow/deny boundary rule logic.
  */
 
-import { describe, it, expect } from 'vitest';
-import { checkBoundaryRules } from './boundaryRules.js';
-import type { Boundary } from './types.js';
+import type { Boundary } from "./types.js";
+import { describe, expect, it } from "vitest";
+import { checkBoundaryRules } from "./boundaryRules.js";
 
-describe('boundaryRules', () => {
+describe("boundaryRules", () => {
   const entitiesBoundary: Boundary = {
-    dir: 'domain/entities',
-    alias: '@entities',
-    absDir: '/project/src/domain/entities',
+    dir: "domain/entities",
+    alias: "@entities",
+    absDir: "/project/src/domain/entities",
   };
 
   const queriesBoundary: Boundary = {
-    dir: 'domain/queries',
-    alias: '@queries',
-    absDir: '/project/src/domain/queries',
+    dir: "domain/queries",
+    alias: "@queries",
+    absDir: "/project/src/domain/queries",
   };
 
   const eventsBoundary: Boundary = {
-    dir: 'domain/events',
-    alias: '@events',
-    absDir: '/project/src/domain/events',
+    dir: "domain/events",
+    alias: "@events",
+    absDir: "/project/src/domain/events",
   };
 
   const utilsBoundary: Boundary = {
-    dir: 'domain/utils',
-    alias: '@utils',
-    absDir: '/project/src/domain/utils',
+    dir: "domain/utils",
+    alias: "@utils",
+    absDir: "/project/src/domain/utils",
   };
 
   const allBoundaries = [
@@ -39,8 +39,8 @@ describe('boundaryRules', () => {
     utilsBoundary,
   ];
 
-  describe('checkBoundaryRules - same boundary', () => {
-    it('should allow imports within the same boundary', () => {
+  describe("checkBoundaryRules - same boundary", () => {
+    it("should allow imports within the same boundary", () => {
       const result = checkBoundaryRules(
         entitiesBoundary,
         entitiesBoundary,
@@ -52,11 +52,11 @@ describe('boundaryRules', () => {
     });
   });
 
-  describe('checkBoundaryRules - allowImportsFrom', () => {
-    it('should allow imports from boundaries in allowImportsFrom', () => {
+  describe("checkBoundaryRules - allowImportsFrom", () => {
+    it("should allow imports from boundaries in allowImportsFrom", () => {
       const fileBoundary: Boundary = {
         ...entitiesBoundary,
-        allowImportsFrom: ['@events', '@utils'],
+        allowImportsFrom: ["@events", "@utils"],
       };
 
       const result = checkBoundaryRules(
@@ -69,10 +69,10 @@ describe('boundaryRules', () => {
       expect(result).toBeNull();
     });
 
-    it('should deny imports from boundaries not in allowImportsFrom', () => {
+    it("should deny imports from boundaries not in allowImportsFrom", () => {
       const fileBoundary: Boundary = {
         ...entitiesBoundary,
-        allowImportsFrom: ['@events'],
+        allowImportsFrom: ["@events"],
       };
 
       const result = checkBoundaryRules(
@@ -83,14 +83,14 @@ describe('boundaryRules', () => {
       );
 
       expect(result).not.toBeNull();
-      expect(result?.reason).toContain('not allowed');
-      expect(result?.reason).toContain('@queries');
+      expect(result?.reason).toContain("not allowed");
+      expect(result?.reason).toContain("@queries");
     });
 
-    it('should deny all by default when only allowImportsFrom is specified', () => {
+    it("should deny all by default when only allowImportsFrom is specified", () => {
       const fileBoundary: Boundary = {
         ...entitiesBoundary,
-        allowImportsFrom: ['@events'],
+        allowImportsFrom: ["@events"],
       };
 
       const result = checkBoundaryRules(
@@ -104,11 +104,11 @@ describe('boundaryRules', () => {
     });
   });
 
-  describe('checkBoundaryRules - denyImportsFrom', () => {
-    it('should deny imports from boundaries in denyImportsFrom', () => {
+  describe("checkBoundaryRules - denyImportsFrom", () => {
+    it("should deny imports from boundaries in denyImportsFrom", () => {
       const fileBoundary: Boundary = {
         ...entitiesBoundary,
-        denyImportsFrom: ['@queries'],
+        denyImportsFrom: ["@queries"],
       };
 
       const result = checkBoundaryRules(
@@ -119,14 +119,14 @@ describe('boundaryRules', () => {
       );
 
       expect(result).not.toBeNull();
-      expect(result?.reason).toContain('explicitly denies');
-      expect(result?.reason).toContain('@queries');
+      expect(result?.reason).toContain("explicitly denies");
+      expect(result?.reason).toContain("@queries");
     });
 
-    it('should allow imports from boundaries not in denyImportsFrom', () => {
+    it("should allow imports from boundaries not in denyImportsFrom", () => {
       const fileBoundary: Boundary = {
         ...entitiesBoundary,
-        denyImportsFrom: ['@queries'],
+        denyImportsFrom: ["@queries"],
       };
 
       const result = checkBoundaryRules(
@@ -139,10 +139,10 @@ describe('boundaryRules', () => {
       expect(result).toBeNull();
     });
 
-    it('should allow all by default when only denyImportsFrom is specified', () => {
+    it("should allow all by default when only denyImportsFrom is specified", () => {
       const fileBoundary: Boundary = {
         ...entitiesBoundary,
-        denyImportsFrom: ['@queries'],
+        denyImportsFrom: ["@queries"],
       };
 
       const result = checkBoundaryRules(
@@ -156,12 +156,12 @@ describe('boundaryRules', () => {
     });
   });
 
-  describe('checkBoundaryRules - both allow and deny', () => {
-    it('should allow imports when in both lists (allow takes precedence)', () => {
+  describe("checkBoundaryRules - both allow and deny", () => {
+    it("should allow imports when in both lists (allow takes precedence)", () => {
       const fileBoundary: Boundary = {
         ...entitiesBoundary,
-        allowImportsFrom: ['@queries', '@events'],
-        denyImportsFrom: ['@queries'],
+        allowImportsFrom: ["@queries", "@events"],
+        denyImportsFrom: ["@queries"],
       };
 
       const result = checkBoundaryRules(
@@ -174,11 +174,11 @@ describe('boundaryRules', () => {
       expect(result).toBeNull();
     });
 
-    it('should deny imports when in deny list but not in allow list', () => {
+    it("should deny imports when in deny list but not in allow list", () => {
       const fileBoundary: Boundary = {
         ...entitiesBoundary,
-        allowImportsFrom: ['@events'],
-        denyImportsFrom: ['@queries'],
+        allowImportsFrom: ["@events"],
+        denyImportsFrom: ["@queries"],
       };
 
       const result = checkBoundaryRules(
@@ -192,8 +192,8 @@ describe('boundaryRules', () => {
     });
   });
 
-  describe('checkBoundaryRules - no rules', () => {
-    it('should deny all by default when neither allow nor deny is specified', () => {
+  describe("checkBoundaryRules - no rules", () => {
+    it("should deny all by default when neither allow nor deny is specified", () => {
       const fileBoundary: Boundary = {
         ...entitiesBoundary,
       };
@@ -206,16 +206,16 @@ describe('boundaryRules', () => {
       );
 
       expect(result).not.toBeNull();
-      expect(result?.reason).toContain('not allowed');
+      expect(result?.reason).toContain("not allowed");
     });
   });
 
-  describe('checkBoundaryRules - type-only imports', () => {
-    it('should allow type imports from allowTypeImportsFrom even if not in allowImportsFrom', () => {
+  describe("checkBoundaryRules - type-only imports", () => {
+    it("should allow type imports from allowTypeImportsFrom even if not in allowImportsFrom", () => {
       const fileBoundary: Boundary = {
         ...entitiesBoundary,
-        allowImportsFrom: ['@events'],
-        allowTypeImportsFrom: ['@utils', '@queries'],
+        allowImportsFrom: ["@events"],
+        allowTypeImportsFrom: ["@utils", "@queries"],
       };
 
       const result = checkBoundaryRules(
@@ -228,11 +228,11 @@ describe('boundaryRules', () => {
       expect(result).toBeNull();
     });
 
-    it('should deny type imports not in allowTypeImportsFrom', () => {
+    it("should deny type imports not in allowTypeImportsFrom", () => {
       const fileBoundary: Boundary = {
         ...entitiesBoundary,
-        allowImportsFrom: ['@events'],
-        allowTypeImportsFrom: ['@utils'],
+        allowImportsFrom: ["@events"],
+        allowTypeImportsFrom: ["@utils"],
       };
 
       const result = checkBoundaryRules(
@@ -245,10 +245,10 @@ describe('boundaryRules', () => {
       expect(result).not.toBeNull();
     });
 
-    it('should fall back to allowImportsFrom for type imports if allowTypeImportsFrom not specified', () => {
+    it("should fall back to allowImportsFrom for type imports if allowTypeImportsFrom not specified", () => {
       const fileBoundary: Boundary = {
         ...entitiesBoundary,
-        allowImportsFrom: ['@events'],
+        allowImportsFrom: ["@events"],
       };
 
       const result = checkBoundaryRules(
@@ -261,11 +261,11 @@ describe('boundaryRules', () => {
       expect(result).toBeNull();
     });
 
-    it('should use allowTypeImportsFrom over allowImportsFrom for type imports', () => {
+    it("should use allowTypeImportsFrom over allowImportsFrom for type imports", () => {
       const fileBoundary: Boundary = {
         ...entitiesBoundary,
-        allowImportsFrom: ['@events'],
-        allowTypeImportsFrom: ['@queries'],
+        allowImportsFrom: ["@events"],
+        allowTypeImportsFrom: ["@queries"],
       };
 
       // @queries is in allowTypeImportsFrom but not allowImportsFrom
@@ -280,4 +280,3 @@ describe('boundaryRules', () => {
     });
   });
 });
-

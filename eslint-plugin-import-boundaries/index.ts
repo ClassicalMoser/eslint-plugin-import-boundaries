@@ -13,88 +13,88 @@
  * All violations are auto-fixable.
  */
 
-import type { Rule } from 'eslint';
+import type { Rule } from "eslint";
 
-import type { Boundary, FileData, RuleOptions } from './types.js';
-import path from 'node:path';
-import process from 'node:process';
-import { getFileData } from './boundaryDetection.js';
-import { handleImport } from './importHandler.js';
+import type { Boundary, FileData, RuleOptions } from "./types.js";
+import path from "node:path";
+import process from "node:process";
+import { getFileData } from "./boundaryDetection.js";
+import { handleImport } from "./importHandler.js";
 
 const rule: Rule.RuleModule = {
   meta: {
-    type: 'problem',
-    fixable: 'code',
+    type: "problem",
+    fixable: "code",
     docs: {
       description:
-        'Enforces architectural boundaries with deterministic import path rules: cross-boundary uses alias without subpath, siblings use relative, boundary-root and top-level paths use alias, cousins use relative (max one ../).',
+        "Enforces architectural boundaries with deterministic import path rules: cross-boundary uses alias without subpath, siblings use relative, boundary-root and top-level paths use alias, cousins use relative (max one ../).",
       recommended: false,
     },
     schema: [
       {
-        type: 'object',
+        type: "object",
         properties: {
-          rootDir: { type: 'string' },
+          rootDir: { type: "string" },
           boundaries: {
-            type: 'array',
+            type: "array",
             items: {
-              type: 'object',
+              type: "object",
               properties: {
-                dir: { type: 'string' },
-                alias: { type: 'string' },
+                dir: { type: "string" },
+                alias: { type: "string" },
                 allowImportsFrom: {
-                  type: 'array',
-                  items: { type: 'string' },
+                  type: "array",
+                  items: { type: "string" },
                 },
                 denyImportsFrom: {
-                  type: 'array',
-                  items: { type: 'string' },
+                  type: "array",
+                  items: { type: "string" },
                 },
                 allowTypeImportsFrom: {
-                  type: 'array',
-                  items: { type: 'string' },
+                  type: "array",
+                  items: { type: "string" },
                 },
                 nestedPathFormat: {
-                  type: 'string',
-                  enum: ['alias', 'relative', 'inherit'],
+                  type: "string",
+                  enum: ["alias", "relative", "inherit"],
                 },
                 severity: {
-                  type: 'string',
-                  enum: ['error', 'warn'],
+                  type: "string",
+                  enum: ["error", "warn"],
                 },
               },
-              required: ['dir'],
+              required: ["dir"],
             },
             minItems: 1,
           },
           crossBoundaryStyle: {
-            type: 'string',
-            enum: ['alias', 'absolute'],
-            default: 'alias',
+            type: "string",
+            enum: ["alias", "absolute"],
+            default: "alias",
           },
           defaultSeverity: {
-            type: 'string',
-            enum: ['error', 'warn'],
+            type: "string",
+            enum: ["error", "warn"],
           },
           allowUnknownBoundaries: {
-            type: 'boolean',
+            type: "boolean",
             default: false,
           },
           skipBoundaryRulesForTestFiles: {
-            type: 'boolean',
+            type: "boolean",
             default: true,
           },
           barrelFileName: {
-            type: 'string',
-            default: 'index',
+            type: "string",
+            default: "index",
           },
           fileExtensions: {
-            type: 'array',
-            items: { type: 'string' },
-            default: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
+            type: "array",
+            items: { type: "string" },
+            default: [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"],
           },
         },
-        required: ['boundaries'],
+        required: ["boundaries"],
       },
     ],
     messages: {
@@ -114,29 +114,29 @@ const rule: Rule.RuleModule = {
     // Validate that options are provided
     if (!context.options || context.options.length === 0) {
       throw new Error(
-        'boundary-alias-vs-relative requires boundaries configuration',
+        "boundary-alias-vs-relative requires boundaries configuration",
       );
     }
     const options: RuleOptions = context.options[0];
     const {
-      rootDir = 'src',
+      rootDir = "src",
       boundaries,
-      crossBoundaryStyle = 'alias',
+      crossBoundaryStyle = "alias",
       defaultSeverity,
       allowUnknownBoundaries = false,
       skipBoundaryRulesForTestFiles = true,
-      barrelFileName = 'index',
-      fileExtensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
+      barrelFileName = "index",
+      fileExtensions = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"],
     } = options;
     const cwd = context.getCwd?.() ?? process.cwd();
 
     // Validate: aliases are required when crossBoundaryStyle is 'alias'
-    if (crossBoundaryStyle === 'alias') {
+    if (crossBoundaryStyle === "alias") {
       const boundariesWithoutAlias = boundaries.filter((b) => !b.alias);
       if (boundariesWithoutAlias.length > 0) {
         const missingAliases = boundariesWithoutAlias
           .map((b) => b.dir)
-          .join(', ');
+          .join(", ");
         throw new Error(
           `When crossBoundaryStyle is 'alias', all boundaries must have an 'alias' property. Missing aliases for: ${missingAliases}`,
         );
@@ -146,7 +146,7 @@ const rule: Rule.RuleModule = {
     // Pre-resolve all boundary directories to absolute paths for efficient comparison
     // This avoids repeated path resolution during linting
     const resolvedBoundaries: Boundary[] = boundaries.map(
-      (b: RuleOptions['boundaries'][number]) => ({
+      (b: RuleOptions["boundaries"][number]) => ({
         dir: b.dir,
         alias: b.alias,
         absDir: path.resolve(cwd, rootDir, b.dir),
@@ -176,7 +176,7 @@ const rule: Rule.RuleModule = {
 
       // Get filename from context, with fallbacks for different ESLint versions
       const filename =
-        context.filename ?? context.getFilename?.() ?? '<unknown>';
+        context.filename ?? context.getFilename?.() ?? "<unknown>";
 
       // Use the module function to get file data
       cachedFileData = getFileData(filename, resolvedBoundaries);
@@ -242,12 +242,12 @@ const rule: Rule.RuleModule = {
        */
       ImportDeclaration(node) {
         const spec = (node.source as { value?: string })?.value;
-        if (typeof spec === 'string') {
+        if (typeof spec === "string") {
           // Check if this is a type-only import (TypeScript ESLint parser adds importKind)
           const importKind = (
-            node as { importKind?: 'type' | 'value' | 'type-value' }
+            node as { importKind?: "type" | "value" | "type-value" }
           ).importKind;
-          const isTypeOnly = importKind === 'type';
+          const isTypeOnly = importKind === "type";
           handleImportStatement(node, spec, isTypeOnly);
         }
       },
@@ -258,7 +258,7 @@ const rule: Rule.RuleModule = {
        */
       ImportExpression(node) {
         const arg = node.source;
-        if (arg?.type === 'Literal' && typeof arg.value === 'string') {
+        if (arg?.type === "Literal" && typeof arg.value === "string") {
           handleImportStatement(node, arg.value, false);
         }
       },
@@ -269,11 +269,11 @@ const rule: Rule.RuleModule = {
        */
       CallExpression(node) {
         if (
-          node.callee.type === 'Identifier' &&
-          node.callee.name === 'require' &&
+          node.callee.type === "Identifier" &&
+          node.callee.name === "require" &&
           node.arguments.length === 1 &&
-          node.arguments[0]?.type === 'Literal' &&
-          typeof node.arguments[0].value === 'string'
+          node.arguments[0]?.type === "Literal" &&
+          typeof node.arguments[0].value === "string"
         ) {
           handleImportStatement(node, node.arguments[0].value, false);
         }
@@ -285,11 +285,11 @@ const rule: Rule.RuleModule = {
        */
       ExportNamedDeclaration(node) {
         const spec = (node.source as { value?: string })?.value;
-        if (typeof spec === 'string') {
+        if (typeof spec === "string") {
           // Check if this is a type-only export (TypeScript ESLint parser adds exportKind)
-          const exportKind = (node as { exportKind?: 'type' | 'value' })
+          const exportKind = (node as { exportKind?: "type" | "value" })
             .exportKind;
-          const isTypeOnly = exportKind === 'type';
+          const isTypeOnly = exportKind === "type";
           handleImportStatement(node, spec, isTypeOnly);
         }
       },
@@ -300,11 +300,11 @@ const rule: Rule.RuleModule = {
        */
       ExportAllDeclaration(node) {
         const spec = (node.source as { value?: string })?.value;
-        if (typeof spec === 'string') {
+        if (typeof spec === "string") {
           // Check if this is a type-only export (TypeScript ESLint parser adds exportKind)
-          const exportKind = (node as { exportKind?: 'type' | 'value' })
+          const exportKind = (node as { exportKind?: "type" | "value" })
             .exportKind;
-          const isTypeOnly = exportKind === 'type';
+          const isTypeOnly = exportKind === "type";
           handleImportStatement(node, spec, isTypeOnly);
         }
       },

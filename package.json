@@ -1,22 +1,18 @@
 {
   "name": "eslint-plugin-import-boundaries",
+  "type": "module",
   "version": "0.2.0",
   "description": "Enforce architectural boundaries with deterministic import paths",
-  "type": "module",
-  "main": "./eslint-plugin-import-boundaries.js",
-  "types": "./eslint-plugin-import-boundaries.d.ts",
-  "exports": {
-    ".": {
-      "import": "./eslint-plugin-import-boundaries.js",
-      "types": "./eslint-plugin-import-boundaries.d.ts"
-    }
+  "author": "ClassicalMoser",
+  "license": "ISC",
+  "homepage": "https://github.com/ClassicalMoser/eslint-plugin-import-boundaries#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ClassicalMoser/eslint-plugin-import-boundaries.git"
   },
-  "files": [
-    "eslint-plugin-import-boundaries.js",
-    "eslint-plugin-import-boundaries.d.ts",
-    "README.md",
-    "LICENSE"
-  ],
+  "bugs": {
+    "url": "https://github.com/ClassicalMoser/eslint-plugin-import-boundaries/issues"
+  },
   "keywords": [
     "eslint",
     "eslint-plugin",
@@ -30,21 +26,22 @@
     "deterministic",
     "import-paths"
   ],
-  "author": "ClassicalMoser",
-  "license": "ISC",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ClassicalMoser/eslint-plugin-import-boundaries.git"
+  "exports": {
+    ".": {
+      "types": "./eslint-plugin-import-boundaries.d.ts",
+      "import": "./eslint-plugin-import-boundaries.js"
+    }
   },
-  "bugs": {
-    "url": "https://github.com/ClassicalMoser/eslint-plugin-import-boundaries/issues"
-  },
-  "homepage": "https://github.com/ClassicalMoser/eslint-plugin-import-boundaries#readme",
+  "main": "./eslint-plugin-import-boundaries.js",
+  "types": "./eslint-plugin-import-boundaries.d.ts",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "eslint-plugin-import-boundaries.d.ts",
+    "eslint-plugin-import-boundaries.js"
+  ],
   "engines": {
     "node": ">=18.0.0"
-  },
-  "peerDependencies": {
-    "eslint": ">=9.0.0"
   },
   "scripts": {
     "build": "tsdown --config tsdown.config.ts",
@@ -55,7 +52,13 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "validate:fix": "pnpm run lint:fix && pnpm run format && pnpm run typecheck",
+    "validate:check": "pnpm run lint && pnpm run format:check && pnpm run typecheck",
     "prepublishOnly": "npm run build && npm run test && npm run typecheck"
+  },
+  "peerDependencies": {
+    "eslint": ">=9.0.0"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^6.4.2",
