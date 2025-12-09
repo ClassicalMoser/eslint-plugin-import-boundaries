@@ -7,7 +7,7 @@
 import type { Rule } from 'eslint';
 import type { Boundary } from './types';
 import { checkAliasSubpath } from './boundaryDetection';
-import { checkBoundaryRules } from './boundaryRules';
+import { checkBoundaryRules, getBoundaryIdentifier } from './boundaryRules';
 import { createFixer } from './fixer';
 import { isInsideDir } from './pathUtils';
 import {
@@ -56,20 +56,19 @@ export function handleImport(options: HandleImportOptions): boolean {
     isTypeOnly = false,
     skipBoundaryRules = false,
   } = options;
-  // Skip checking for external packages (node_modules, etc.)
-  // External packages are:
-  // - Not relative imports (don't start with .)
-  // - Not matching any boundary alias (don't start with @boundary)
-  // - Not absolute paths within rootDir
-  const isRelative = rawSpec.startsWith('.');
-  const matchesBoundaryAlias = boundaries.some(
-    (b) => rawSpec === b.alias || rawSpec.startsWith(`${b.alias}/`),
+  // Resolve target path first to determine if it's internal or external
+  // (this handles aliases, relative, absolute, and bare imports)
+  const { targetAbs } = resolveTargetPath(
+    rawSpec,
+    fileDir,
+    boundaries,
+    rootDir,
+    cwd,
   );
-  const isAbsoluteInRoot =
-    rawSpec.startsWith(rootDir) || rawSpec.startsWith(`/${rootDir}`);
 
-  // If it's not relative, not a boundary alias, and not an absolute path in rootDir, it's external
-  if (!isRelative && !matchesBoundaryAlias && !isAbsoluteInRoot) {
+  // Skip checking for external packages (node_modules, etc.)
+  // External packages don't resolve to any boundary (targetAbs is empty)
+  if (!targetAbs) {
     return false; // Skip all checking for external packages
   }
 
@@ -101,15 +100,6 @@ export function handleImport(options: HandleImportOptions): boolean {
     }
   }
 
-  // Resolve target path to find target boundary for allow/deny checking
-  const { targetAbs } = resolveTargetPath(
-    rawSpec,
-    fileDir,
-    boundaries,
-    rootDir,
-    cwd,
-  );
-
   // Find target boundary
   const targetBoundary =
     boundaries.find((b) => isInsideDir(b.absDir, targetAbs)) ?? null;
@@ -134,8 +124,8 @@ export function handleImport(options: HandleImportOptions): boolean {
         node,
         messageId: 'boundaryViolation',
         data: {
-          from: fileBoundary.alias,
-          to: targetBoundary.alias,
+          from: getBoundaryIdentifier(fileBoundary),
+          to: getBoundaryIdentifier(targetBoundary),
           reason: violation.reason,
         },
         ...(severity && { severity: severity === 'warn' ? 1 : 2 }),
@@ -159,23 +149,32 @@ export function handleImport(options: HandleImportOptions): boolean {
   if (!correctPath) {
     // Check if it's ancestor barrel (not fixable)
     // calculateCorrectImportPath returns null only for ancestor barrels:
-    // - rawSpec === fileBoundary.alias (line 115)
+    // - rawSpec === fileBoundary.alias (when using alias style)
+    // - rawSpec === absolute path to boundary root (when using absolute style)
     // - Target is boundary root index.ts (line 142)
     // - Same directory index.ts (line 164)
     // - Defensive: firstDifferingSegment is falsy (line 170, should be unreachable)
-    if (fileBoundary && rawSpec === fileBoundary.alias) {
-      const severity = fileBoundary.severity || defaultSeverity;
-      const reportOptions: Rule.ReportDescriptor = {
-        node,
-        messageId: 'ancestorBarrelImport',
-        data: {
-          alias: fileBoundary.alias,
-        },
-        // No fix - requires knowing where exports actually live
-        ...(severity && { severity: severity === 'warn' ? 1 : 2 }),
-      };
-      context.report(reportOptions);
-      return true;
+    if (fileBoundary) {
+      const isAncestorBarrel =
+        crossBoundaryStyle === 'alias'
+          ? fileBoundary.alias && rawSpec === fileBoundary.alias
+          : rawSpec ===
+            `${rootDir}/${fileBoundary.dir}`.replace(/\\/g, '/') ||
+            rawSpec === `${rootDir}/${fileBoundary.dir}/`.replace(/\\/g, '/');
+      if (isAncestorBarrel) {
+        const severity = fileBoundary.severity || defaultSeverity;
+        const reportOptions: Rule.ReportDescriptor = {
+          node,
+          messageId: 'ancestorBarrelImport',
+          data: {
+            alias: getBoundaryIdentifier(fileBoundary),
+          },
+          // No fix - requires knowing where exports actually live
+          ...(severity && { severity: severity === 'warn' ? 1 : 2 }),
+        };
+        context.report(reportOptions);
+        return true;
+      }
     }
     // Defensive: should never reach here in practice
     // calculateCorrectImportPath only returns null for ancestor barrels

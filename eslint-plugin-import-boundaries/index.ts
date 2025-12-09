@@ -63,7 +63,7 @@ const rule: Rule.RuleModule = {
                   enum: ['error', 'warn'],
                 },
               },
-              required: ['dir', 'alias'],
+              required: ['dir'],
             },
             minItems: 1,
           },
@@ -118,6 +118,19 @@ const rule: Rule.RuleModule = {
       skipBoundaryRulesForTestFiles = true,
     } = options;
     const cwd = context.getCwd?.() ?? process.cwd();
+
+    // Validate: aliases are required when crossBoundaryStyle is 'alias'
+    if (crossBoundaryStyle === 'alias') {
+      const boundariesWithoutAlias = boundaries.filter((b) => !b.alias);
+      if (boundariesWithoutAlias.length > 0) {
+        const missingAliases = boundariesWithoutAlias
+          .map((b) => b.dir)
+          .join(', ');
+        throw new Error(
+          `When crossBoundaryStyle is 'alias', all boundaries must have an 'alias' property. Missing aliases for: ${missingAliases}`,
+        );
+      }
+    }
 
     // Pre-resolve all boundary directories to absolute paths for efficient comparison
     // This avoids repeated path resolution during linting

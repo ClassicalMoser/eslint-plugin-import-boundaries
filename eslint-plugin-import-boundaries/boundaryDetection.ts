@@ -23,7 +23,7 @@ export function checkAliasSubpath(
   boundaries: Boundary[],
 ): AliasSubpathCheck {
   for (const b of boundaries) {
-    if (spec.startsWith(`${b.alias}/`)) {
+    if (b.alias && spec.startsWith(`${b.alias}/`)) {
       return { isSubpath: true, baseAlias: b.alias };
     }
   }

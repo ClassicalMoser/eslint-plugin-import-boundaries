@@ -6,9 +6,9 @@
  * 3. Determine correct import path based on relationship
  */
 
-import type { Boundary } from './types';
-import path from 'node:path';
-import { isInsideDir } from './pathUtils';
+import type { Boundary } from "./types";
+import path from "node:path";
+import { isInsideDir } from "./pathUtils";
 
 /**
  * Resolve the target path from an import specifier.
@@ -18,55 +18,121 @@ export function resolveTargetPath(
   fileDir: string,
   boundaries: Boundary[],
   rootDir: string,
-  cwd: string,
+  cwd: string
 ): { targetAbs: string; targetDir: string } {
   let targetAbs: string;
   let targetDir: string;
 
-  if (rawSpec.startsWith('@')) {
+  if (rawSpec.startsWith("@")) {
     // Alias import - resolve via boundary
     const boundary = boundaries.find(
-      (b) => rawSpec === b.alias || rawSpec.startsWith(`${b.alias}/`),
+      (b) =>
+        b.alias && (rawSpec === b.alias || rawSpec.startsWith(`${b.alias}/`))
     );
-    if (boundary) {
+    if (boundary && boundary.alias) {
       const subpath = rawSpec.slice(boundary.alias.length + 1); // Remove '@boundary/'
-      if (subpath && !subpath.endsWith('.ts')) {
+      if (subpath && !subpath.endsWith(".ts")) {
         // Directory - assume barrel file
         targetDir = path.resolve(boundary.absDir, subpath);
-        targetAbs = path.join(targetDir, 'index.ts');
+        targetAbs = path.join(targetDir, "index.ts");
       } else if (subpath) {
         targetAbs = path.resolve(boundary.absDir, subpath);
         targetDir = path.dirname(targetAbs);
       } else {
         // Just @boundary (no subpath) - ancestor barrel
-        targetAbs = path.join(boundary.absDir, 'index.ts');
+        targetAbs = path.join(boundary.absDir, "index.ts");
         targetDir = boundary.absDir;
       }
     } else {
-      targetAbs = '';
-      targetDir = '';
+      targetAbs = "";
+      targetDir = "";
     }
-  } else if (rawSpec.startsWith('.')) {
+  } else if (rawSpec.startsWith(".")) {
     // Relative import
-    if (!rawSpec.endsWith('.ts')) {
+    if (!rawSpec.endsWith(".ts")) {
       targetDir = path.resolve(fileDir, rawSpec);
-      targetAbs = path.join(targetDir, 'index.ts');
+      targetAbs = path.join(targetDir, "index.ts");
     } else {
       targetAbs = path.resolve(fileDir, rawSpec);
       targetDir = path.dirname(targetAbs);
     }
   } else if (rawSpec.startsWith(rootDir)) {
     // Absolute path
-    if (!rawSpec.endsWith('.ts')) {
+    if (!rawSpec.endsWith(".ts")) {
       targetDir = path.resolve(cwd, rawSpec);
-      targetAbs = path.join(targetDir, 'index.ts');
+      targetAbs = path.join(targetDir, "index.ts");
     } else {
       targetAbs = path.resolve(cwd, rawSpec);
       targetDir = path.dirname(targetAbs);
     }
   } else {
-    targetAbs = '';
-    targetDir = '';
+    // Bare import - try to match against boundary directory paths
+    // e.g., 'entities/army' could match boundary dir 'domain/entities'
+    // or 'domain/entities/army' could match boundary dir 'domain/entities'
+    const matchingBoundary = boundaries.find((b) => {
+      // Check if import starts with boundary dir (e.g., 'domain/entities/army' matches 'domain/entities')
+      if (rawSpec === b.dir || rawSpec.startsWith(`${b.dir}/`)) {
+        return true;
+      }
+      // Check if import matches a suffix of boundary dir (e.g., 'entities/army' matches 'domain/entities')
+      // This handles path mappings like 'entities' -> 'src/domain/entities'
+      const boundaryParts = b.dir.split("/");
+      const importParts = rawSpec.split("/");
+      // Check if import starts with the last segment(s) of boundary dir
+      if (importParts.length > 0 && boundaryParts.length > 0) {
+        // Try matching from the end of boundary dir
+        for (let i = boundaryParts.length - 1; i >= 0; i--) {
+          const boundarySuffix = boundaryParts.slice(i).join("/");
+          if (
+            rawSpec === boundarySuffix ||
+            rawSpec.startsWith(`${boundarySuffix}/`)
+          ) {
+            return true;
+          }
+        }
+      }
+      return false;
+    });
+
+    if (matchingBoundary) {
+      // Resolve the subpath within the boundary
+      let subpath = "";
+      if (rawSpec === matchingBoundary.dir) {
+        subpath = "";
+      } else if (rawSpec.startsWith(`${matchingBoundary.dir}/`)) {
+        subpath = rawSpec.slice(matchingBoundary.dir.length + 1);
+      } else {
+        // Find the matching suffix and get the subpath
+        const boundaryParts = matchingBoundary.dir.split("/");
+        for (let i = boundaryParts.length - 1; i >= 0; i--) {
+          const boundarySuffix = boundaryParts.slice(i).join("/");
+          if (rawSpec.startsWith(`${boundarySuffix}/`)) {
+            subpath = rawSpec.slice(boundarySuffix.length + 1);
+            break;
+          } else if (rawSpec === boundarySuffix) {
+            subpath = "";
+            break;
+          }
+        }
+      }
+
+      if (subpath && !subpath.endsWith(".ts")) {
+        // Directory - assume barrel file
+        targetDir = path.resolve(matchingBoundary.absDir, subpath);
+        targetAbs = path.join(targetDir, "index.ts");
+      } else if (subpath) {
+        targetAbs = path.resolve(matchingBoundary.absDir, subpath);
+        targetDir = path.dirname(targetAbs);
+      } else {
+        // Just boundary dir (no subpath) - ancestor barrel
+        targetAbs = path.join(matchingBoundary.absDir, "index.ts");
+        targetDir = matchingBoundary.absDir;
+      }
+    } else {
+      // Doesn't match any boundary - external package
+      targetAbs = "";
+      targetDir = "";
+    }
   }
 
   return { targetAbs, targetDir };
@@ -82,7 +148,7 @@ export function calculateCorrectImportPath(
   boundaries: Boundary[],
   rootDir: string,
   cwd: string,
-  crossBoundaryStyle: 'alias' | 'absolute' = 'alias',
+  crossBoundaryStyle: "alias" | "absolute" = "alias"
 ): string | null {
   // Resolve target path
   const { targetAbs, targetDir } = resolveTargetPath(
@@ -90,7 +156,7 @@ export function calculateCorrectImportPath(
     fileDir,
     boundaries,
     rootDir,
-    cwd,
+    cwd
   );
 
   // Find target boundary
@@ -100,44 +166,67 @@ export function calculateCorrectImportPath(
   // 1. Cross-boundary: use @boundary (no subpath) or absolute path
   if (!fileBoundary || targetBoundary !== fileBoundary) {
     if (targetBoundary) {
-      if (crossBoundaryStyle === 'absolute') {
+      if (crossBoundaryStyle === "absolute") {
         // Use absolute path relative to rootDir (e.g., 'src/domain/entities')
-        return path.join(rootDir, targetBoundary.dir).replace(/\\/g, '/');
+        return path.join(rootDir, targetBoundary.dir).replace(/\\/g, "/");
+      }
+      // Alias style requires alias to be present
+      if (!targetBoundary.alias) {
+        // This shouldn't happen if validation is correct, but handle gracefully
+        return path.join(rootDir, targetBoundary.dir).replace(/\\/g, "/");
       }
       return targetBoundary.alias;
     }
     // Target is outside all boundaries - return special marker
-    return 'UNKNOWN_BOUNDARY';
+    return "UNKNOWN_BOUNDARY";
   }
 
   // 2. Ancestor barrel: forbidden
-  if (rawSpec === fileBoundary.alias) {
-    return null; // Handled separately (not fixable)
+  // Check based on crossBoundaryStyle
+  if (crossBoundaryStyle === "alias") {
+    if (fileBoundary.alias && rawSpec === fileBoundary.alias) {
+      return null; // Handled separately (not fixable)
+    }
+  } else {
+    // Absolute style: check if rawSpec matches the absolute path to boundary root
+    const boundaryAbsPath = path
+      .join(rootDir, fileBoundary.dir)
+      .replace(/\\/g, "/");
+    if (rawSpec === boundaryAbsPath || rawSpec === `${boundaryAbsPath}/`) {
+      return null; // Handled separately (not fixable)
+    }
   }
 
   // 3. Same boundary: resolve both to boundary-relative paths (as arrays)
   const targetRelativeToBoundary = path.relative(
     fileBoundary.absDir,
-    targetDir,
+    targetDir
   );
   const fileRelativeToBoundary = path.relative(fileBoundary.absDir, fileDir);
 
   // Convert to arrays for easy comparison
   // Normalize: empty string or '.' means boundary root (empty array)
   const targetParts =
-    targetRelativeToBoundary === '' || targetRelativeToBoundary === '.'
+    targetRelativeToBoundary === "" || targetRelativeToBoundary === "."
       ? []
-      : targetRelativeToBoundary.split(path.sep).filter((p) => p && p !== '.');
+      : targetRelativeToBoundary.split(path.sep).filter((p) => p && p !== ".");
   const fileParts =
-    fileRelativeToBoundary === '' || fileRelativeToBoundary === '.'
+    fileRelativeToBoundary === "" || fileRelativeToBoundary === "."
       ? []
-      : fileRelativeToBoundary.split(path.sep).filter((p) => p && p !== '.');
+      : fileRelativeToBoundary.split(path.sep).filter((p) => p && p !== ".");
 
   // Handle boundary root file (target is at boundary root)
   if (targetParts.length === 0) {
-    const targetBasename = path.basename(targetAbs, '.ts');
-    if (targetBasename !== 'index') {
-      return `${fileBoundary.alias}/${targetBasename}`;
+    const targetBasename = path.basename(targetAbs, ".ts");
+    if (targetBasename !== "index") {
+      // Use alias if available, otherwise use absolute path
+      if (fileBoundary.alias) {
+        return `${fileBoundary.alias}/${targetBasename}`;
+      }
+      // Absolute style: use absolute path
+      return path
+        .join(rootDir, fileBoundary.dir, targetBasename)
+        .replace(/\\/g, "/");
     }
     return null; // Ancestor barrel
   }
@@ -157,8 +246,8 @@ export function calculateCorrectImportPath(
     firstDifferingIndex >= targetParts.length &&
     firstDifferingIndex >= fileParts.length
   ) {
-    const targetBasename = path.basename(targetAbs, '.ts');
-    if (targetBasename !== 'index') {
+    const targetBasename = path.basename(targetAbs, ".ts");
+    if (targetBasename !== "index") {
       return `./${targetBasename}`;
     }
     return null; // Ancestor barrel (index.ts in same directory)
@@ -187,5 +276,12 @@ export function calculateCorrectImportPath(
   }
 
   // Otherwise: top-level or requires >1 ../ → @boundary/segment (first differing segment only)
-  return `${fileBoundary.alias}/${firstDifferingSegment}`;
+  // Use alias if available, otherwise use absolute path
+  if (fileBoundary.alias) {
+    return `${fileBoundary.alias}/${firstDifferingSegment}`;
+  }
+  // Absolute style: use absolute path
+  return path
+    .join(rootDir, fileBoundary.dir, firstDifferingSegment)
+    .replace(/\\/g, "/");
 }

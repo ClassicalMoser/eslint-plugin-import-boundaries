@@ -3,16 +3,16 @@
  */
 
 /**
- * Represents a boundary configuration with its directory and alias.
+ * Represents a boundary configuration with its directory and optional alias.
  * absDir is computed at rule initialization for efficient path comparisons.
  */
 export interface Boundary {
   dir: string; // Relative directory path (e.g., 'domain/entities')
-  alias: string; // Import alias (e.g., '@entities')
+  alias?: string; // Import alias (e.g., '@entities') - optional when crossBoundaryStyle is 'absolute'
   absDir: string; // Absolute resolved directory path
-  allowImportsFrom?: string[]; // Array of boundary aliases that can be imported from
-  denyImportsFrom?: string[]; // Array of boundary aliases that cannot be imported from
-  allowTypeImportsFrom?: string[]; // Array of boundary aliases that can be imported as types (overrides allowImportsFrom for type-only imports)
+  allowImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that can be imported from
+  denyImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that cannot be imported from
+  allowTypeImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that can be imported as types (overrides allowImportsFrom for type-only imports)
   nestedPathFormat?: 'alias' | 'relative' | 'inherit'; // Path format for nested boundaries
   severity?: 'error' | 'warn'; // Severity for violations in this boundary
 }
@@ -32,10 +32,10 @@ export interface FileData {
  */
 export interface BoundaryConfig {
   dir: string; // Relative directory path (e.g., 'domain/entities')
-  alias: string; // Import alias (e.g., '@entities')
-  allowImportsFrom?: string[]; // Array of boundary aliases that can be imported from
-  denyImportsFrom?: string[]; // Array of boundary aliases that cannot be imported from
-  allowTypeImportsFrom?: string[]; // Array of boundary aliases that can be imported as types (overrides allowImportsFrom for type-only imports)
+  alias?: string; // Import alias (e.g., '@entities') - required when crossBoundaryStyle is 'alias', optional when 'absolute'
+  allowImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that can be imported from
+  denyImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that cannot be imported from
+  allowTypeImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that can be imported as types (overrides allowImportsFrom for type-only imports)
   nestedPathFormat?: 'alias' | 'relative' | 'inherit'; // Path format for nested boundaries
   severity?: 'error' | 'warn'; // Severity for violations in this boundary (default: 'error')
 }

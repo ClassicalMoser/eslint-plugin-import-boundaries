@@ -5,6 +5,30 @@
 import type { Boundary } from './types';
 
 /**
+ * Get the identifier for a boundary (alias if present, otherwise dir).
+ * Used for allow/deny rules and error messages.
+ */
+export function getBoundaryIdentifier(boundary: Boundary): string {
+  return boundary.alias ?? boundary.dir;
+}
+
+/**
+ * Check if a boundary identifier matches a target boundary.
+ * Matches by alias (if present) or by dir path.
+ */
+function matchesBoundaryIdentifier(
+  identifier: string,
+  targetBoundary: Boundary,
+): boolean {
+  // Try alias first if present
+  if (targetBoundary.alias && identifier === targetBoundary.alias) {
+    return true;
+  }
+  // Fall back to dir
+  return identifier === targetBoundary.dir;
+}
+
+/**
  * Check if an import from fileBoundary to targetBoundary is allowed.
  * Returns violation info if not allowed, null if allowed.
  *
@@ -28,10 +52,15 @@ export function checkBoundaryRules(
     return null;
   }
 
+  const fileIdentifier = getBoundaryIdentifier(fileBoundary);
+  const targetIdentifier = getBoundaryIdentifier(targetBoundary);
+
   // For type-only imports, check allowTypeImportsFrom first (if specified)
   if (
     isTypeOnly &&
-    fileBoundary.allowTypeImportsFrom?.includes(targetBoundary.alias)
+    fileBoundary.allowTypeImportsFrom?.some((id) =>
+      matchesBoundaryIdentifier(id, targetBoundary),
+    )
   ) {
     return null; // Type imports explicitly allowed
   }
@@ -44,24 +73,28 @@ export function checkBoundaryRules(
   // If both lists exist, allow takes precedence (for nested boundaries where child can be more permissive)
   if (
     hasAllowList &&
-    fileBoundary.allowImportsFrom!.includes(targetBoundary.alias)
+    fileBoundary.allowImportsFrom!.some((id) =>
+      matchesBoundaryIdentifier(id, targetBoundary),
+    )
   ) {
     return null; // Explicitly allowed, even if in deny list
   }
 
   if (
     hasDenyList &&
-    fileBoundary.denyImportsFrom!.includes(targetBoundary.alias)
+    fileBoundary.denyImportsFrom!.some((id) =>
+      matchesBoundaryIdentifier(id, targetBoundary),
+    )
   ) {
     return {
-      reason: `Boundary '${fileBoundary.alias}' explicitly denies imports from '${targetBoundary.alias}'`,
+      reason: `Boundary '${fileIdentifier}' explicitly denies imports from '${targetIdentifier}'`,
     };
   }
 
   // If only allow list exists: deny-all by default
   if (hasAllowList && !hasDenyList) {
     return {
-      reason: `Cross-boundary import from '${targetBoundary.alias}' to '${fileBoundary.alias}' is not allowed. Add '${targetBoundary.alias}' to 'allowImportsFrom' if this import is intentional.`,
+      reason: `Cross-boundary import from '${targetIdentifier}' to '${fileIdentifier}' is not allowed. Add '${targetIdentifier}' to 'allowImportsFrom' if this import is intentional.`,
     };
   }
 
@@ -72,6 +105,6 @@ export function checkBoundaryRules(
 
   // If neither list exists: deny-all by default (strictest)
   return {
-    reason: `Cross-boundary import from '${targetBoundary.alias}' to '${fileBoundary.alias}' is not allowed. Add '${targetBoundary.alias}' to 'allowImportsFrom' if this import is intentional.`,
+    reason: `Cross-boundary import from '${targetIdentifier}' to '${fileIdentifier}' is not allowed. Add '${targetIdentifier}' to 'allowImportsFrom' if this import is intentional.`,
   };
 }

@@ -1,6 +1,6 @@
 # Hexagonal Architecture Default Configuration
 
-This document defines a **sane default configuration** for hexagonal architecture (ports and adapters) that can be used as a starting point for projects following this pattern.
+This document defines a default configuration for hexagonal architecture (ports and adapters) that can be used as a starting point for projects following this pattern.
 
 ## Default Boundaries
 
@@ -14,36 +14,44 @@ For a typical hexagonal architecture project, the following boundaries are recom
     {
       dir: 'domain',
       alias: '@domain',
-      // Domain is the core - no dependencies on other layers
-      denyImportsFrom: ['@application', '@infrastructure', '@composition'],
+      // Domain is pure - no dependencies on other layers
+      denyImportsFrom: ['@application', '@infrastructure', '@interface', '@composition'],
     },
     {
       dir: 'application',
       alias: '@application',
-      // Application can use domain, but not infrastructure
+      // Application defines use cases and ports (interfaces)
+      // Can use domain, but not infrastructure (dependency inversion)
       allowImportsFrom: ['@domain'],
-      denyImportsFrom: ['@infrastructure', '@composition'],
-    },
-    {
-      dir: 'application/ports',
-      alias: '@ports',
-      // Ports (nested in application) can import from infrastructure
-      // This is the key hexagonal pattern - ports bridge application and infrastructure
-      allowImportsFrom: ['@domain', '@infrastructure', '@application'],
-      nestedPathFormat: 'relative', // Use ../... for @application imports
+      denyImportsFrom: ['@infrastructure', '@interface', '@composition'],
     },
     {
       dir: 'infrastructure',
       alias: '@infrastructure',
-      // Infrastructure can use domain and application
+      // Infrastructure implements ports defined by Application
+      // Needs port types from Application, and can use Domain entities
+      allowImportsFrom: ['@domain'],
+      allowTypeImportsFrom: ['@application'], // Port interfaces to implement
+      denyImportsFrom: ['@interface', '@composition'],
+    },
+    {
+      dir: 'interface',
+      alias: '@interface',
+      // Interface (driving adapters) - HTTP controllers, CLI, etc.
+      // Calls Application use cases, uses Domain entities
       allowImportsFrom: ['@domain', '@application'],
-      denyImportsFrom: ['@composition'],
+      denyImportsFrom: ['@infrastructure', '@composition'],
     },
     {
       dir: 'composition',
       alias: '@composition',
       // Composition (wiring) can import from everything
-      allowImportsFrom: ['@domain', '@application', '@infrastructure', '@ports'],
+      allowImportsFrom: [
+        '@domain',
+        '@application',
+        '@infrastructure',
+        '@interface',
+      ],
     },
   ],
 }
@@ -59,15 +67,19 @@ For a typical hexagonal architecture project, the following boundaries are recom
 └─────────────┘
        │
        ├─→ ┌──────────────┐
-       │   │ Application  │  ← Can import from Domain
+       │   │  Interface   │  ← Driving adapters (HTTP, CLI)
+       │   │              │    Calls Application, uses Domain
        │   └──────────────┘
-       │         │
-       │         └─→ ┌──────────────┐
-       │             │    Ports     │  ← Can import from Infrastructure (hexagonal pattern)
-       │             └──────────────┘
        │
        ├─→ ┌──────────────┐
-       │   │Infrastructure│  ← Can import from Domain and Application
+       │   │ Application  │  ← Use cases, defines Ports (interfaces)
+       │   │              │    Uses Domain
+       │   └──────────────┘
+       │
+       ├─→ ┌──────────────┐
+       │   │Infrastructure│  ← Driven adapters (DB, external APIs)
+       │   │              │    Implements Ports (types from Application)
+       │   │              │    Uses Domain entities
        │   └──────────────┘
        │
        └─→ ┌──────────────┐
@@ -77,26 +89,28 @@ For a typical hexagonal architecture project, the following boundaries are recom
 
 ### Key Patterns
 
-1. **Domain is Pure**: 
-   - No dependencies on other layers
+1. **Domain**:
+   - Pure business logic with no dependencies on other layers
    - Contains business entities and value objects
    - Denies all other boundaries
 
-2. **Application Layer**:
+2. **Application**:
    - Contains use cases and application logic
+   - **Defines Ports** (interfaces/contracts) that Infrastructure will implement
    - Can import from Domain
-   - Cannot import from Infrastructure (dependency inversion)
+   - Cannot import from Infrastructure, Interface, or Composition (dependency inversion principle)
 
-3. **Ports (Nested in Application)**:
-   - Defines interfaces that Infrastructure implements
-   - **Can import from Infrastructure** (this is the hexagonal pattern)
-   - Broader than parent Application boundary
-   - Uses relative paths for Application imports
+3. **Infrastructure** (Driven Adapters):
+   - **Implements Ports** defined by Application
+   - Needs port types from Application (type imports only)
+   - Can import Domain entities (value imports)
+   - Cannot import from Interface or Composition
 
-4. **Infrastructure**:
-   - Implements ports/interfaces
-   - Can import from Domain and Application
-   - Cannot import from Composition (avoids circular dependencies)
+4. **Interface** (Driving Adapters):
+   - HTTP controllers, CLI, webhooks, etc.
+   - Calls Application use cases
+   - Uses Domain entities
+   - Cannot import from Infrastructure or Composition
 
 5. **Composition**:
    - Wires everything together (DI container, main, etc.)
@@ -120,14 +134,18 @@ src/
 │   ├── entities/
 │   ├── value-objects/
 │   └── index.ts
-├── application/         # @application - Use cases
+├── application/         # @application - Use cases, defines Ports
 │   ├── use-cases/
-│   ├── ports/          # @ports - Interfaces (can import infrastructure)
+│   ├── ports/          # Port interfaces (part of application)
 │   │   └── index.ts
 │   └── index.ts
-├── infrastructure/      # @infrastructure - External adapters
-│   ├── persistence/
-│   ├── http/
+├── infrastructure/      # @infrastructure - Implements Ports
+│   ├── persistence/     # Implements persistence ports
+│   ├── http/           # Implements HTTP client ports
+│   └── index.ts
+├── interface/           # @interface - Driving adapters
+│   ├── api/            # HTTP controllers
+│   ├── cli/            # CLI handlers
 │   └── index.ts
 └── composition/         # @composition - Wiring
     ├── di/
@@ -141,6 +159,5 @@ src/
 - The rule requires explicit boundary configuration - this serves as a recommended starting point
 - Adjust `rootDir` if your source code is in a different location
 - Adjust `crossBoundaryStyle` based on your preference (alias vs absolute paths)
-
-
-
+- **Key hexagonal principle**: Application defines Ports (interfaces), Infrastructure implements them. This enforces dependency inversion.
+- For nested boundaries (where ports can have broader import rules than application), see the nested boundaries design document
