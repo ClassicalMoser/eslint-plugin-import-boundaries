@@ -34,8 +34,8 @@ function matchesBoundaryIdentifier(
  *
  * Semantics:
  * - If both allowImportsFrom and denyImportsFrom are specified, they work as:
- *   - allowImportsFrom: explicit allow list (overrides deny for those items)
- *   - denyImportsFrom: explicit deny list (overrides default allow for those items)
+ *   - Both lists apply independently (allow applies to items in allow list, deny applies to items in deny list)
+ *   - If the same identifier appears in both lists (configuration error), denyImportsFrom takes precedence for safety
  * - If only allowImportsFrom: only those boundaries are allowed (deny-all by default)
  * - If only denyImportsFrom: all boundaries allowed except those (allow-all by default)
  * - If neither: deny-all by default (strictest)
@@ -70,25 +70,36 @@ export function checkBoundaryRules(
   const hasDenyList =
     fileBoundary.denyImportsFrom && fileBoundary.denyImportsFrom.length > 0;
 
-  // If both lists exist, allow takes precedence (for nested boundaries where child can be more permissive)
-  if (
-    hasAllowList &&
-    fileBoundary.allowImportsFrom!.some((id) =>
-      matchesBoundaryIdentifier(id, targetBoundary),
-    )
-  ) {
-    return null; // Explicitly allowed, even if in deny list
-  }
-
+  // Check deny list first - deny takes precedence for safety
+  // This handles the case where you allow a parent boundary but deny a specific sub-boundary
   if (
     hasDenyList &&
     fileBoundary.denyImportsFrom!.some((id) =>
       matchesBoundaryIdentifier(id, targetBoundary),
     )
   ) {
+    // Check if it's also in allow list - if so, this is a configuration error
+    // Deny still takes precedence for safety
+    const alsoInAllowList =
+      hasAllowList &&
+      fileBoundary.allowImportsFrom!.some((id) =>
+        matchesBoundaryIdentifier(id, targetBoundary),
+      );
     return {
-      reason: `Boundary '${fileIdentifier}' explicitly denies imports from '${targetIdentifier}'`,
+      reason: alsoInAllowList
+        ? `Boundary '${fileIdentifier}' explicitly denies imports from '${targetIdentifier}' (deny takes precedence over allow)`
+        : `Boundary '${fileIdentifier}' explicitly denies imports from '${targetIdentifier}'`,
     };
+  }
+
+  // Check allow list - only if not in deny list
+  if (
+    hasAllowList &&
+    fileBoundary.allowImportsFrom!.some((id) =>
+      matchesBoundaryIdentifier(id, targetBoundary),
+    )
+  ) {
+    return null; // Explicitly allowed
   }
 
   // If only allow list exists: deny-all by default

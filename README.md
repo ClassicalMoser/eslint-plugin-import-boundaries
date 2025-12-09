@@ -225,11 +225,23 @@ import { Controller } from "@interface"; // ❌ Violation: @di cannot import fro
 
 **Rule semantics:**
 
-- If both `allowImportsFrom` and `denyImportsFrom` exist: `allowImportsFrom` takes precedence (items in allow list are allowed even if also in deny list)
 - If only `allowImportsFrom`: deny-all by default (only items in allow list are allowed)
 - If only `denyImportsFrom`: allow-all by default (everything except deny list is allowed)
 - If neither: deny-all by default (strictest)
-- **Important**: When `allowImportsFrom` is specified, `denyImportsFrom` can deny specific sub-boundaries (e.g. deny `@utils` within allowed `@application`), but is otherwise redundant since anything not in the allow list is already denied by default. Note that this works recursively: It is possible to allow a boundary within a denied boundary within an allowed boundary, and so on.
+- If both `allowImportsFrom` and `denyImportsFrom` exist: Both lists apply independently. Items in the allow list are allowed (unless also in deny list), items in the deny list are denied, and items in neither list are denied by default (whitelist behavior). This allows you to deny specific sub-boundaries within an allowed parent boundary. For example, you can allow `@application` but deny its sub-boundary `@units`:
+
+  ```javascript
+  {
+    dir: 'interface',
+    alias: '@interface',
+    allowImportsFrom: ['@application'],      // Allow all of @application
+    denyImportsFrom: ['@units'],  // Deny this specific sub-boundary
+  }
+  ```
+
+  Note: This works recursively - you can allow a boundary within a denied boundary within an allowed boundary, and so on.
+
+  **Conflict resolution:** If the same boundary identifier appears in both lists (which indicates a configuration error), `denyImportsFrom` takes precedence - the import will be denied. This ensures safety: explicit denials override allows.
 
 ### 4. Type-Only Imports
 
@@ -240,7 +252,7 @@ Different rules for types vs values (types don't create runtime dependencies):
   dir: 'infrastructure',
   alias: '@infrastructure',
   allowImportsFrom: ['@domain'],           // Value imports from domain
-  allowTypeImportsFrom: ['@application'], // Type imports from application (port interfaces)
+  allowTypeImportsFrom: ['@ports'],       // Type imports from ports (interfaces for dependency inversion)
 }
 ```
 

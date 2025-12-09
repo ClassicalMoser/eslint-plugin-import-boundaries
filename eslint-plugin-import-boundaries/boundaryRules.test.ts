@@ -157,7 +157,7 @@ describe("boundaryRules", () => {
   });
 
   describe("checkBoundaryRules - both allow and deny", () => {
-    it("should allow imports when in both lists (allow takes precedence)", () => {
+    it("should deny imports when in both lists (deny takes precedence for safety)", () => {
       const fileBoundary: Boundary = {
         ...entitiesBoundary,
         allowImportsFrom: ["@queries", "@events"],
@@ -171,7 +171,9 @@ describe("boundaryRules", () => {
         false,
       );
 
-      expect(result).toBeNull();
+      expect(result).not.toBeNull();
+      expect(result?.reason).toContain("denies imports");
+      expect(result?.reason).toContain("deny takes precedence");
     });
 
     it("should deny imports when in deny list but not in allow list", () => {
