@@ -354,6 +354,14 @@ const rule = {
 					enum: ["alias", "absolute"],
 					default: "alias"
 				},
+				defaultSeverity: {
+					type: "string",
+					enum: ["error", "warn"]
+				},
+				allowUnknownBoundaries: {
+					type: "boolean",
+					default: false
+				},
 				skipBoundaryRulesForTestFiles: {
 					type: "boolean",
 					default: true
