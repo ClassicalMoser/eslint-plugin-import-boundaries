@@ -12,7 +12,7 @@ export default defineConfig({
     ),
   },
   format: ['esm'],
-  dts: false,
+  dts: true,
   unbundle: false, // Bundle all modules into a single file
   sourcemap: false,
   clean: false,

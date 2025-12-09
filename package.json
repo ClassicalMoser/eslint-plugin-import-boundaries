@@ -1,16 +1,19 @@
 {
   "name": "eslint-plugin-import-boundaries",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Enforce architectural boundaries with deterministic import paths",
   "type": "module",
   "main": "./eslint-plugin-import-boundaries.js",
+  "types": "./eslint-plugin-import-boundaries.d.ts",
   "exports": {
     ".": {
-      "import": "./eslint-plugin-import-boundaries.js"
+      "import": "./eslint-plugin-import-boundaries.js",
+      "types": "./eslint-plugin-import-boundaries.d.ts"
     }
   },
   "files": [
     "eslint-plugin-import-boundaries.js",
+    "eslint-plugin-import-boundaries.d.ts",
     "README.md",
     "LICENSE"
   ],
@@ -52,7 +55,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "prepublishOnly": "npm run test && npm run typecheck"
+    "prepublishOnly": "npm run build && npm run test && npm run typecheck"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^6.4.2",
