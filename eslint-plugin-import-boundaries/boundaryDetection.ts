@@ -20,7 +20,7 @@ import { isInsideDir } from "./pathUtils";
  */
 export function checkAliasSubpath(
   spec: string,
-  boundaries: Boundary[]
+  boundaries: Boundary[],
 ): AliasSubpathCheck {
   for (const b of boundaries) {
     if (b.alias && spec.startsWith(`${b.alias}/`)) {
@@ -40,17 +40,17 @@ export function checkAliasSubpath(
  */
 export function resolveToBoundary(
   filename: string,
-  boundaries: Boundary[]
+  boundaries: Boundary[],
 ): Boundary | null {
   // Find all boundaries where the file is inside the boundary's directory
   const matchingBoundaries = boundaries.filter((b) =>
-    isInsideDir(b.absDir, filename)
+    isInsideDir(b.absDir, filename),
   );
 
   if (matchingBoundaries.length > 0) {
     // Return the most specific (longest path) boundary
     return matchingBoundaries.sort(
-      (a, b) => b.absDir.length - a.absDir.length
+      (a, b) => b.absDir.length - a.absDir.length,
     )[0]!;
   }
 
@@ -68,11 +68,11 @@ export function resolveToBoundary(
  */
 export function resolveToSpecifiedBoundary(
   filename: string,
-  boundaries: Boundary[]
+  boundaries: Boundary[],
 ): Boundary | null {
   // Find all boundaries where the file is inside the boundary's directory
   const matchingBoundaries = boundaries.filter((b) =>
-    isInsideDir(b.absDir, filename)
+    isInsideDir(b.absDir, filename),
   );
 
   // Filter to only boundaries that have rules specified
@@ -82,13 +82,13 @@ export function resolveToSpecifiedBoundary(
     (b) =>
       b.allowImportsFrom !== undefined ||
       b.denyImportsFrom !== undefined ||
-      b.allowTypeImportsFrom !== undefined
+      b.allowTypeImportsFrom !== undefined,
   );
 
   if (specifiedBoundaries.length > 0) {
     // Return the most specific (longest path) specified boundary
     return specifiedBoundaries.sort(
-      (a, b) => b.absDir.length - a.absDir.length
+      (a, b) => b.absDir.length - a.absDir.length,
     )[0]!;
   }
 
@@ -99,12 +99,12 @@ export function resolveToSpecifiedBoundary(
     (b) =>
       b.allowImportsFrom !== undefined ||
       b.denyImportsFrom !== undefined ||
-      b.allowTypeImportsFrom !== undefined
+      b.allowTypeImportsFrom !== undefined,
   );
 
   // Find ancestors (boundaries that contain the file)
   const ancestors = allSpecifiedBoundaries.filter((b) =>
-    isInsideDir(b.absDir, filename)
+    isInsideDir(b.absDir, filename),
   );
 
   if (ancestors.length > 0) {
@@ -126,7 +126,7 @@ export function resolveToSpecifiedBoundary(
  */
 export function getFileData(
   filename: string,
-  boundaries: Boundary[]
+  boundaries: Boundary[],
 ): FileData {
   // If filename is not absolute, we can't determine boundaries
   // This can happen with virtual files or in some edge cases

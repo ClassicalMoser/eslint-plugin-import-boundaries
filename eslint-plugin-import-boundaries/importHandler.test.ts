@@ -82,7 +82,6 @@ describe("importHandler", () => {
       rawSpec: "",
       fileDir: defaultFileDir,
       fileBoundary: queriesBoundary,
-      filename: path.join(defaultFileDir, "file.ts"),
       boundaries,
       rootDir,
       cwd,
