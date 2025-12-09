@@ -340,7 +340,7 @@ function handleImport(options) {
 		const aliasSubpathCheck = checkAliasSubpath(rawSpec, boundaries);
 		if (aliasSubpathCheck.isSubpath) {
 			const targetBoundary$1 = boundaries.find((b) => b.alias === aliasSubpathCheck.baseAlias);
-			if (targetBoundary$1 && fileBoundary && targetBoundary$1 !== fileBoundary) {
+			if (targetBoundary$1 && targetBoundary$1.alias && fileBoundary && targetBoundary$1 !== fileBoundary) {
 				const expectedPath = targetBoundary$1.alias;
 				const severity$1 = fileBoundary.severity || defaultSeverity;
 				const reportOptions$1 = {
