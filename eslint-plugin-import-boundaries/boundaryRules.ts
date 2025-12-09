@@ -2,7 +2,7 @@
  * Boundary allow/deny rule checking logic.
  */
 
-import type { Boundary } from "./types";
+import type { Boundary } from './types';
 
 /**
  * Get the identifier for a boundary (alias if present, otherwise dir).

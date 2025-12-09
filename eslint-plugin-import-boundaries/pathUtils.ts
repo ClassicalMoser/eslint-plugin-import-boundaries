@@ -3,7 +3,7 @@
  * Pure path math - no file I/O.
  */
 
-import path from "node:path";
+import path from 'node:path';
 
 /**
  * Check if a path is inside a directory.
@@ -22,10 +22,10 @@ import path from "node:path";
 export function isInsideDir(absDir: string, absPath: string): boolean {
   const rel = path.relative(absDir, absPath);
   // Empty string means paths are the same
-  if (rel === "") return true;
+  if (rel === '') return true;
   // If relative path starts with '..', it's outside the directory
   // If it's absolute, it's definitely outside
-  return !rel.startsWith("..") && !path.isAbsolute(rel);
+  return !rel.startsWith('..') && !path.isAbsolute(rel);
 }
 
 /**

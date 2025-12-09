@@ -1,5 +1,5 @@
-import antfu from "@antfu/eslint-config";
-import prettierConfig from "eslint-config-prettier";
+import antfu from '@antfu/eslint-config';
+import prettierConfig from 'eslint-config-prettier';
 
 export default antfu(
   {
@@ -8,10 +8,13 @@ export default antfu(
     stylistic: false,
     markdown: false,
     ignores: [
-      "coverage/**",
-      "node_modules/**",
-      "eslint-plugin-import-boundaries.js",
-      "eslint-plugin-import-boundaries.d.ts",
+      // Reports
+      'coverage/**',
+      // External files
+      'node_modules/**',
+      // Build files
+      'eslint-plugin-import-boundaries.js',
+      'eslint-plugin-import-boundaries.d.ts',
     ],
     languageOptions: {
       globals: {
@@ -26,20 +29,20 @@ export default antfu(
       },
     },
     rules: {
-      "no-console": ["error", { allow: ["error"] }],
-      "import/no-duplicates": ["error", { "prefer-inline": false }],
+      'no-console': ['error', { allow: ['error'] }],
+      'import/no-duplicates': ['error', { 'prefer-inline': false }],
     },
   },
   {
     ignores: [
-      "pnpm-lock.yaml",
-      "node_modules/**",
-      "coverage/**",
-      "*.yml",
-      "**/*.md",
-      "**/*.mdx",
-      "eslint-plugin-import-boundaries.js",
-      "eslint-plugin-import-boundaries.d.ts",
+      'pnpm-lock.yaml',
+      'node_modules/**',
+      'coverage/**',
+      '*.yml',
+      '**/*.md',
+      '**/*.mdx',
+      'eslint-plugin-import-boundaries.js',
+      'eslint-plugin-import-boundaries.d.ts',
     ],
   },
   prettierConfig,

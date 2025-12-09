@@ -2,7 +2,7 @@
  * Utility function for creating ESLint fixes for import paths.
  */
 
-import type { Rule } from "eslint";
+import type { Rule } from 'eslint';
 
 /**
  * Create a fixer function to replace an import path.
@@ -18,12 +18,12 @@ export function createFixer(
 ): Rule.ReportFixer | null {
   return (fixer) => {
     // Case 1: Standard import statement (import ... from 'path')
-    if ("source" in node && node.source) {
+    if ('source' in node && node.source) {
       return fixer.replaceText(node.source as Rule.Node, `'${newPath}'`);
     }
     // Case 2: Dynamic import or require() call
     if (
-      "arguments" in node &&
+      'arguments' in node &&
       Array.isArray(node.arguments) &&
       node.arguments[0]
     ) {

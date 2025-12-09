@@ -3,16 +3,16 @@
  * Tests the main import handler that orchestrates all checking logic.
  */
 
-import type { Rule } from "eslint";
-import type { HandleImportOptions } from "./importHandler.js";
-import type { Boundary } from "./types.js";
-import path from "node:path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { handleImport } from "./importHandler.js";
+import type { Rule } from 'eslint';
+import type { HandleImportOptions } from './importHandler.js';
+import type { Boundary } from './types.js';
+import path from 'node:path';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handleImport } from './importHandler.js';
 
-describe("importHandler", () => {
-  const cwd = "/project";
-  const rootDir = "src";
+describe('importHandler', () => {
+  const cwd = '/project';
+  const rootDir = 'src';
 
   let entitiesBoundary: Boundary;
   let queriesBoundary: Boundary;
@@ -30,23 +30,23 @@ describe("importHandler", () => {
 
   beforeEach(() => {
     entitiesBoundary = {
-      dir: "domain/entities",
-      alias: "@entities",
-      absDir: path.resolve(cwd, rootDir, "domain/entities"),
-      allowImportsFrom: ["@events"],
+      dir: 'domain/entities',
+      alias: '@entities',
+      absDir: path.resolve(cwd, rootDir, 'domain/entities'),
+      allowImportsFrom: ['@events'],
     };
 
     queriesBoundary = {
-      dir: "domain/queries",
-      alias: "@queries",
-      absDir: path.resolve(cwd, rootDir, "domain/queries"),
-      allowImportsFrom: ["@entities"],
+      dir: 'domain/queries',
+      alias: '@queries',
+      absDir: path.resolve(cwd, rootDir, 'domain/queries'),
+      allowImportsFrom: ['@entities'],
     };
 
     eventsBoundary = {
-      dir: "domain/events",
-      alias: "@events",
-      absDir: path.resolve(cwd, rootDir, "domain/events"),
+      dir: 'domain/events',
+      alias: '@events',
+      absDir: path.resolve(cwd, rootDir, 'domain/events'),
       allowImportsFrom: [], // Has rules (empty allow list = deny all by default)
     };
 
@@ -55,10 +55,10 @@ describe("importHandler", () => {
     reportedViolations = [];
 
     mockNode = {
-      type: "ImportDeclaration",
+      type: 'ImportDeclaration',
       source: {
-        type: "Literal",
-        value: "@entities",
+        type: 'Literal',
+        value: '@entities',
         raw: "'@entities'",
       },
     } as Rule.Node;
@@ -76,17 +76,17 @@ describe("importHandler", () => {
   function createOptions(
     overrides: Partial<HandleImportOptions>,
   ): HandleImportOptions {
-    const defaultFileDir = path.resolve(cwd, rootDir, "domain/queries");
+    const defaultFileDir = path.resolve(cwd, rootDir, 'domain/queries');
     return {
       node: mockNode,
-      rawSpec: "",
+      rawSpec: '',
       fileDir: defaultFileDir,
       fileBoundary: queriesBoundary,
       boundaries,
       rootDir,
       cwd,
       context: mockContext,
-      crossBoundaryStyle: "alias",
+      crossBoundaryStyle: 'alias',
       defaultSeverity: undefined,
       allowUnknownBoundaries: false,
       isTypeOnly: false,
@@ -95,12 +95,12 @@ describe("importHandler", () => {
     };
   }
 
-  describe("external package detection", () => {
-    it("should skip checking for external packages", () => {
-      const fileDir = path.resolve(cwd, rootDir, "domain/queries");
+  describe('external package detection', () => {
+    it('should skip checking for external packages', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
       const result = handleImport(
         createOptions({
-          rawSpec: "lodash",
+          rawSpec: 'lodash',
           fileDir,
         }),
       );
@@ -109,11 +109,11 @@ describe("importHandler", () => {
       expect(mockContext.report).not.toHaveBeenCalled();
     });
 
-    it("should check absolute paths within rootDir", () => {
-      const fileDir = path.resolve(cwd, rootDir, "domain/queries");
+    it('should check absolute paths within rootDir', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
       handleImport(
         createOptions({
-          rawSpec: "src/domain/entities",
+          rawSpec: 'src/domain/entities',
           fileDir,
           skipBoundaryRules: true,
         }),
@@ -123,30 +123,30 @@ describe("importHandler", () => {
     });
   });
 
-  describe("cross-boundary alias subpaths", () => {
-    it("should flag cross-boundary alias subpaths", () => {
-      const fileDir = path.resolve(cwd, rootDir, "domain/queries");
+  describe('cross-boundary alias subpaths', () => {
+    it('should flag cross-boundary alias subpaths', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
       handleImport(
         createOptions({
-          rawSpec: "@entities/army",
+          rawSpec: '@entities/army',
           fileDir,
         }),
       );
 
       expect(mockContext.report).toHaveBeenCalled();
       const violation = reportedViolations[0];
-      expect(violation.messageId).toBe("incorrectImportPath");
-      expect(violation.data?.expectedPath).toBe("@entities");
+      expect(violation.messageId).toBe('incorrectImportPath');
+      expect(violation.data?.expectedPath).toBe('@entities');
       expect(violation.fix).toBeDefined();
     });
 
-    it("should not flag subpaths within same boundary", () => {
-      const fileDir = path.resolve(cwd, rootDir, "domain/queries", "subdir");
+    it('should not flag subpaths within same boundary', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
       reportedViolations = [];
 
       handleImport(
         createOptions({
-          rawSpec: "@queries/otherSubdir",
+          rawSpec: '@queries/otherSubdir',
           fileDir,
           skipBoundaryRules: true,
         }),
@@ -154,19 +154,19 @@ describe("importHandler", () => {
 
       const subpathViolation = reportedViolations.find(
         (v) =>
-          v.data?.actualPath === "@queries/otherSubdir" &&
-          v.data?.expectedPath === "@queries",
+          v.data?.actualPath === '@queries/otherSubdir' &&
+          v.data?.expectedPath === '@queries',
       );
       expect(subpathViolation).toBeUndefined();
     });
 
-    it("should skip subpath check when using absolute style", () => {
-      const fileDir = path.resolve(cwd, rootDir, "domain/queries");
+    it('should skip subpath check when using absolute style', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
       handleImport(
         createOptions({
-          rawSpec: "@entities/army",
+          rawSpec: '@entities/army',
           fileDir,
-          crossBoundaryStyle: "absolute",
+          crossBoundaryStyle: 'absolute',
         }),
       );
 
@@ -174,53 +174,53 @@ describe("importHandler", () => {
     });
   });
 
-  describe("boundary rules enforcement", () => {
-    it("should report violations for disallowed boundaries", () => {
-      const fileDir = path.resolve(cwd, rootDir, "domain/queries");
+  describe('boundary rules enforcement', () => {
+    it('should report violations for disallowed boundaries', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
       handleImport(
         createOptions({
-          rawSpec: "@events", // Not in allowImportsFrom
+          rawSpec: '@events', // Not in allowImportsFrom
           fileDir,
         }),
       );
 
       expect(mockContext.report).toHaveBeenCalled();
       const violation = reportedViolations[0];
-      expect(violation.messageId).toBe("boundaryViolation");
-      expect(violation.data?.from).toBe("@queries");
-      expect(violation.data?.to).toBe("@events");
+      expect(violation.messageId).toBe('boundaryViolation');
+      expect(violation.data?.from).toBe('@queries');
+      expect(violation.data?.to).toBe('@events');
     });
 
-    it("should not report when boundary rule allows import", () => {
-      const fileDir = path.resolve(cwd, rootDir, "domain/queries");
+    it('should not report when boundary rule allows import', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
       reportedViolations = [];
 
       handleImport(
         createOptions({
-          rawSpec: "@entities", // Allowed by boundary rules
+          rawSpec: '@entities', // Allowed by boundary rules
           fileDir,
         }),
       );
 
       const boundaryViolation = reportedViolations.find(
-        (v) => v.messageId === "boundaryViolation",
+        (v) => v.messageId === 'boundaryViolation',
       );
       expect(boundaryViolation).toBeUndefined();
     });
 
-    it("should allow type-only imports from allowTypeImportsFrom", () => {
+    it('should allow type-only imports from allowTypeImportsFrom', () => {
       const fileBoundaryWithTypeAllow: Boundary = {
         ...queriesBoundary,
-        allowImportsFrom: ["@entities"],
-        allowTypeImportsFrom: ["@events"],
+        allowImportsFrom: ['@entities'],
+        allowTypeImportsFrom: ['@events'],
       };
 
-      const fileDir = path.resolve(cwd, rootDir, "domain/queries");
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
       reportedViolations = [];
 
       handleImport(
         createOptions({
-          rawSpec: "@events",
+          rawSpec: '@events',
           fileDir,
           fileBoundary: fileBoundaryWithTypeAllow,
           isTypeOnly: true,
@@ -228,53 +228,53 @@ describe("importHandler", () => {
       );
 
       const boundaryViolation = reportedViolations.find(
-        (v) => v.messageId === "boundaryViolation",
+        (v) => v.messageId === 'boundaryViolation',
       );
       expect(boundaryViolation).toBeUndefined();
     });
 
-    it("should skip boundary rules when skipBoundaryRules is true", () => {
-      const fileDir = path.resolve(cwd, rootDir, "domain/queries");
+    it('should skip boundary rules when skipBoundaryRules is true', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
       reportedViolations = [];
 
       handleImport(
         createOptions({
-          rawSpec: "@events", // Would normally be disallowed
+          rawSpec: '@events', // Would normally be disallowed
           fileDir,
           skipBoundaryRules: true,
         }),
       );
 
       const boundaryViolation = reportedViolations.find(
-        (v) => v.messageId === "boundaryViolation",
+        (v) => v.messageId === 'boundaryViolation',
       );
       expect(boundaryViolation).toBeUndefined();
     });
 
-    it("should not check boundary rules for same-boundary imports", () => {
-      const fileDir = path.resolve(cwd, rootDir, "domain/queries", "subdir");
+    it('should not check boundary rules for same-boundary imports', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
       reportedViolations = [];
 
       handleImport(
         createOptions({
-          rawSpec: "./sibling",
+          rawSpec: './sibling',
           fileDir,
         }),
       );
 
       const boundaryViolation = reportedViolations.find(
-        (v) => v.messageId === "boundaryViolation",
+        (v) => v.messageId === 'boundaryViolation',
       );
       expect(boundaryViolation).toBeUndefined();
     });
   });
 
-  describe("path format enforcement", () => {
-    it("should report incorrect path format", () => {
-      const fileDir = path.resolve(cwd, rootDir, "domain/queries", "subdir");
+  describe('path format enforcement', () => {
+    it('should report incorrect path format', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
       handleImport(
         createOptions({
-          rawSpec: "../entities", // Wrong - should be @entities for cross-boundary
+          rawSpec: '../entities', // Wrong - should be @entities for cross-boundary
           fileDir,
           skipBoundaryRules: true,
         }),
@@ -282,53 +282,53 @@ describe("importHandler", () => {
 
       expect(mockContext.report).toHaveBeenCalled();
       const violation = reportedViolations[0];
-      expect(violation.messageId).toBe("incorrectImportPath");
+      expect(violation.messageId).toBe('incorrectImportPath');
       expect(violation.fix).toBeDefined();
     });
 
-    it("should not report when path is correct", () => {
-      const fileDir = path.resolve(cwd, rootDir, "domain/queries", "subdir");
+    it('should not report when path is correct', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
       reportedViolations = [];
 
       handleImport(
         createOptions({
-          rawSpec: "@entities", // Correct for cross-boundary
+          rawSpec: '@entities', // Correct for cross-boundary
           fileDir,
           skipBoundaryRules: true,
         }),
       );
 
       const pathViolation = reportedViolations.find(
-        (v) => v.messageId === "incorrectImportPath",
+        (v) => v.messageId === 'incorrectImportPath',
       );
       expect(pathViolation).toBeUndefined();
     });
   });
 
-  describe("ancestor barrel imports", () => {
-    it("should report ancestor barrel imports", () => {
-      const fileDir = path.resolve(cwd, rootDir, "domain/queries", "subdir");
+  describe('ancestor barrel imports', () => {
+    it('should report ancestor barrel imports', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
       handleImport(
         createOptions({
-          rawSpec: "@queries", // Ancestor barrel
+          rawSpec: '@queries', // Ancestor barrel
           fileDir,
         }),
       );
 
       expect(mockContext.report).toHaveBeenCalled();
       const violation = reportedViolations[0];
-      expect(violation.messageId).toBe("ancestorBarrelImport");
-      expect(violation.data?.alias).toBe("@queries");
+      expect(violation.messageId).toBe('ancestorBarrelImport');
+      expect(violation.data?.alias).toBe('@queries');
       expect(violation.fix).toBeUndefined();
     });
   });
 
-  describe("unknown boundaries", () => {
-    it("should report unknown boundary imports when not allowed", () => {
-      const fileDir = path.resolve(cwd, rootDir, "domain/queries");
+  describe('unknown boundaries', () => {
+    it('should report unknown boundary imports when not allowed', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
       handleImport(
         createOptions({
-          rawSpec: "../unknown",
+          rawSpec: '../unknown',
           fileDir,
           allowUnknownBoundaries: false,
         }),
@@ -336,43 +336,43 @@ describe("importHandler", () => {
 
       expect(mockContext.report).toHaveBeenCalled();
       const violation = reportedViolations[0];
-      expect(violation.messageId).toBe("unknownBoundaryImport");
-      expect(violation.data?.path).toBe("../unknown");
+      expect(violation.messageId).toBe('unknownBoundaryImport');
+      expect(violation.data?.path).toBe('../unknown');
       expect(violation.fix).toBeUndefined();
     });
 
-    it("should allow unknown boundary imports when allowed", () => {
-      const fileDir = path.resolve(cwd, rootDir, "domain/queries");
+    it('should allow unknown boundary imports when allowed', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
       reportedViolations = [];
 
       handleImport(
         createOptions({
-          rawSpec: "../unknown",
+          rawSpec: '../unknown',
           fileDir,
           allowUnknownBoundaries: true,
         }),
       );
 
       const violation = reportedViolations.find(
-        (v) => v.messageId === "unknownBoundaryImport",
+        (v) => v.messageId === 'unknownBoundaryImport',
       );
       expect(violation).toBeUndefined();
     });
   });
 
-  describe("severity handling", () => {
-    it("should apply severity correctly (error, warn, undefined)", () => {
-      const fileDir = path.resolve(cwd, rootDir, "domain/queries");
+  describe('severity handling', () => {
+    it('should apply severity correctly (error, warn, undefined)', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
 
       // Test boundary severity
       const fileBoundaryWithError: Boundary = {
         ...queriesBoundary,
-        severity: "error",
+        severity: 'error',
       };
       reportedViolations = [];
       handleImport(
         createOptions({
-          rawSpec: "@events",
+          rawSpec: '@events',
           fileDir,
           fileBoundary: fileBoundaryWithError,
         }),
@@ -383,9 +383,9 @@ describe("importHandler", () => {
       reportedViolations = [];
       handleImport(
         createOptions({
-          rawSpec: "@events",
+          rawSpec: '@events',
           fileDir,
-          defaultSeverity: "warn",
+          defaultSeverity: 'warn',
         }),
       );
       expect(reportedViolations[0].severity).toBe(1);
@@ -394,7 +394,7 @@ describe("importHandler", () => {
       reportedViolations = [];
       handleImport(
         createOptions({
-          rawSpec: "@events",
+          rawSpec: '@events',
           fileDir,
           defaultSeverity: undefined,
         }),
@@ -403,21 +403,21 @@ describe("importHandler", () => {
     });
   });
 
-  describe("absolute path style", () => {
-    it("should use absolute paths for cross-boundary imports when configured", () => {
-      const fileDir = path.resolve(cwd, rootDir, "domain/queries");
+  describe('absolute path style', () => {
+    it('should use absolute paths for cross-boundary imports when configured', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
       handleImport(
         createOptions({
-          rawSpec: "src/domain/entities/army", // Wrong - should be src/domain/entities
+          rawSpec: 'src/domain/entities/army', // Wrong - should be src/domain/entities
           fileDir,
-          crossBoundaryStyle: "absolute",
+          crossBoundaryStyle: 'absolute',
           skipBoundaryRules: true,
         }),
       );
 
       expect(mockContext.report).toHaveBeenCalled();
       const violation = reportedViolations[0];
-      expect(violation.data?.expectedPath).toBe("src/domain/entities");
+      expect(violation.data?.expectedPath).toBe('src/domain/entities');
     });
   });
 });

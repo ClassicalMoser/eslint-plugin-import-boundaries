@@ -3,7 +3,7 @@
  * These can be used as starting points and easily overridden.
  */
 
-import type { RuleOptions } from "./types";
+import type { RuleOptions } from './types';
 
 /**
  * Default hexagonal architecture (ports and adapters) configuration.
@@ -30,48 +30,48 @@ export function hexagonalDefaults(
   overrides: Partial<RuleOptions> = {},
 ): RuleOptions {
   const defaults: RuleOptions = {
-    rootDir: "src",
-    crossBoundaryStyle: "alias",
+    rootDir: 'src',
+    crossBoundaryStyle: 'alias',
     boundaries: [
       {
-        dir: "domain",
-        alias: "@domain",
+        dir: 'domain',
+        alias: '@domain',
         // Domain is pure - no dependencies on other layers
-        denyImportsFrom: ["@application", "@infrastructure", "@composition"],
+        denyImportsFrom: ['@application', '@infrastructure', '@composition'],
       },
       {
-        dir: "application",
-        alias: "@application",
+        dir: 'application',
+        alias: '@application',
         // Application can use domain, but not infrastructure
-        allowImportsFrom: ["@domain"],
-        denyImportsFrom: ["@infrastructure", "@composition"],
+        allowImportsFrom: ['@domain'],
+        denyImportsFrom: ['@infrastructure', '@composition'],
       },
       {
-        dir: "application/ports",
-        alias: "@ports",
+        dir: 'application/ports',
+        alias: '@ports',
         // Ports (nested in application) can import from infrastructure
         // This is the key hexagonal pattern - ports bridge application and infrastructure
-        allowImportsFrom: ["@domain", "@infrastructure", "@application"],
-        nestedPathFormat: "relative", // Use ../... for @application imports
+        allowImportsFrom: ['@domain', '@infrastructure', '@application'],
+        nestedPathFormat: 'relative', // Use ../... for @application imports
       },
       {
-        dir: "infrastructure",
-        alias: "@infrastructure",
+        dir: 'infrastructure',
+        alias: '@infrastructure',
         // Infrastructure can use domain (values)
         // Infrastructure can use ports and domain (types only) - needs port interfaces to implement
-        allowImportsFrom: ["@domain"],
-        allowTypeImportsFrom: ["@domain", "@ports"],
-        denyImportsFrom: ["@composition"],
+        allowImportsFrom: ['@domain'],
+        allowTypeImportsFrom: ['@domain', '@ports'],
+        denyImportsFrom: ['@composition'],
       },
       {
-        dir: "composition",
-        alias: "@composition",
+        dir: 'composition',
+        alias: '@composition',
         // Composition (wiring) can import from everything
         allowImportsFrom: [
-          "@domain",
-          "@application",
-          "@infrastructure",
-          "@ports",
+          '@domain',
+          '@application',
+          '@infrastructure',
+          '@ports',
         ],
       },
     ],
@@ -99,12 +99,12 @@ export function simpleDefaults(
   overrides: Partial<RuleOptions> = {},
 ): RuleOptions {
   const defaults: RuleOptions = {
-    rootDir: "src",
-    crossBoundaryStyle: "alias",
+    rootDir: 'src',
+    crossBoundaryStyle: 'alias',
     boundaries: [
-      { dir: "domain", alias: "@domain" },
-      { dir: "application", alias: "@application" },
-      { dir: "infrastructure", alias: "@infrastructure" },
+      { dir: 'domain', alias: '@domain' },
+      { dir: 'application', alias: '@application' },
+      { dir: 'infrastructure', alias: '@infrastructure' },
     ],
   };
 

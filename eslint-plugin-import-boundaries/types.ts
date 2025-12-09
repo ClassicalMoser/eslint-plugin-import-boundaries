@@ -13,8 +13,8 @@ export interface Boundary {
   allowImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that can be imported from
   denyImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that cannot be imported from
   allowTypeImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that can be imported as types (overrides allowImportsFrom for type-only imports)
-  nestedPathFormat?: "alias" | "relative" | "inherit"; // Path format for nested boundaries
-  severity?: "error" | "warn"; // Severity for violations in this boundary
+  nestedPathFormat?: 'alias' | 'relative' | 'inherit'; // Path format for nested boundaries
+  severity?: 'error' | 'warn'; // Severity for violations in this boundary
 }
 
 /**
@@ -36,8 +36,8 @@ export interface BoundaryConfig {
   allowImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that can be imported from
   denyImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that cannot be imported from
   allowTypeImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that can be imported as types (overrides allowImportsFrom for type-only imports)
-  nestedPathFormat?: "alias" | "relative" | "inherit"; // Path format for nested boundaries
-  severity?: "error" | "warn"; // Severity for violations in this boundary (default: 'error')
+  nestedPathFormat?: 'alias' | 'relative' | 'inherit'; // Path format for nested boundaries
+  severity?: 'error' | 'warn'; // Severity for violations in this boundary (default: 'error')
 }
 
 /**
@@ -46,10 +46,10 @@ export interface BoundaryConfig {
 export interface RuleOptions {
   rootDir?: string; // Root directory (defaults to 'src')
   boundaries: BoundaryConfig[]; // Array of boundary definitions
-  crossBoundaryStyle?: "alias" | "absolute"; // Style for cross-boundary imports (default: 'alias')
+  crossBoundaryStyle?: 'alias' | 'absolute'; // Style for cross-boundary imports (default: 'alias')
   // 'alias': Use alias paths like @entities
   // 'absolute': Use absolute paths relative to rootDir like src/domain/entities
-  defaultSeverity?: "error" | "warn"; // Default severity for violations (if not set, uses rule-level severity)
+  defaultSeverity?: 'error' | 'warn'; // Default severity for violations (if not set, uses rule-level severity)
   allowUnknownBoundaries?: boolean; // Allow imports from paths not in any boundary (default: false)
   enforceBoundaries?: boolean; // Enforce boundary allow/deny rules (default: true). When false, boundary rules are skipped but path format is still enforced.
   testFilePatterns?: string[]; // Patterns to detect test files (default: common test patterns)

@@ -4,15 +4,15 @@
  * path format enforcement, and violation reporting.
  */
 
-import type { Rule } from "eslint";
-import type { Boundary } from "./types";
-import { checkAliasSubpath, resolveToBoundary } from "./boundaryDetection";
-import { checkBoundaryRules, getBoundaryIdentifier } from "./boundaryRules";
-import { createFixer } from "./fixer";
+import type { Rule } from 'eslint';
+import type { Boundary } from './types';
+import { checkAliasSubpath, resolveToBoundary } from './boundaryDetection';
+import { checkBoundaryRules, getBoundaryIdentifier } from './boundaryRules';
+import { createFixer } from './fixer';
 import {
   calculateCorrectImportPath,
   resolveTargetPath,
-} from "./relationshipDetection";
+} from './relationshipDetection';
 
 /**
  * Options for handleImport function.
@@ -26,8 +26,8 @@ export interface HandleImportOptions {
   rootDir: string;
   cwd: string;
   context: Rule.RuleContext;
-  crossBoundaryStyle?: "alias" | "absolute";
-  defaultSeverity?: "error" | "warn";
+  crossBoundaryStyle?: 'alias' | 'absolute';
+  defaultSeverity?: 'error' | 'warn';
   allowUnknownBoundaries?: boolean;
   isTypeOnly?: boolean;
   skipBoundaryRules?: boolean;
@@ -51,13 +51,13 @@ export function handleImport(options: HandleImportOptions): boolean {
     rootDir,
     cwd,
     context,
-    crossBoundaryStyle = "alias",
+    crossBoundaryStyle = 'alias',
     defaultSeverity,
     allowUnknownBoundaries = false,
     isTypeOnly = false,
     skipBoundaryRules = false,
-    barrelFileName = "index",
-    fileExtensions = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"],
+    barrelFileName = 'index',
+    fileExtensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
   } = options;
   // Resolve target path first to determine if it's internal or external
   // (this handles aliases, relative, absolute, and bare imports)
@@ -79,7 +79,7 @@ export function handleImport(options: HandleImportOptions): boolean {
 
   // Handle cross-boundary alias subpaths (e.g., '@entities/army' -> '@entities')
   // Only check this if using alias style
-  if (crossBoundaryStyle === "alias") {
+  if (crossBoundaryStyle === 'alias') {
     const aliasSubpathCheck = checkAliasSubpath(rawSpec, boundaries);
     if (aliasSubpathCheck.isSubpath) {
       const targetBoundary = boundaries.find(
@@ -96,13 +96,13 @@ export function handleImport(options: HandleImportOptions): boolean {
         // Only set severity if explicitly configured (allows rule-level severity to be used)
         const reportOptions: Rule.ReportDescriptor = {
           node,
-          messageId: "incorrectImportPath",
+          messageId: 'incorrectImportPath',
           data: {
             expectedPath,
             actualPath: rawSpec,
           },
           fix: createFixer(node, expectedPath),
-          ...(severity && { severity: severity === "warn" ? 1 : 2 }),
+          ...(severity && { severity: severity === 'warn' ? 1 : 2 }),
         };
         context.report(reportOptions);
         return true;
@@ -133,13 +133,13 @@ export function handleImport(options: HandleImportOptions): boolean {
       const severity = fileBoundary.severity || defaultSeverity;
       const reportOptions: Rule.ReportDescriptor = {
         node,
-        messageId: "boundaryViolation",
+        messageId: 'boundaryViolation',
         data: {
           from: getBoundaryIdentifier(fileBoundary),
           to: getBoundaryIdentifier(targetBoundary),
           reason: violation.reason,
         },
-        ...(severity && { severity: severity === "warn" ? 1 : 2 }),
+        ...(severity && { severity: severity === 'warn' ? 1 : 2 }),
       };
       context.report(reportOptions);
       return true;
@@ -169,20 +169,20 @@ export function handleImport(options: HandleImportOptions): boolean {
     // - Defensive: firstDifferingSegment is falsy (line 170, should be unreachable)
     if (fileBoundary) {
       const isAncestorBarrel =
-        crossBoundaryStyle === "alias"
+        crossBoundaryStyle === 'alias'
           ? fileBoundary.alias && rawSpec === fileBoundary.alias
-          : rawSpec === `${rootDir}/${fileBoundary.dir}`.replace(/\\/g, "/") ||
-            rawSpec === `${rootDir}/${fileBoundary.dir}/`.replace(/\\/g, "/");
+          : rawSpec === `${rootDir}/${fileBoundary.dir}`.replace(/\\/g, '/') ||
+            rawSpec === `${rootDir}/${fileBoundary.dir}/`.replace(/\\/g, '/');
       if (isAncestorBarrel) {
         const severity = fileBoundary.severity || defaultSeverity;
         const reportOptions: Rule.ReportDescriptor = {
           node,
-          messageId: "ancestorBarrelImport",
+          messageId: 'ancestorBarrelImport',
           data: {
             alias: getBoundaryIdentifier(fileBoundary),
           },
           // No fix - requires knowing where exports actually live
-          ...(severity && { severity: severity === "warn" ? 1 : 2 }),
+          ...(severity && { severity: severity === 'warn' ? 1 : 2 }),
         };
         context.report(reportOptions);
         return true;
@@ -195,17 +195,17 @@ export function handleImport(options: HandleImportOptions): boolean {
   }
 
   // Check for unknown boundary (target outside all boundaries)
-  if (correctPath === "UNKNOWN_BOUNDARY") {
+  if (correctPath === 'UNKNOWN_BOUNDARY') {
     if (!allowUnknownBoundaries) {
       const reportOptions: Rule.ReportDescriptor = {
         node,
-        messageId: "unknownBoundaryImport",
+        messageId: 'unknownBoundaryImport',
         data: {
           path: rawSpec,
         },
         // No fix - don't know what the correct path should be
         ...(defaultSeverity && {
-          severity: defaultSeverity === "warn" ? 1 : 2,
+          severity: defaultSeverity === 'warn' ? 1 : 2,
         }),
       };
       context.report(reportOptions);
@@ -225,14 +225,14 @@ export function handleImport(options: HandleImportOptions): boolean {
   // Show the expected path directly
   const reportOptions: Rule.ReportDescriptor = {
     node,
-    messageId: "incorrectImportPath",
+    messageId: 'incorrectImportPath',
     data: {
       expectedPath: correctPath,
       actualPath: rawSpec,
     },
     fix: createFixer(node, correctPath),
     // Only set severity if explicitly configured (allows rule-level severity to be used)
-    ...(severity && { severity: severity === "warn" ? 1 : 2 }),
+    ...(severity && { severity: severity === 'warn' ? 1 : 2 }),
   };
   context.report(reportOptions);
 
