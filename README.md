@@ -5,7 +5,7 @@
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-import-boundaries)](https://www.npmjs.com/package/eslint-plugin-import-boundaries)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 
-**Note: This is a beta release, originally developed for a personal project. It is not yet stable and may have breaking changes.**
+**Note: This is an alpha release, originally developed for a personal project. It is not yet stable and may have breaking changes.**
 
 An opinionated ESLint rule that enforces architectural boundaries using deterministic import path rules. This rule determines when to use alias vs relative imports based on your architecture, rather than enforcing a single pattern for all imports.
 
@@ -20,6 +20,7 @@ An opinionated ESLint rule that enforces architectural boundaries using determin
 - **Auto-fixable**: Legal import paths are auto-fixable and will always converge to the correct import string.
 - **Zero I/O**: Pure path math and AST analysis - fast even on large codebases
 - **Type-aware**: Different rules for type-only imports vs value imports
+- **Test-ready**: Flexible configuration for test files (skip boundary rules while maintaining path format)
 - **Circular Dependency Prevention**: Blocks ancestor barrel imports
 - **Configurable**: Works with any architectural pattern
 
@@ -28,6 +29,8 @@ An opinionated ESLint rule that enforces architectural boundaries using determin
 ```bash
 npm install --save-dev eslint-plugin-import-boundaries
 ```
+
+### Using Alias Paths (Default)
 
 ```javascript
 // eslint.config.js
@@ -42,6 +45,7 @@ export default {
       "error",
       {
         rootDir: "src",
+        crossBoundaryStyle: "alias", // Default: use alias paths
         boundaries: [
           { dir: "domain", alias: "@domain" },
           { dir: "application", alias: "@application" },
@@ -51,6 +55,21 @@ export default {
     ],
   },
 };
+```
+
+**Import patterns with aliases:**
+
+```typescript
+// Cross-boundary imports → use alias
+import { Entity } from "@domain"; // ✅
+import { UseCase } from "@application"; // ✅
+
+// Same-boundary, close imports → use relative
+import { helper } from "./helper"; // ✅ Same directory
+import { utils } from "../utils"; // ✅ Parent's sibling
+
+// Same-boundary, distant imports → use alias
+import { useCase } from "@application/use-cases"; // ✅ Distant in same boundary
 ```
 
 ## What Problem Does This Solve?
@@ -104,8 +123,8 @@ import { helper } from "./helper"; // ✅
 // Parent's sibling (cousin, max one ../)
 import { utils } from "../utils"; // ✅
 
-// Top-level or distant → Use alias
-import { useCase } from "@application/topLevel"; // ✅
+// Distant within same boundary → Use alias (with subpath allowed for same-boundary imports)
+import { useCase } from "@application/use-cases"; // ✅ Same boundary, distant location
 ```
 
 ### 3. Architectural Boundary Enforcement
@@ -132,29 +151,68 @@ import { Database } from "@infrastructure";
 
 #### Nested Boundaries
 
-Boundaries can be nested, and each boundary must explicitly declare its import rules:
+Boundaries can be nested, and each boundary must explicitly declare its import rules. Each nested boundary has its own independent rules (no inheritance from parent boundaries):
 
 ```javascript
 {
   boundaries: [
     {
-      dir: 'application',
-      alias: '@application',
-      allowImportsFrom: ['@domain'],
-    },
-    {
-      dir: 'application/ports',
-      alias: '@ports',
-      allowImportsFrom: ['@infrastructure', '@domain'], // Can import from infrastructure even though parent cannot
-    },
-    {
       dir: 'interface',
       alias: '@interface',
-      allowImportsFrom: ['@application', '@public-use-cases'],
-      denyImportsFrom: ['@use-cases'], // Deny specific sub-boundary even though parent @application is allowed
+      allowImportsFrom: ['@application', '@domain'], // @interface can import from @application and @domain
+      // Implicitly denies all other boundaries (including @infrastructure, @composition, etc.)
+    },
+    {
+      dir: 'interface/api',
+      alias: '@api',
+      allowImportsFrom: ['@domain', '@public-use-cases'],
+      // @api (public REST API) only allows public use cases, not all of @application
+      // This demonstrates selective access within an allowed parent boundary
+      // Note: @public-use-cases and @internal-use-cases would be separate boundaries
+      // defined elsewhere in your boundaries array
+      denyImportsFrom: ['@internal-use-cases'],
+    },
+    {
+      dir: 'interface/graphql',
+      alias: '@graphql',
+      allowImportsFrom: ['@application', '@domain'],
+      // @graphql can import from all of @application (different rules than @api sibling)
+      // This shows how sibling boundaries can have different rules
+    },
+    {
+      dir: 'composition',
+      alias: '@composition',
+      allowImportsFrom: ['@domain', '@application', '@infrastructure', '@interface'],
+      // @composition can import from all boundaries (wiring layer)
+    },
+    {
+      dir: 'composition/di',
+      alias: '@di',
+      allowImportsFrom: ['@domain', '@application', '@infrastructure'],
+      // @di (dependency injection setup) doesn't need @interface
+      // This shows how nested boundaries can be more restrictive than parent
     },
   ],
 }
+```
+
+**Example behavior:**
+
+```typescript
+// File: interface/api/user-controller.ts
+import { Entity } from "@domain"; // ✅ Allowed: @api can import from @domain
+import { CreateUser } from "@public-use-cases"; // ✅ Allowed: @api can import from @public-use-cases
+import { InternalAudit } from "@internal-use-cases"; // ❌ Violation: @api explicitly denies @internal-use-cases
+
+// File: interface/graphql/user-resolver.ts
+import { Entity } from "@domain"; // ✅ Allowed: @graphql can import from @domain
+import { CreateUser } from "@public-use-cases"; // ✅ Allowed: @graphql can import from any @application code
+import { InternalAudit } from "@internal-use-cases"; // ✅ Allowed: @graphql has different rules than @api sibling
+
+// File: composition/di/container.ts
+import { Repository } from "@infrastructure"; // ✅ Allowed: @di can import from @infrastructure for wiring
+import { UseCase } from "@application"; // ✅ Allowed: @di can import from @application
+import { Controller } from "@interface"; // ❌ Violation: @di cannot import from @interface (more restrictive than parent)
 ```
 
 **Key behaviors:**
@@ -209,27 +267,23 @@ import { something } from "@application"; // When inside @application boundary
 
 ### Basic Configuration
 
+Here's a complete configuration example with all boundary rules:
+
 ```javascript
 {
-  rootDir: 'src',                    // Root directory (default: 'src')
-  crossBoundaryStyle: 'alias',      // 'alias' | 'absolute' (default: 'alias')
-  defaultSeverity: 'error',         // 'error' | 'warn' (default: 'error')
-  allowUnknownBoundaries: false,    // Allow imports outside boundaries (default: false)
-  skipBoundaryRulesForTestFiles: true, // Skip boundary rules for tests (default: true)
-  barrelFileName: 'index',          // Barrel file name without extension (default: 'index')
-  fileExtensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'], // Extensions to recognize (default: all common JS/TS extensions)
+  rootDir: 'src',                    // Required: Root directory (default: 'src')
   boundaries: [                    // Required: Array of boundary definitions
     {
       dir: 'domain',                // Required: Relative directory path
-      alias: '@domain',             // Required when crossBoundaryStyle is 'alias', optional when 'absolute'
-      denyImportsFrom: ['@application', '@infrastructure', '@interface', '@composition'], // Domain is pure
+      alias: '@domain',             // Required: Import alias (e.g., '@domain')
+      denyImportsFrom: ['@application', '@infrastructure', '@interface', '@composition'], // Domain is pure - denies all other boundaries
       severity: 'error',             // Optional: 'error' | 'warn' (overrides defaultSeverity for this boundary)
     },
     {
       dir: 'application',
       alias: '@application',
       allowImportsFrom: ['@domain'], // Application uses domain (deny-all by default)
-      // Note: denyImportsFrom is redundant here - those boundaries are already denied
+      // Note: denyImportsFrom is redundant here - anything not in allowImportsFrom is already denied
     },
     {
       dir: 'infrastructure',
@@ -238,40 +292,151 @@ import { something } from "@application"; // When inside @application boundary
       allowTypeImportsFrom: ['@application'], // Infrastructure implements application ports (types only)
     },
   ],
+  // Optional configuration options (all have sensible defaults):
+  defaultSeverity: 'error',         // 'error' | 'warn' (default: 'error')
+  enforceBoundaries: true,          // Enforce boundary rules (default: true)
+  allowUnknownBoundaries: false,    // Allow imports outside boundaries (default: false)
+  barrelFileName: 'index',          // Barrel file name without extension (default: 'index')
+  fileExtensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'], // Extensions to recognize (default: all common JS/TS extensions)
 }
 ```
 
+**Important:** The `enforceBoundaries` option applies globally to all files when set. To have different behavior for test files vs regular files, you must use ESLint's file matching (see Test Files Configuration below).
+
 ### Test Files Configuration
 
-Use ESLint's file matching for test files:
+**How test exclusion works:** When `enforceBoundaries: false`, the rule skips boundary rule checking (allow/deny rules) but still enforces path format (alias vs relative). This allows test files to import from any boundary while maintaining consistent import path patterns. The default is `true` (boundary rules are enforced by default).
+
+**Why skip boundary rules for tests?** Test files often need to:
+
+- Import from multiple boundaries to set up test scenarios (e.g., mocking infrastructure while testing application logic)
+- Use test helper libraries or mocks that don't fit clean architectural boundaries
+- Access internal implementation details for thorough testing
+- Create test fixtures that span multiple boundaries
+
+By setting `enforceBoundaries: false` for test files, you maintain architectural boundaries in production code while giving tests the flexibility they need. Path format (alias vs relative) is still enforced, keeping import paths consistent and readable.
+
+**Alternative approach:** You can also define separate boundaries for test directories (e.g., `test/domain`, `test/application`) with their own import rules, but this has two downsides: it discourages test collocation (tests must live in separate test directories rather than alongside source files), and it requires much more configuration overhead than most projects need. The `enforceBoundaries: false` approach is simpler and sufficient for most use cases.
+
+**Configuration pattern:** Use ESLint's file matching to apply different configs to test files vs regular files. Define boundaries once and reuse them in both config blocks:
 
 ```javascript
-export default [
+import importBoundaries from "eslint-plugin-import-boundaries";
+
+// Define boundaries once - shared between regular files and test files
+const boundaries = [
   {
-    files: ["src/**/*.ts"],
+    dir: "domain",
+    alias: "@domain",
+    // No imports allowed by default
+  },
+  {
+    dir: "application",
+    alias: "@application",
+    allowImportsFrom: ["@domain"],
+  },
+  {
+    dir: "infrastructure",
+    alias: "@infrastructure",
+    allowImportsFrom: ["@domain"],
+  },
+];
+
+export default [
+  // Test files - skip boundary rules but keep path format enforcement
+  // Put test files first so they take precedence over regular file patterns
+  {
+    files: [
+      "**/*.test.{ts,js}",
+      "**/*.spec.{ts,js}",
+      "**/__tests__/**/*.{ts,js}",
+    ],
     rules: {
       "import-boundaries/enforce": [
         "error",
         {
-          /* config */
+          rootDir: "src",
+          enforceBoundaries: false, // Tests can import from any boundary
+          boundaries, // Same boundaries - needed for path format calculation
         },
       ],
     },
   },
+  // Regular source files - enforce boundary rules
+  // Excludes test files via ignores to prevent overlap
   {
-    files: ["**/*.test.{ts,js}", "**/*.spec.{ts,js}"],
+    files: ["src/**/*.ts", "src/**/*.tsx"],
+    ignores: [
+      "**/*.test.{ts,js}",
+      "**/*.spec.{ts,js}",
+      "**/__tests__/**/*.{ts,js}",
+    ],
     rules: {
       "import-boundaries/enforce": [
         "error",
         {
-          skipBoundaryRulesForTestFiles: true, // Tests can import from any boundary
-          // ... rest of config
+          rootDir: "src",
+          enforceBoundaries: true, // Enforce boundary rules
+          boundaries,
         },
       ],
     },
   },
 ];
 ```
+
+**What gets checked in test files:**
+
+- ✅ Path format (alias vs relative) - still enforced
+- ✅ Barrel file imports - still enforced
+- ✅ Ancestor barrel prevention - still enforced
+- ❌ Boundary allow/deny rules - **skipped** (tests can import from any boundary)
+
+**What gets checked in regular files:**
+
+- ✅ Path format (alias vs relative)
+- ✅ Barrel file imports
+- ✅ Ancestor barrel prevention
+- ✅ Boundary allow/deny rules - **enforced**
+
+### Using Absolute Paths
+
+By default, the rule uses alias paths (e.g., `@domain`). If your build configuration doesn't support path aliases, or you prefer absolute paths, you can use `crossBoundaryStyle: 'absolute'`:
+
+```javascript
+{
+  rootDir: 'src',
+  crossBoundaryStyle: 'absolute', // Use absolute paths instead of aliases
+  boundaries: [
+    { dir: 'domain' }, // No alias required when using absolute paths
+    { dir: 'application' },
+    { dir: 'infrastructure' },
+  ],
+}
+```
+
+**Import patterns with absolute paths:**
+
+```typescript
+// Cross-boundary imports → use absolute path
+import { Entity } from "src/domain"; // ✅
+import { UseCase } from "src/application"; // ✅
+
+// Same-boundary, close imports → use relative (same as alias style)
+import { helper } from "./helper"; // ✅ Same directory
+import { utils } from "../utils"; // ✅ Parent's sibling
+
+// Same-boundary, distant imports → use absolute path
+import { useCase } from "src/application/use-cases"; // ✅ Distant in same boundary
+```
+
+**When to use absolute paths:**
+
+- Your build configuration doesn't support path aliases (e.g., some bundlers or older tooling)
+- You prefer explicit paths over aliases for clarity
+- You're working in a codebase that already uses absolute paths
+
+**Note:** Alias paths are recommended for readability, especially for boundaries defined at deeper directory levels (e.g., `@entities/user` vs `src/hexagonal/domain/entities/user`). However, this rule does not require them since not all build configurations support path aliases. When using `crossBoundaryStyle: 'absolute'`, the `alias` property in boundary definitions becomes optional, and the rule will use paths like `src/domain` instead of `@domain`.
 
 ## How It Works
 

@@ -51,7 +51,7 @@ export interface RuleOptions {
   // 'absolute': Use absolute paths relative to rootDir like src/domain/entities
   defaultSeverity?: "error" | "warn"; // Default severity for violations (if not set, uses rule-level severity)
   allowUnknownBoundaries?: boolean; // Allow imports from paths not in any boundary (default: false)
-  skipBoundaryRulesForTestFiles?: boolean; // Skip allow/deny boundary rules for test files, but still enforce path format (default: true)
+  enforceBoundaries?: boolean; // Enforce boundary allow/deny rules (default: true). When false, boundary rules are skipped but path format is still enforced.
   testFilePatterns?: string[]; // Patterns to detect test files (default: common test patterns)
   barrelFileName?: string; // Name of barrel files without extension (default: 'index')
   fileExtensions?: string[]; // File extensions to recognize (default: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'])

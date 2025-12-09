@@ -497,7 +497,7 @@ const rule = {
 					type: "boolean",
 					default: false
 				},
-				skipBoundaryRulesForTestFiles: {
+				enforceBoundaries: {
 					type: "boolean",
 					default: true
 				},
@@ -529,7 +529,7 @@ const rule = {
 	},
 	create(context) {
 		if (!context.options || context.options.length === 0) throw new Error("boundary-alias-vs-relative requires boundaries configuration");
-		const { rootDir = "src", boundaries, crossBoundaryStyle = "alias", defaultSeverity, allowUnknownBoundaries = false, skipBoundaryRulesForTestFiles = true, barrelFileName = "index", fileExtensions = [
+		const { rootDir = "src", boundaries, crossBoundaryStyle = "alias", defaultSeverity, allowUnknownBoundaries = false, enforceBoundaries = true, barrelFileName = "index", fileExtensions = [
 			".ts",
 			".tsx",
 			".js",
@@ -592,7 +592,7 @@ const rule = {
 				defaultSeverity,
 				allowUnknownBoundaries,
 				isTypeOnly,
-				skipBoundaryRules: skipBoundaryRulesForTestFiles,
+				skipBoundaryRules: !enforceBoundaries,
 				barrelFileName,
 				fileExtensions
 			});

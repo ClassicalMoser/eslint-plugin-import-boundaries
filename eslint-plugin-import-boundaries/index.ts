@@ -80,7 +80,7 @@ const rule: Rule.RuleModule = {
             type: "boolean",
             default: false,
           },
-          skipBoundaryRulesForTestFiles: {
+          enforceBoundaries: {
             type: "boolean",
             default: true,
           },
@@ -124,7 +124,7 @@ const rule: Rule.RuleModule = {
       crossBoundaryStyle = "alias",
       defaultSeverity,
       allowUnknownBoundaries = false,
-      skipBoundaryRulesForTestFiles = true,
+      enforceBoundaries = true,
       barrelFileName = "index",
       fileExtensions = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"],
     } = options;
@@ -203,7 +203,7 @@ const rule: Rule.RuleModule = {
       if (!fileDir) return;
 
       // Main import handler (no file I/O, pure path math)
-      // skipBoundaryRulesForTestFiles is set via ESLint config blocks for test files
+      // enforceBoundaries is set via ESLint config blocks (false for test files, true for regular files)
       handleImport({
         node,
         rawSpec,
@@ -217,7 +217,7 @@ const rule: Rule.RuleModule = {
         defaultSeverity,
         allowUnknownBoundaries,
         isTypeOnly,
-        skipBoundaryRules: skipBoundaryRulesForTestFiles,
+        skipBoundaryRules: !enforceBoundaries, // Invert: enforceBoundaries=false means skip rules
         barrelFileName,
         fileExtensions,
       });
