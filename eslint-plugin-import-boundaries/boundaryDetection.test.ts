@@ -294,7 +294,7 @@ describe("boundaryDetection", () => {
       expect(result.fileBoundary).toBeNull();
     });
 
-    it("should resolve to parent when child has no rules", () => {
+    it("should return actual boundary when child has no rules (for same-boundary detection)", () => {
       const parentBoundary: Boundary = {
         dir: "domain/application",
         alias: "@application",
@@ -316,10 +316,12 @@ describe("boundaryDetection", () => {
         "file.ts",
       );
 
+      // getFileData now returns the actual boundary (for same-boundary detection)
+      // Rule checking will resolve to parent via resolveToSpecifiedBoundary
       const result = getFileData(filename, [parentBoundary, childBoundary]);
 
       expect(result.isValid).toBe(true);
-      expect(result.fileBoundary).toBe(parentBoundary);
+      expect(result.fileBoundary).toBe(childBoundary); // Returns actual boundary, not parent
     });
 
     it("should return most specific boundary with rules for nested boundaries", () => {

@@ -22,6 +22,7 @@ export interface HandleImportOptions {
   rawSpec: string;
   fileDir: string;
   fileBoundary: Boundary | null;
+  filename: string; // Actual file path for resolving to specified boundary
   boundaries: Boundary[];
   rootDir: string;
   cwd: string;
@@ -47,6 +48,7 @@ export function handleImport(options: HandleImportOptions): boolean {
     rawSpec,
     fileDir,
     fileBoundary,
+    filename,
     boundaries,
     rootDir,
     cwd,
@@ -68,7 +70,7 @@ export function handleImport(options: HandleImportOptions): boolean {
     rootDir,
     cwd,
     barrelFileName,
-    fileExtensions,
+    fileExtensions
   );
 
   // Skip checking for external packages (node_modules, etc.)
@@ -83,7 +85,7 @@ export function handleImport(options: HandleImportOptions): boolean {
     const aliasSubpathCheck = checkAliasSubpath(rawSpec, boundaries);
     if (aliasSubpathCheck.isSubpath) {
       const targetBoundary = boundaries.find(
-        (b) => b.alias === aliasSubpathCheck.baseAlias,
+        (b) => b.alias === aliasSubpathCheck.baseAlias
       );
       if (
         targetBoundary &&
@@ -116,6 +118,7 @@ export function handleImport(options: HandleImportOptions): boolean {
 
   // Check allow/deny rules if both boundaries exist and are different
   // Skip this check for test files if skipBoundaryRules is true (but still enforce path format)
+  // Every boundary has rules (explicit or implicit "deny all"), so use the boundary itself
   if (
     !skipBoundaryRules &&
     fileBoundary &&
@@ -126,7 +129,7 @@ export function handleImport(options: HandleImportOptions): boolean {
       fileBoundary,
       targetBoundary,
       boundaries,
-      isTypeOnly,
+      isTypeOnly
     );
     if (violation) {
       const severity = fileBoundary.severity || defaultSeverity;
@@ -155,7 +158,7 @@ export function handleImport(options: HandleImportOptions): boolean {
     cwd,
     crossBoundaryStyle,
     barrelFileName,
-    fileExtensions,
+    fileExtensions
   );
 
   if (!correctPath) {

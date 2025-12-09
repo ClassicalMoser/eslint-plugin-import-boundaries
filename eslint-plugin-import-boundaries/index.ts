@@ -204,11 +204,14 @@ const rule: Rule.RuleModule = {
 
       // Main import handler (no file I/O, pure path math)
       // skipBoundaryRulesForTestFiles is set via ESLint config blocks for test files
+      const filename =
+        context.filename ?? context.getFilename?.() ?? "<unknown>";
       handleImport({
         node,
         rawSpec,
         fileDir,
         fileBoundary: fileBoundary ?? null,
+        filename,
         boundaries: resolvedBoundaries,
         rootDir,
         cwd,

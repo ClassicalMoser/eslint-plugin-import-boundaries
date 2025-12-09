@@ -30,7 +30,7 @@ describe("fixer", () => {
       fixer!(mockFixer as any);
       expect(mockFixer.replaceText).toHaveBeenCalledWith(
         (node as any).source,
-        "'@entities'",
+        "'@entities'"
       );
     });
 
@@ -54,7 +54,7 @@ describe("fixer", () => {
       fixer!(mockFixer as any);
       expect(mockFixer.replaceText).toHaveBeenCalledWith(
         (node as any).source,
-        "'@entities'",
+        "'@entities'"
       );
     });
 
@@ -84,7 +84,7 @@ describe("fixer", () => {
       fixer!(mockFixer as any);
       expect(mockFixer.replaceText).toHaveBeenCalledWith(
         (node as any).arguments[0],
-        "'@entities'",
+        "'@entities'"
       );
     });
 
@@ -108,7 +108,7 @@ describe("fixer", () => {
       fixer!(mockFixer as any);
       expect(mockFixer.replaceText).toHaveBeenCalledWith(
         (node as any).source,
-        "'../cousin'",
+        "'../cousin'"
       );
     });
 

@@ -116,8 +116,8 @@ Prevent violations of your architecture:
 {
   dir: 'application',
   alias: '@application',
-  allowImportsFrom: ['@domain'],  // Only allow imports from @domain
-  denyImportsFrom: ['@infrastructure'],  // Deny imports from @infrastructure (dependency inversion)
+  allowImportsFrom: ['@domain'],  // Only allow imports from @domain (deny-all by default)
+  // Note: denyImportsFrom is redundant here - anything not in allowImportsFrom is already denied
 }
 ```
 
@@ -151,7 +151,7 @@ Boundaries can be nested, and each boundary must explicitly declare its import r
       dir: 'interface',
       alias: '@interface',
       allowImportsFrom: ['@application', '@public-use-cases'],
-      denyImportsFrom: ['@use-cases'], // Can allow parent and specific child, but deny intermediate boundary
+      denyImportsFrom: ['@use-cases'], // Deny specific sub-boundary even though parent @application is allowed
     },
   ],
 }
@@ -159,11 +159,19 @@ Boundaries can be nested, and each boundary must explicitly declare its import r
 
 **Key behaviors:**
 
-- Each boundary must explicitly declare its rules (no inheritance)
-- Files in boundaries without rules resolve to their nearest ancestor with rules (or are rejected if no ancestor has rules)
+- Each boundary has rules: explicit (via `allowImportsFrom`/`denyImportsFrom`) or implicit "deny all" (if neither is specified)
+- Each boundary uses its own rules directly (no inheritance from parent boundaries)
 - Rules work the same regardless of nesting depth (flat rule checking)
 - You can selectively allow/deny specific nested boundaries
-- A boundary is considered to have rules if it defines `allowImportsFrom`, `denyImportsFrom`, or `allowTypeImportsFrom` (even if empty arrays)
+- Files resolve to their most specific boundary (longest matching path), which determines the rules to apply
+
+**Rule semantics:**
+
+- If both `allowImportsFrom` and `denyImportsFrom` exist: `allowImportsFrom` takes precedence (items in allow list are allowed even if also in deny list)
+- If only `allowImportsFrom`: deny-all by default (only items in allow list are allowed)
+- If only `denyImportsFrom`: allow-all by default (everything except deny list is allowed)
+- If neither: deny-all by default (strictest)
+- **Important**: When `allowImportsFrom` is specified, `denyImportsFrom` can deny specific sub-boundaries (e.g. deny `@utils` within allowed `@application`), but is otherwise redundant since anything not in the allow list is already denied by default. Note that this works recursively: It is possible to allow a boundary within a denied boundary within an allowed boundary, and so on.
 
 ### 4. Type-Only Imports
 
@@ -220,8 +228,8 @@ import { something } from "@application"; // When inside @application boundary
     {
       dir: 'application',
       alias: '@application',
-      allowImportsFrom: ['@domain'], // Application uses domain
-      denyImportsFrom: ['@infrastructure', '@interface', '@composition'], // Dependency inversion
+      allowImportsFrom: ['@domain'], // Application uses domain (deny-all by default)
+      // Note: denyImportsFrom is redundant here - those boundaries are already denied
     },
     {
       dir: 'infrastructure',

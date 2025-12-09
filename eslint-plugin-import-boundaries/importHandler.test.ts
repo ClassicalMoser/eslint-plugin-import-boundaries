@@ -76,11 +76,13 @@ describe("importHandler", () => {
   function createOptions(
     overrides: Partial<HandleImportOptions>,
   ): HandleImportOptions {
+    const defaultFileDir = path.resolve(cwd, rootDir, "domain/queries");
     return {
       node: mockNode,
       rawSpec: "",
-      fileDir: path.resolve(cwd, rootDir, "domain/queries"),
+      fileDir: defaultFileDir,
       fileBoundary: queriesBoundary,
+      filename: path.join(defaultFileDir, "file.ts"),
       boundaries,
       rootDir,
       cwd,
