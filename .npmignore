@@ -1,0 +1,41 @@
+# Source files
+eslint-plugin-import-boundaries/
+*.ts
+!*.d.ts
+
+# Test files
+*.test.ts
+*.spec.ts
+**/*.test.ts
+**/*.spec.ts
+
+# Config files
+tsdown.config.ts
+vitest.config.ts
+tsconfig.json
+.eslintrc*
+eslint.config.js
+.prettierrc*
+.prettierignore
+
+# Build artifacts
+*.map
+coverage/
+.nyc_output/
+
+# Development
+.vscode/
+.idea/
+*.log
+.DS_Store
+node_modules/
+
+# Git
+.git/
+.gitignore
+
+# Documentation (keep README.md and LICENSE)
+*.md
+!README.md
+!LICENSE
+
