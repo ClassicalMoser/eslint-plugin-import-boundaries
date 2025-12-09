@@ -55,7 +55,7 @@
     "format:check": "prettier --check .",
     "validate:fix": "pnpm run lint:fix && pnpm run format && pnpm run typecheck",
     "validate:check": "pnpm run lint && pnpm run format:check && pnpm run typecheck",
-    "prepublishOnly": "npm run build && npm run test && npm run typecheck"
+    "prepublishOnly": "npm run build && npm run test && npm run validate:check"
   },
   "peerDependencies": {
     "eslint": ">=9.0.0"

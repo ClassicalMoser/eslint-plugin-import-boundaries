@@ -21,7 +21,7 @@ export function resolveTargetPath(
   rootDir: string,
   cwd: string,
   barrelFileName: string = "index",
-  fileExtensions: string[] = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]
+  fileExtensions: string[] = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"],
 ): { targetAbs: string; targetDir: string } {
   let targetAbs: string;
   let targetDir: string;
@@ -30,7 +30,7 @@ export function resolveTargetPath(
     // Alias import - resolve via boundary
     const boundary = boundaries.find(
       (b) =>
-        b.alias && (rawSpec === b.alias || rawSpec.startsWith(`${b.alias}/`))
+        b.alias && (rawSpec === b.alias || rawSpec.startsWith(`${b.alias}/`)),
     );
     if (boundary && boundary.alias) {
       const subpath = rawSpec.slice(boundary.alias.length + 1); // Remove '@boundary/'
@@ -41,7 +41,7 @@ export function resolveTargetPath(
         // For now, use the first extension (will be resolved by module resolver)
         targetAbs = path.join(
           targetDir,
-          `${barrelFileName}${fileExtensions[0]}`
+          `${barrelFileName}${fileExtensions[0]}`,
         );
       } else if (subpath) {
         targetAbs = path.resolve(boundary.absDir, subpath);
@@ -50,7 +50,7 @@ export function resolveTargetPath(
         // Just @boundary (no subpath) - ancestor barrel
         targetAbs = path.join(
           boundary.absDir,
-          `${barrelFileName}${fileExtensions[0]}`
+          `${barrelFileName}${fileExtensions[0]}`,
         );
         targetDir = boundary.absDir;
       }
@@ -132,7 +132,7 @@ export function resolveTargetPath(
         targetDir = path.resolve(matchingBoundary.absDir, subpath);
         targetAbs = path.join(
           targetDir,
-          `${barrelFileName}${fileExtensions[0]}`
+          `${barrelFileName}${fileExtensions[0]}`,
         );
       } else if (subpath) {
         targetAbs = path.resolve(matchingBoundary.absDir, subpath);
@@ -141,7 +141,7 @@ export function resolveTargetPath(
         // Just boundary dir (no subpath) - ancestor barrel
         targetAbs = path.join(
           matchingBoundary.absDir,
-          `${barrelFileName}${fileExtensions[0]}`
+          `${barrelFileName}${fileExtensions[0]}`,
         );
         targetDir = matchingBoundary.absDir;
       }
@@ -167,7 +167,7 @@ export function calculateCorrectImportPath(
   cwd: string,
   crossBoundaryStyle: "alias" | "absolute" = "alias",
   barrelFileName: string = "index",
-  fileExtensions: string[] = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]
+  fileExtensions: string[] = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"],
 ): string | null {
   // Resolve target path
   const { targetAbs, targetDir } = resolveTargetPath(
@@ -177,7 +177,7 @@ export function calculateCorrectImportPath(
     rootDir,
     cwd,
     barrelFileName,
-    fileExtensions
+    fileExtensions,
   );
 
   // Resolve target to nearest boundary (even if it has no rules)
@@ -221,7 +221,7 @@ export function calculateCorrectImportPath(
   // 3. Same boundary: resolve both to boundary-relative paths (as arrays)
   const targetRelativeToBoundary = path.relative(
     fileBoundary.absDir,
-    targetDir
+    targetDir,
   );
   const fileRelativeToBoundary = path.relative(fileBoundary.absDir, fileDir);
 
