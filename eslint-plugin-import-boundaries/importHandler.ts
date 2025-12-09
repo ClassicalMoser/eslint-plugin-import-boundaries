@@ -32,6 +32,8 @@ export interface HandleImportOptions {
   allowUnknownBoundaries?: boolean;
   isTypeOnly?: boolean;
   skipBoundaryRules?: boolean;
+  barrelFileName?: string;
+  fileExtensions?: string[];
 }
 
 /**
@@ -55,6 +57,8 @@ export function handleImport(options: HandleImportOptions): boolean {
     allowUnknownBoundaries = false,
     isTypeOnly = false,
     skipBoundaryRules = false,
+    barrelFileName = 'index',
+    fileExtensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
   } = options;
   // Resolve target path first to determine if it's internal or external
   // (this handles aliases, relative, absolute, and bare imports)
@@ -64,6 +68,8 @@ export function handleImport(options: HandleImportOptions): boolean {
     boundaries,
     rootDir,
     cwd,
+    barrelFileName,
+    fileExtensions,
   );
 
   // Skip checking for external packages (node_modules, etc.)
@@ -144,6 +150,8 @@ export function handleImport(options: HandleImportOptions): boolean {
     rootDir,
     cwd,
     crossBoundaryStyle,
+    barrelFileName,
+    fileExtensions,
   );
 
   if (!correctPath) {

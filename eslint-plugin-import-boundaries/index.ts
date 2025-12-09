@@ -84,6 +84,15 @@ const rule: Rule.RuleModule = {
             type: 'boolean',
             default: true,
           },
+          barrelFileName: {
+            type: 'string',
+            default: 'index',
+          },
+          fileExtensions: {
+            type: 'array',
+            items: { type: 'string' },
+            default: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
+          },
         },
         required: ['boundaries'],
       },
@@ -116,6 +125,8 @@ const rule: Rule.RuleModule = {
       defaultSeverity,
       allowUnknownBoundaries = false,
       skipBoundaryRulesForTestFiles = true,
+      barrelFileName = 'index',
+      fileExtensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
     } = options;
     const cwd = context.getCwd?.() ?? process.cwd();
 
@@ -207,6 +218,8 @@ const rule: Rule.RuleModule = {
         allowUnknownBoundaries,
         isTypeOnly,
         skipBoundaryRules: skipBoundaryRulesForTestFiles,
+        barrelFileName,
+        fileExtensions,
       });
     }
 

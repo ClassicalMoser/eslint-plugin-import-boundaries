@@ -8,7 +8,11 @@
 
 import type { Boundary } from "./types";
 import path from "node:path";
-import { isInsideDir } from "./pathUtils";
+import {
+  isInsideDir,
+  hasExtension,
+  getBasenameWithoutExt,
+} from "./pathUtils";
 
 /**
  * Resolve the target path from an import specifier.
@@ -18,7 +22,9 @@ export function resolveTargetPath(
   fileDir: string,
   boundaries: Boundary[],
   rootDir: string,
-  cwd: string
+  cwd: string,
+  barrelFileName: string = "index",
+  fileExtensions: string[] = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]
 ): { targetAbs: string; targetDir: string } {
   let targetAbs: string;
   let targetDir: string;
@@ -31,16 +37,18 @@ export function resolveTargetPath(
     );
     if (boundary && boundary.alias) {
       const subpath = rawSpec.slice(boundary.alias.length + 1); // Remove '@boundary/'
-      if (subpath && !subpath.endsWith(".ts")) {
+      if (subpath && !hasExtension(subpath, fileExtensions)) {
         // Directory - assume barrel file
         targetDir = path.resolve(boundary.absDir, subpath);
-        targetAbs = path.join(targetDir, "index.ts");
+        // Try to find the barrel file with any of the configured extensions
+        // For now, use the first extension (will be resolved by module resolver)
+        targetAbs = path.join(targetDir, `${barrelFileName}${fileExtensions[0]}`);
       } else if (subpath) {
         targetAbs = path.resolve(boundary.absDir, subpath);
         targetDir = path.dirname(targetAbs);
       } else {
         // Just @boundary (no subpath) - ancestor barrel
-        targetAbs = path.join(boundary.absDir, "index.ts");
+        targetAbs = path.join(boundary.absDir, `${barrelFileName}${fileExtensions[0]}`);
         targetDir = boundary.absDir;
       }
     } else {
@@ -49,18 +57,18 @@ export function resolveTargetPath(
     }
   } else if (rawSpec.startsWith(".")) {
     // Relative import
-    if (!rawSpec.endsWith(".ts")) {
+    if (!hasExtension(rawSpec, fileExtensions)) {
       targetDir = path.resolve(fileDir, rawSpec);
-      targetAbs = path.join(targetDir, "index.ts");
+      targetAbs = path.join(targetDir, `${barrelFileName}${fileExtensions[0]}`);
     } else {
       targetAbs = path.resolve(fileDir, rawSpec);
       targetDir = path.dirname(targetAbs);
     }
   } else if (rawSpec.startsWith(rootDir)) {
     // Absolute path
-    if (!rawSpec.endsWith(".ts")) {
+    if (!hasExtension(rawSpec, fileExtensions)) {
       targetDir = path.resolve(cwd, rawSpec);
-      targetAbs = path.join(targetDir, "index.ts");
+      targetAbs = path.join(targetDir, `${barrelFileName}${fileExtensions[0]}`);
     } else {
       targetAbs = path.resolve(cwd, rawSpec);
       targetDir = path.dirname(targetAbs);
@@ -116,16 +124,19 @@ export function resolveTargetPath(
         }
       }
 
-      if (subpath && !subpath.endsWith(".ts")) {
+      if (subpath && !hasExtension(subpath, fileExtensions)) {
         // Directory - assume barrel file
         targetDir = path.resolve(matchingBoundary.absDir, subpath);
-        targetAbs = path.join(targetDir, "index.ts");
+        targetAbs = path.join(targetDir, `${barrelFileName}${fileExtensions[0]}`);
       } else if (subpath) {
         targetAbs = path.resolve(matchingBoundary.absDir, subpath);
         targetDir = path.dirname(targetAbs);
       } else {
         // Just boundary dir (no subpath) - ancestor barrel
-        targetAbs = path.join(matchingBoundary.absDir, "index.ts");
+        targetAbs = path.join(
+          matchingBoundary.absDir,
+          `${barrelFileName}${fileExtensions[0]}`
+        );
         targetDir = matchingBoundary.absDir;
       }
     } else {
@@ -148,7 +159,9 @@ export function calculateCorrectImportPath(
   boundaries: Boundary[],
   rootDir: string,
   cwd: string,
-  crossBoundaryStyle: "alias" | "absolute" = "alias"
+  crossBoundaryStyle: "alias" | "absolute" = "alias",
+  barrelFileName: string = "index",
+  fileExtensions: string[] = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]
 ): string | null {
   // Resolve target path
   const { targetAbs, targetDir } = resolveTargetPath(
@@ -156,7 +169,9 @@ export function calculateCorrectImportPath(
     fileDir,
     boundaries,
     rootDir,
-    cwd
+    cwd,
+    barrelFileName,
+    fileExtensions
   );
 
   // Find target boundary
@@ -217,8 +232,8 @@ export function calculateCorrectImportPath(
 
   // Handle boundary root file (target is at boundary root)
   if (targetParts.length === 0) {
-    const targetBasename = path.basename(targetAbs, ".ts");
-    if (targetBasename !== "index") {
+    const targetBasename = getBasenameWithoutExt(targetAbs);
+    if (targetBasename !== barrelFileName) {
       // Use alias if available, otherwise use absolute path
       if (fileBoundary.alias) {
         return `${fileBoundary.alias}/${targetBasename}`;
@@ -246,11 +261,11 @@ export function calculateCorrectImportPath(
     firstDifferingIndex >= targetParts.length &&
     firstDifferingIndex >= fileParts.length
   ) {
-    const targetBasename = path.basename(targetAbs, ".ts");
-    if (targetBasename !== "index") {
+    const targetBasename = getBasenameWithoutExt(targetAbs);
+    if (targetBasename !== barrelFileName) {
       return `./${targetBasename}`;
     }
-    return null; // Ancestor barrel (index.ts in same directory)
+    return null; // Ancestor barrel (barrel file in same directory)
   }
 
   // Get first differing segment (only - we assume barrel files)
