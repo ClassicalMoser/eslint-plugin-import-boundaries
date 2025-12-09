@@ -29,7 +29,7 @@ describe('fixer', () => {
 
       const result = fixer!(mockFixer as any);
       expect(mockFixer.replaceText).toHaveBeenCalledWith(
-        node.source,
+        (node as any).source,
         "'@entities'",
       );
     });
@@ -53,7 +53,7 @@ describe('fixer', () => {
 
       const result = fixer!(mockFixer as any);
       expect(mockFixer.replaceText).toHaveBeenCalledWith(
-        node.source,
+        (node as any).source,
         "'@entities'",
       );
     });
@@ -107,7 +107,7 @@ describe('fixer', () => {
 
       fixer!(mockFixer as any);
       expect(mockFixer.replaceText).toHaveBeenCalledWith(
-        node.source,
+        (node as any).source,
         "'../cousin'",
       );
     });

@@ -278,4 +278,9 @@ const rule: Rule.RuleModule = {
   },
 };
 
-export default rule;
+// ESLint plugins must export an object with a 'rules' property
+export default {
+  rules: {
+    enforce: rule,
+  },
+};
