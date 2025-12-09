@@ -7,14 +7,14 @@
 
 **Note: This is a beta release developed for a personal project. It is not yet stable and may have breaking changes.**
 
-An ESLint rule that enforces architectural boundaries using deterministic import path rules. This rule determines when to use alias vs relative imports based on your architecture, rather than enforcing a single pattern for all imports.
+An opinionated ESLint rule that enforces architectural boundaries using deterministic import path rules. This rule determines when to use alias vs relative imports based on your architecture, rather than enforcing a single pattern for all imports.
 
 ## Features
 
 - **Deterministic**: One correct path for every import
 - **Explicit Exports**: Ensures every directory is explicit about what it exports (via barrel files)
 - **Readable Paths**: Resolves to logical, readable filepaths (no `../../../../../../` chains)
-- **Architectural Boundaries**: Enforce clean architecture, hexagonal architecture, or any non-nested boundary pattern (nested boundaries planned but not ready)
+- **Architectural Boundaries**: Enforce clean architecture, hexagonal architecture, or any non-nested boundary pattern (nested boundaries planned but not yet implemented)
 - **Auto-fixable**: Most violations are automatically fixable
 - **Zero I/O**: Pure path math and AST analysis - fast even on large codebases
 - **Type-aware**: Different rules for type-only imports vs value imports
@@ -29,21 +29,21 @@ npm install --save-dev eslint-plugin-import-boundaries
 
 ```javascript
 // eslint.config.js
-import importBoundaries from 'eslint-plugin-import-boundaries';
+import importBoundaries from "eslint-plugin-import-boundaries";
 
 export default {
   plugins: {
-    'import-boundaries': importBoundaries,
+    "import-boundaries": importBoundaries,
   },
   rules: {
-    'import-boundaries/enforce': [
-      'error',
+    "import-boundaries/enforce": [
+      "error",
       {
-        rootDir: 'src',
+        rootDir: "src",
         boundaries: [
-          { dir: 'domain/entities', alias: '@entities' },
-          { dir: 'domain/queries', alias: '@queries' },
-          { dir: 'domain/events', alias: '@events' },
+          { dir: "domain", alias: "@domain" },
+          { dir: "application", alias: "@application" },
+          { dir: "infrastructure", alias: "@infrastructure" },
         ],
       },
     ],
@@ -53,19 +53,27 @@ export default {
 
 ## What Problem Does This Solve?
 
-Most projects have inconsistent import patterns:
+Most projects suffer from inconsistent import patterns that create ambiguity and technical debt:
 
-- Sometimes `@entities`, sometimes `../entities`, sometimes `../../domain/entities`
-- No clear rules for when to use alias vs relative
-- Import formatting discussions waste time in code reviews
-- Long relative paths like `../../../../../../utils` are hard to read
-- Absolute paths might not fit your architecture (`src/domain/entities/army/unit/weapon/sword`)
-- Directories aren't explicit about their exports (no barrel files)
-- Architectural boundaries are violated without enforcement
-- Circular dependencies sneak in
+**Path Inconsistency:**
+
+- No clear rules: sometimes `@domain`, sometimes `../domain`, sometimes `../../src/domain`
+- Unreadable paths: `../../../../../../utils` chains that obscure relationships
+- Absolute paths that don't fit your architecture (too long, harder to evaluate barrel files)
+
+**Architectural Issues:**
+
+- Boundaries are violated without enforcement (e.g., `@application` importing from `@infrastructure`)
+- Circular dependencies sneak in through ancestor barrel imports
+- Directories bypass barrel files, breaking encapsulation
+
+**Maintainability Problems:**
+
+- Import formatting debates waste time in code reviews
 - Refactoring is risky because import paths are ambiguous
+- No single source of truth for "the correct way" to import
 
-This rule provides deterministic import paths with architectural boundary enforcement - one correct answer for every import, eliminating debates and making refactoring safer.
+This rule provides **deterministic import paths with architectural boundary enforcement** - one correct answer for every import, eliminating debates and making refactoring safer.
 
 ## Core Rules
 
@@ -75,12 +83,12 @@ When importing from a different boundary, always use the boundary alias (no subp
 
 ```typescript
 // ✅ CORRECT
-import { Entity } from '@entities';
-import { Query } from '@queries';
+import { Entity } from "@domain";
+import { UseCase } from "@application";
 
 // ❌ WRONG
-import { Entity } from '@entities/army'; // Subpath not allowed
-import { Entity } from '../entities'; // Relative not allowed
+import { Entity } from "@domain/entities"; // Subpath not allowed
+import { Entity } from "../domain"; // Relative not allowed
 ```
 
 ### 2. Same-Boundary Imports → Relative (when close)
@@ -89,13 +97,13 @@ When importing within the same boundary, use relative paths for close imports:
 
 ```typescript
 // Same directory (sibling)
-import { helper } from './helper'; // ✅
+import { helper } from "./helper"; // ✅
 
 // Parent's sibling (cousin, max one ../)
-import { utils } from '../utils'; // ✅
+import { utils } from "../utils"; // ✅
 
 // Top-level or distant → Use alias
-import { something } from '@queries/topLevel'; // ✅
+import { useCase } from "@application/topLevel"; // ✅
 ```
 
 ### 3. Architectural Boundary Enforcement
@@ -104,20 +112,20 @@ Prevent violations of your architecture:
 
 ```javascript
 {
-  dir: 'domain/entities',
-  alias: '@entities',
-  allowImportsFrom: ['@events'],  // Only allow imports from @events
-  denyImportsFrom: ['@queries'],  // Deny imports from @queries
+  dir: 'application',
+  alias: '@application',
+  allowImportsFrom: ['@domain'],  // Only allow imports from @domain
+  denyImportsFrom: ['@infrastructure'],  // Deny imports from @infrastructure (dependency inversion)
 }
 ```
 
 ```typescript
-// ✅ ALLOWED: @entities can import from @events
-import { Event } from '@events';
+// ✅ ALLOWED: @application can import from @domain
+import { Entity } from "@domain";
 
-// ❌ VIOLATION: @entities cannot import from @queries
-import { Query } from '@queries';
-// Error: Cannot import from '@queries' to '@entities': Import not allowed
+// ❌ VIOLATION: @application cannot import from @infrastructure
+import { Database } from "@infrastructure";
+// Error: Cannot import from '@infrastructure' to '@application': Import not allowed
 ```
 
 ### 4. Type-Only Imports
@@ -126,19 +134,19 @@ Different rules for types vs values (types don't create runtime dependencies):
 
 ```javascript
 {
-  dir: 'domain/entities',
-  alias: '@entities',
-  allowImportsFrom: ['@events'],           // Value imports
-  allowTypeImportsFrom: ['@events', '@queries'], // Type imports (more permissive)
+  dir: 'infrastructure',
+  alias: '@infrastructure',
+  allowImportsFrom: ['@domain'],           // Value imports from domain
+  allowTypeImportsFrom: ['@application'], // Type imports from application (port interfaces)
 }
 ```
 
 ```typescript
-// ✅ ALLOWED: Type import from @queries
-import type { QueryResult } from '@queries';
+// ✅ ALLOWED: Type import from @application (port interface)
+import type { RepositoryPort } from "@application";
 
-// ❌ VIOLATION: Value import from @queries
-import { executeQuery } from '@queries';
+// ❌ VIOLATION: Value import from @application
+import { UseCase } from "@application";
 ```
 
 ### 5. Ancestor Barrel Prevention
@@ -147,8 +155,8 @@ Prevents circular dependencies by blocking ancestor barrel imports:
 
 ```typescript
 // ❌ FORBIDDEN: Would create circular dependency
-import { something } from '@queries'; // When inside @queries boundary
-// Error: Cannot import from ancestor barrel '@queries'.
+import { something } from "@application"; // When inside @application boundary
+// Error: Cannot import from ancestor barrel '@application'.
 //        This would create a circular dependency.
 ```
 
@@ -163,14 +171,25 @@ import { something } from '@queries'; // When inside @queries boundary
   defaultSeverity: 'error',         // 'error' | 'warn' (default: 'error')
   allowUnknownBoundaries: false,    // Allow imports outside boundaries (default: false)
   skipBoundaryRulesForTestFiles: true, // Skip boundary rules for tests (default: true)
+  barrelFileName: 'index',          // Barrel file name without extension (default: 'index')
+  fileExtensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'], // Extensions to recognize (default: all common JS/TS extensions)
   boundaries: [                    // Required: Array of boundary definitions
     {
-      dir: 'domain/entities',       // Required: Relative directory path
-      alias: '@entities',           // Required: Import alias
-      severity: 'error',            // Optional: Override default severity
-      allowImportsFrom: ['@events'], // Optional: Allowed boundaries (value imports)
-      denyImportsFrom: ['@queries'], // Optional: Denied boundaries
-      allowTypeImportsFrom: ['@events', '@queries'], // Optional: Allowed for types
+      dir: 'domain',                // Required: Relative directory path
+      alias: '@domain',             // Required when crossBoundaryStyle is 'alias', optional when 'absolute'
+      denyImportsFrom: ['@application', '@infrastructure', '@interface', '@composition'], // Domain is pure
+    },
+    {
+      dir: 'application',
+      alias: '@application',
+      allowImportsFrom: ['@domain'], // Application uses domain
+      denyImportsFrom: ['@infrastructure', '@interface', '@composition'], // Dependency inversion
+    },
+    {
+      dir: 'infrastructure',
+      alias: '@infrastructure',
+      allowImportsFrom: ['@domain'], // Infrastructure uses domain entities
+      allowTypeImportsFrom: ['@application'], // Infrastructure implements application ports (types only)
     },
   ],
 }
@@ -183,10 +202,10 @@ Use ESLint's file matching for test files:
 ```javascript
 export default [
   {
-    files: ['src/**/*.ts'],
+    files: ["src/**/*.ts"],
     rules: {
-      'import-boundaries/enforce': [
-        'error',
+      "import-boundaries/enforce": [
+        "error",
         {
           /* config */
         },
@@ -194,10 +213,10 @@ export default [
     },
   },
   {
-    files: ['**/*.test.{ts,js}', '**/*.spec.{ts,js}'],
+    files: ["**/*.test.{ts,js}", "**/*.spec.{ts,js}"],
     rules: {
-      'import-boundaries/enforce': [
-        'error',
+      "import-boundaries/enforce": [
+        "error",
         {
           skipBoundaryRulesForTestFiles: true, // Tests can import from any boundary
           // ... rest of config
@@ -219,13 +238,15 @@ The rule uses pure path math - no file I/O, just deterministic algorithms:
 
 ### Barrel Files as Module Interface
 
-The rule assumes barrel files (`index.ts`) are the module interface for each directory. This means:
+The rule assumes barrel files (default: `index.ts`, configurable) are the module interface for each directory. This means:
 
 - `./dir` imports from `dir/index.ts` (the barrel)
 - You cannot bypass the barrel: `./dir/file` is not allowed
 - This enforces a clear public API for each module
 
 This barrel file assumption enables zero I/O: because we know every directory has a barrel file, we can determine correct paths using pure path math - no file system access needed. This makes the rule fast, reliable, and deterministic.
+
+**Extension Support**: The rule supports multiple file extensions (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs` by default). You can configure which extensions to recognize and the barrel file name via `fileExtensions` and `barrelFileName` options.
 
 The rule is barrel-agnostic - it enforces the path pattern (must go through the barrel), not what the barrel exports. Whether you use selective exports (`export { A, B } from './module'`) or universal exports (`export * from './module'`) is your choice based on your codebase needs.
 
@@ -235,25 +256,34 @@ The rule is barrel-agnostic - it enforces the path pattern (must go through the 
 - **Large projects**: The pattern works at any scale. Performance depends on what you export (use selective exports in large apps), not the pattern itself. The rule's zero I/O approach means it stays fast even in massive codebases.
 - **Monorepos**: Works across packages, but requires manual configuration. You'd configure boundaries that span packages (e.g., `{ dir: 'packages/pkg-a/src/domain', alias: '@pkg-a/domain' }`). Each package maintains its own barrel structure, and the rule enforces boundaries between them based on your configuration.
 
-## What Gets Skipped
+## What Gets Skipped vs Checked
 
-The rule automatically skips checking for:
+The rule distinguishes between **external packages** (skipped) and **files outside boundaries** (checked):
 
-- External packages (`node_modules`, npm packages)
-- Imports that don't match any boundary alias and aren't relative paths
+**Skipped (External Packages):**
 
-Only internal imports (relative paths, boundary aliases, and absolute paths within `rootDir`) are checked.
+- npm packages like `lodash`, `react`, `@types/node` - imports that don't resolve to any file path (e.g., `import _ from 'lodash'`)
+- These are detected because `resolveTargetPath` returns an empty `targetAbs` (the import doesn't match any boundary pattern and isn't a relative/absolute path)
+
+**Checked (Files Outside Boundaries):**
+
+- Files in your project that exist but are outside all configured boundaries (e.g., `../shared/utils.ts` when `shared` isn't a boundary)
+- These trigger an "unknown boundary" error unless `allowUnknownBoundaries: true` is set
+- The rule detects these because the import resolves to a file path, but that path isn't inside any boundary
+
+**Detection method**: The rule tries to resolve every import. If it resolves to a file path but that file isn't in any boundary, it's an "unknown boundary" error. If it doesn't resolve to any file path at all, it's treated as an external package and skipped.
 
 ## Error Messages
 
 Clear, actionable error messages:
 
 ```
-Expected '@entities' but got '@entities/army'
-Expected './sibling' but got '@queries/sibling'
-Expected '../cousin' but got '@queries/nested/cousin'
-Cannot import from '@queries' to '@entities': Import not allowed
-Cannot import from ancestor barrel '@queries'. This would create a circular dependency.
+Expected '@domain' but got '@domain/entities'
+Expected './sibling' but got '@application/sibling'
+Expected '../cousin' but got '@application/nested/cousin'
+Cannot import from '@infrastructure' to '@application': Import not allowed
+Cannot import from ancestor barrel '@application'. This would create a circular dependency.
+Cannot import from 'src/shared/utils' - path is outside all configured boundaries. Add this path to boundaries configuration or set 'allowUnknownBoundaries: true'.
 ```
 
 ## Comparison with Other Plugins

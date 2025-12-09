@@ -5,7 +5,11 @@
 
 import { describe, it, expect } from 'vitest';
 import path from 'node:path';
-import { isInsideDir } from './pathUtils.js';
+import {
+  isInsideDir,
+  hasExtension,
+  getBasenameWithoutExt,
+} from './pathUtils.js';
 
 describe('pathUtils', () => {
   describe('isInsideDir', () => {
@@ -65,6 +69,46 @@ describe('pathUtils', () => {
 
       // Even though the path contains .., path.relative handles it correctly
       expect(isInsideDir(absDir, absPath)).toBe(false);
+    });
+  });
+
+  describe('hasExtension', () => {
+    it('should return true for paths with extensions', () => {
+      expect(hasExtension('file.ts')).toBe(true);
+      expect(hasExtension('file.tsx')).toBe(true);
+      expect(hasExtension('file.js')).toBe(true);
+      expect(hasExtension('file.jsx')).toBe(true);
+      expect(hasExtension('file.mjs')).toBe(true);
+      expect(hasExtension('file.cjs')).toBe(true);
+    });
+
+    it('should return false for paths without extensions', () => {
+      expect(hasExtension('file')).toBe(false);
+      expect(hasExtension('dir/file')).toBe(false);
+      expect(hasExtension('dir/subdir')).toBe(false);
+    });
+
+    it('should filter by specific extensions when provided', () => {
+      const extensions = ['.ts', '.tsx'];
+      expect(hasExtension('file.ts', extensions)).toBe(true);
+      expect(hasExtension('file.tsx', extensions)).toBe(true);
+      expect(hasExtension('file.js', extensions)).toBe(false);
+      expect(hasExtension('file.jsx', extensions)).toBe(false);
+    });
+  });
+
+  describe('getBasenameWithoutExt', () => {
+    it('should return basename without extension', () => {
+      expect(getBasenameWithoutExt('/a/b/file.ts')).toBe('file');
+      expect(getBasenameWithoutExt('/a/b/file.tsx')).toBe('file');
+      expect(getBasenameWithoutExt('/a/b/file.js')).toBe('file');
+      expect(getBasenameWithoutExt('/a/b/index.ts')).toBe('index');
+      expect(getBasenameWithoutExt('/a/b/index.js')).toBe('index');
+    });
+
+    it('should return full basename if no extension', () => {
+      expect(getBasenameWithoutExt('/a/b/file')).toBe('file');
+      expect(getBasenameWithoutExt('/a/b/dir')).toBe('dir');
     });
   });
 });

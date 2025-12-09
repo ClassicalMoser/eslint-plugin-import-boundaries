@@ -8,11 +8,7 @@
 
 import type { Boundary } from "./types";
 import path from "node:path";
-import {
-  isInsideDir,
-  hasExtension,
-  getBasenameWithoutExt,
-} from "./pathUtils";
+import { isInsideDir, hasExtension, getBasenameWithoutExt } from "./pathUtils";
 
 /**
  * Resolve the target path from an import specifier.
@@ -42,13 +38,19 @@ export function resolveTargetPath(
         targetDir = path.resolve(boundary.absDir, subpath);
         // Try to find the barrel file with any of the configured extensions
         // For now, use the first extension (will be resolved by module resolver)
-        targetAbs = path.join(targetDir, `${barrelFileName}${fileExtensions[0]}`);
+        targetAbs = path.join(
+          targetDir,
+          `${barrelFileName}${fileExtensions[0]}`
+        );
       } else if (subpath) {
         targetAbs = path.resolve(boundary.absDir, subpath);
         targetDir = path.dirname(targetAbs);
       } else {
         // Just @boundary (no subpath) - ancestor barrel
-        targetAbs = path.join(boundary.absDir, `${barrelFileName}${fileExtensions[0]}`);
+        targetAbs = path.join(
+          boundary.absDir,
+          `${barrelFileName}${fileExtensions[0]}`
+        );
         targetDir = boundary.absDir;
       }
     } else {
@@ -127,7 +129,10 @@ export function resolveTargetPath(
       if (subpath && !hasExtension(subpath, fileExtensions)) {
         // Directory - assume barrel file
         targetDir = path.resolve(matchingBoundary.absDir, subpath);
-        targetAbs = path.join(targetDir, `${barrelFileName}${fileExtensions[0]}`);
+        targetAbs = path.join(
+          targetDir,
+          `${barrelFileName}${fileExtensions[0]}`
+        );
       } else if (subpath) {
         targetAbs = path.resolve(matchingBoundary.absDir, subpath);
         targetDir = path.dirname(targetAbs);
