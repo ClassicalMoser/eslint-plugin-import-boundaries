@@ -1,10 +1,9 @@
-import { Rule } from "eslint";
+import * as eslint0 from "eslint";
 
 //#region src/index.d.ts
-
 declare const _default: {
   rules: {
-    enforce: Rule.RuleModule;
+    enforce: eslint0.Rule.RuleModule;
   };
 };
 //#endregion

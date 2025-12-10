@@ -1,7 +1,7 @@
 import path from "node:path";
 import process from "node:process";
 
-//#region src/pathUtils.ts
+//#region src/domain/pathUtils.ts
 /**
 * Path utility functions for the boundary-alias-vs-relative ESLint rule.
 * Pure path math - no file I/O.
@@ -66,7 +66,7 @@ function getBasenameWithoutExt(filePath) {
 }
 
 //#endregion
-//#region src/boundaryDetection.ts
+//#region src/domain/boundaryDetection.ts
 /**
 * Check if an import specifier is using an alias subpath (e.g., '@entities/army').
 * Subpaths should be converted to the base alias (e.g., '@entities').
@@ -117,224 +117,7 @@ function getFileData(filename, boundaries) {
 }
 
 //#endregion
-//#region src/ruleContext.ts
-/**
-* Extract and validate rule options.
-*/
-function extractRuleOptions(context) {
-	if (!context.options || context.options.length === 0) throw new Error("boundary-alias-vs-relative requires boundaries configuration");
-	const { rootDir = "src", boundaries, crossBoundaryStyle = "alias", defaultSeverity, allowUnknownBoundaries = false, enforceBoundaries = true, barrelFileName = "index", fileExtensions = [
-		".ts",
-		".tsx",
-		".js",
-		".jsx",
-		".mjs",
-		".cjs"
-	] } = context.options[0];
-	const cwd = context.getCwd?.() ?? process.cwd();
-	if (crossBoundaryStyle === "alias") {
-		const boundariesWithoutAlias = boundaries.filter((b) => !b.alias);
-		if (boundariesWithoutAlias.length > 0) {
-			const missingAliases = boundariesWithoutAlias.map((b) => b.dir).join(", ");
-			throw new Error(`When crossBoundaryStyle is 'alias', all boundaries must have an 'alias' property. Missing aliases for: ${missingAliases}`);
-		}
-	}
-	return {
-		rootDir,
-		boundaries: boundaries.map((b) => ({
-			dir: b.dir,
-			alias: b.alias,
-			absDir: path.resolve(cwd, rootDir, b.dir),
-			allowImportsFrom: b.allowImportsFrom,
-			denyImportsFrom: b.denyImportsFrom,
-			allowTypeImportsFrom: b.allowTypeImportsFrom,
-			nestedPathFormat: b.nestedPathFormat,
-			severity: b.severity
-		})),
-		crossBoundaryStyle,
-		defaultSeverity,
-		allowUnknownBoundaries,
-		enforceBoundaries,
-		barrelFileName,
-		fileExtensions,
-		cwd
-	};
-}
-/**
-* Create a cached file data getter with cache clearing capability.
-*/
-function createFileDataGetter(context, boundaries) {
-	const cache = { data: null };
-	function getFileDataCached() {
-		if (cache.data) return cache.data;
-		cache.data = getFileData(context.filename ?? context.getFilename?.() ?? "<unknown>", boundaries);
-		return cache.data;
-	}
-	function clearCache() {
-		cache.data = null;
-	}
-	return {
-		getFileData: getFileDataCached,
-		clearCache
-	};
-}
-
-//#endregion
-//#region src/schemaHelpers.ts
-/**
-* Common schema property definitions.
-*/
-const schemaProps = {
-	string: { type: "string" },
-	boolean: { type: "boolean" },
-	stringArray: {
-		type: "array",
-		items: { type: "string" }
-	}
-};
-/**
-* Create a string enum schema property.
-*/
-function stringEnum(values) {
-	return {
-		type: "string",
-		enum: values
-	};
-}
-/**
-* Create a schema property with default value.
-*/
-function withDefault(property, defaultValue) {
-	return {
-		...property,
-		default: defaultValue
-	};
-}
-/**
-* Boundary config schema definition.
-*/
-const boundaryConfigSchema = {
-	type: "object",
-	properties: {
-		dir: schemaProps.string,
-		alias: schemaProps.string,
-		allowImportsFrom: schemaProps.stringArray,
-		denyImportsFrom: schemaProps.stringArray,
-		allowTypeImportsFrom: schemaProps.stringArray,
-		nestedPathFormat: stringEnum([
-			"alias",
-			"relative",
-			"inherit"
-		]),
-		severity: stringEnum(["error", "warn"])
-	},
-	required: ["dir"]
-};
-/**
-* Rule schema for boundary-alias-vs-relative.
-*/
-const ruleSchema = [{
-	type: "object",
-	properties: {
-		rootDir: schemaProps.string,
-		boundaries: {
-			type: "array",
-			items: boundaryConfigSchema,
-			minItems: 1
-		},
-		crossBoundaryStyle: withDefault(stringEnum(["alias", "absolute"]), "alias"),
-		defaultSeverity: stringEnum(["error", "warn"]),
-		allowUnknownBoundaries: withDefault(schemaProps.boolean, false),
-		enforceBoundaries: withDefault(schemaProps.boolean, true),
-		barrelFileName: withDefault(schemaProps.string, "index"),
-		fileExtensions: withDefault(schemaProps.stringArray, [
-			".ts",
-			".tsx",
-			".js",
-			".jsx",
-			".mjs",
-			".cjs"
-		])
-	},
-	required: ["boundaries"]
-}];
-
-//#endregion
-//#region src/ruleSchema.ts
-/**
-* Rule messages for boundary-alias-vs-relative.
-*/
-const ruleMessages = {
-	incorrectImportPath: "Expected '{{expectedPath}}' but got '{{actualPath}}'.",
-	ancestorBarrelImport: "Cannot import from ancestor barrel '{{alias}}'. This would create a circular dependency. Import from the specific file or directory instead.",
-	unknownBoundaryImport: "Cannot import from '{{path}}' - path is outside all configured boundaries. Add this path to boundaries configuration or set 'allowUnknownBoundaries: true'.",
-	boundaryViolation: "Cannot import from '{{to}}' to '{{from}}': {{reason}}"
-};
-
-//#endregion
-//#region src/boundaryRules.ts
-/**
-* Get the identifier for a boundary (alias if present, otherwise dir).
-* Used for allow/deny rules and error messages.
-*/
-function getBoundaryIdentifier(boundary) {
-	return boundary.alias ?? boundary.dir;
-}
-/**
-* Check if a boundary identifier matches a target boundary.
-* Matches by alias (if present) or by dir path.
-*/
-function matchesBoundaryIdentifier(identifier, targetBoundary) {
-	if (targetBoundary.alias && identifier === targetBoundary.alias) return true;
-	return identifier === targetBoundary.dir;
-}
-/**
-* Check if an import from fileBoundary to targetBoundary is allowed.
-* Returns violation info if not allowed, null if allowed.
-*
-* Semantics:
-* - If both allowImportsFrom and denyImportsFrom are specified, they work as:
-*   - Both lists apply independently (allow applies to items in allow list, deny applies to items in deny list)
-*   - If the same identifier appears in both lists (configuration error), denyImportsFrom takes precedence for safety
-* - If only allowImportsFrom: only those boundaries are allowed (deny-all by default)
-* - If only denyImportsFrom: all boundaries allowed except those (allow-all by default)
-* - If neither: deny-all by default (strictest)
-* - allowTypeImportsFrom: For type-only imports, this overrides allowImportsFrom (allows types from more boundaries)
-*/
-function checkBoundaryRules(fileBoundary, targetBoundary, allBoundaries, isTypeOnly = false) {
-	if (fileBoundary === targetBoundary) return null;
-	const fileIdentifier = getBoundaryIdentifier(fileBoundary);
-	const targetIdentifier = getBoundaryIdentifier(targetBoundary);
-	if (isTypeOnly && fileBoundary.allowTypeImportsFrom?.some((id) => matchesBoundaryIdentifier(id, targetBoundary))) return null;
-	const hasAllowList = fileBoundary.allowImportsFrom && fileBoundary.allowImportsFrom.length > 0;
-	const hasDenyList = fileBoundary.denyImportsFrom && fileBoundary.denyImportsFrom.length > 0;
-	if (hasDenyList && fileBoundary.denyImportsFrom.some((id) => matchesBoundaryIdentifier(id, targetBoundary))) return { reason: hasAllowList && fileBoundary.allowImportsFrom.some((id) => matchesBoundaryIdentifier(id, targetBoundary)) ? `Boundary '${fileIdentifier}' explicitly denies imports from '${targetIdentifier}' (deny takes precedence over allow)` : `Boundary '${fileIdentifier}' explicitly denies imports from '${targetIdentifier}'` };
-	if (hasAllowList && fileBoundary.allowImportsFrom.some((id) => matchesBoundaryIdentifier(id, targetBoundary))) return null;
-	if (hasAllowList && !hasDenyList) return { reason: `Cross-boundary import from '${targetIdentifier}' to '${fileIdentifier}' is not allowed. Add '${targetIdentifier}' to 'allowImportsFrom' if this import is intentional.` };
-	if (hasDenyList && !hasAllowList) return null;
-	return { reason: `Cross-boundary import from '${targetIdentifier}' to '${fileIdentifier}' is not allowed. Add '${targetIdentifier}' to 'allowImportsFrom' if this import is intentional.` };
-}
-
-//#endregion
-//#region src/fixer.ts
-/**
-* Create a fixer function to replace an import path.
-* Handles different import node types: ImportDeclaration, ImportExpression, require().
-*
-* @param node - AST node for the import
-* @param newPath - New import path to use
-* @returns Fixer function, or null if node type is unsupported
-*/
-function createFixer(node, newPath) {
-	return (fixer) => {
-		if ("source" in node && node.source) return fixer.replaceText(node.source, `'${newPath}'`);
-		if ("arguments" in node && Array.isArray(node.arguments) && node.arguments[0]) return fixer.replaceText(node.arguments[0], `'${newPath}'`);
-		return null;
-	};
-}
-
-//#endregion
-//#region src/pathFormatting.ts
+//#region src/domain/pathFormatting.ts
 /**
 * Format a path as a forward-slash path relative to rootDir.
 */
@@ -352,7 +135,7 @@ function choosePathFormat(boundary, segment, rootDir, crossBoundaryStyle) {
 }
 
 //#endregion
-//#region src/importPathCalculation.ts
+//#region src/domain/importPathCalculation.ts
 /**
 * Calculate path for cross-boundary imports.
 */
@@ -428,7 +211,7 @@ function calculateSameBoundaryPath(targetDir, targetAbs, fileDir, fileBoundary, 
 }
 
 //#endregion
-//#region src/targetPathResolution.ts
+//#region src/domain/targetPathResolution.ts
 /**
 * Resolve alias import (e.g., @boundary, @boundary/path).
 */
@@ -584,7 +367,7 @@ function resolveTargetPath(rawSpec, fileDir, boundaries, rootDir, cwd, barrelFil
 }
 
 //#endregion
-//#region src/relationshipDetection.ts
+//#region src/domain/relationshipDetection.ts
 /**
 * Calculate the correct import path using the simplified algorithm.
 */
@@ -604,7 +387,206 @@ function calculateCorrectImportPath(rawSpec, fileDir, fileBoundary, boundaries, 
 }
 
 //#endregion
-//#region src/importHandler.ts
+//#region src/domain/boundaryRules.ts
+/**
+* Get the identifier for a boundary (alias if present, otherwise dir).
+* Used for allow/deny rules and error messages.
+*/
+function getBoundaryIdentifier(boundary) {
+	return boundary.alias ?? boundary.dir;
+}
+/**
+* Check if a boundary identifier matches a target boundary.
+* Matches by alias (if present) or by dir path.
+*/
+function matchesBoundaryIdentifier(identifier, targetBoundary) {
+	if (targetBoundary.alias && identifier === targetBoundary.alias) return true;
+	return identifier === targetBoundary.dir;
+}
+/**
+* Check if an import from fileBoundary to targetBoundary is allowed.
+* Returns violation info if not allowed, null if allowed.
+*
+* Semantics:
+* - If both allowImportsFrom and denyImportsFrom are specified, they work as:
+*   - Both lists apply independently (allow applies to items in allow list, deny applies to items in deny list)
+*   - If the same identifier appears in both lists (configuration error), denyImportsFrom takes precedence for safety
+* - If only allowImportsFrom: only those boundaries are allowed (deny-all by default)
+* - If only denyImportsFrom: all boundaries allowed except those (allow-all by default)
+* - If neither: deny-all by default (strictest)
+* - allowTypeImportsFrom: For type-only imports, this overrides allowImportsFrom (allows types from more boundaries)
+*/
+function checkBoundaryRules(fileBoundary, targetBoundary, allBoundaries, isTypeOnly = false) {
+	if (fileBoundary === targetBoundary) return null;
+	const fileIdentifier = getBoundaryIdentifier(fileBoundary);
+	const targetIdentifier = getBoundaryIdentifier(targetBoundary);
+	if (isTypeOnly && fileBoundary.allowTypeImportsFrom?.some((id) => matchesBoundaryIdentifier(id, targetBoundary))) return null;
+	const hasAllowList = fileBoundary.allowImportsFrom && fileBoundary.allowImportsFrom.length > 0;
+	const hasDenyList = fileBoundary.denyImportsFrom && fileBoundary.denyImportsFrom.length > 0;
+	if (hasDenyList && fileBoundary.denyImportsFrom.some((id) => matchesBoundaryIdentifier(id, targetBoundary))) return { reason: hasAllowList && fileBoundary.allowImportsFrom.some((id) => matchesBoundaryIdentifier(id, targetBoundary)) ? `Boundary '${fileIdentifier}' explicitly denies imports from '${targetIdentifier}' (deny takes precedence over allow)` : `Boundary '${fileIdentifier}' explicitly denies imports from '${targetIdentifier}'` };
+	if (hasAllowList && fileBoundary.allowImportsFrom.some((id) => matchesBoundaryIdentifier(id, targetBoundary))) return null;
+	if (hasAllowList && !hasDenyList) return { reason: `Cross-boundary import from '${targetIdentifier}' to '${fileIdentifier}' is not allowed. Add '${targetIdentifier}' to 'allowImportsFrom' if this import is intentional.` };
+	if (hasDenyList && !hasAllowList) return null;
+	return { reason: `Cross-boundary import from '${targetIdentifier}' to '${fileIdentifier}' is not allowed. Add '${targetIdentifier}' to 'allowImportsFrom' if this import is intentional.` };
+}
+
+//#endregion
+//#region src/infrastructure/eslint/ruleContext.ts
+/**
+* Extract and validate rule options.
+*/
+function extractRuleOptions(context) {
+	if (!context.options || context.options.length === 0) throw new Error("boundary-alias-vs-relative requires boundaries configuration");
+	const { rootDir = "src", boundaries, crossBoundaryStyle = "alias", defaultSeverity, allowUnknownBoundaries = false, enforceBoundaries = true, barrelFileName = "index", fileExtensions = [
+		".ts",
+		".tsx",
+		".js",
+		".jsx",
+		".mjs",
+		".cjs"
+	] } = context.options[0];
+	const cwd = context.getCwd?.() ?? process.cwd();
+	if (crossBoundaryStyle === "alias") {
+		const boundariesWithoutAlias = boundaries.filter((b) => !b.alias);
+		if (boundariesWithoutAlias.length > 0) {
+			const missingAliases = boundariesWithoutAlias.map((b) => b.dir).join(", ");
+			throw new Error(`When crossBoundaryStyle is 'alias', all boundaries must have an 'alias' property. Missing aliases for: ${missingAliases}`);
+		}
+	}
+	return {
+		rootDir,
+		boundaries: boundaries.map((b) => ({
+			dir: b.dir,
+			alias: b.alias,
+			absDir: path.resolve(cwd, rootDir, b.dir),
+			allowImportsFrom: b.allowImportsFrom,
+			denyImportsFrom: b.denyImportsFrom,
+			allowTypeImportsFrom: b.allowTypeImportsFrom,
+			nestedPathFormat: b.nestedPathFormat,
+			severity: b.severity
+		})),
+		crossBoundaryStyle,
+		defaultSeverity,
+		allowUnknownBoundaries,
+		enforceBoundaries,
+		barrelFileName,
+		fileExtensions,
+		cwd
+	};
+}
+/**
+* Create a cached file data getter with cache clearing capability.
+*/
+function createFileDataGetter(context, boundaries) {
+	const cache = { data: null };
+	function getFileDataCached() {
+		if (cache.data) return cache.data;
+		cache.data = getFileData(context.filename ?? context.getFilename?.() ?? "<unknown>", boundaries);
+		return cache.data;
+	}
+	function clearCache() {
+		cache.data = null;
+	}
+	return {
+		getFileData: getFileDataCached,
+		clearCache
+	};
+}
+
+//#endregion
+//#region src/infrastructure/eslint/schemaHelpers.ts
+/**
+* Common schema property definitions.
+*/
+const schemaProps = {
+	string: { type: "string" },
+	boolean: { type: "boolean" },
+	stringArray: {
+		type: "array",
+		items: { type: "string" }
+	}
+};
+/**
+* Create a string enum schema property.
+*/
+function stringEnum(values) {
+	return {
+		type: "string",
+		enum: values
+	};
+}
+/**
+* Create a schema property with default value.
+*/
+function withDefault(property, defaultValue) {
+	return {
+		...property,
+		default: defaultValue
+	};
+}
+/**
+* Boundary config schema definition.
+*/
+const boundaryConfigSchema = {
+	type: "object",
+	properties: {
+		dir: schemaProps.string,
+		alias: schemaProps.string,
+		allowImportsFrom: schemaProps.stringArray,
+		denyImportsFrom: schemaProps.stringArray,
+		allowTypeImportsFrom: schemaProps.stringArray,
+		nestedPathFormat: stringEnum([
+			"alias",
+			"relative",
+			"inherit"
+		]),
+		severity: stringEnum(["error", "warn"])
+	},
+	required: ["dir"]
+};
+/**
+* Rule schema for boundary-alias-vs-relative.
+*/
+const ruleSchema = [{
+	type: "object",
+	properties: {
+		rootDir: schemaProps.string,
+		boundaries: {
+			type: "array",
+			items: boundaryConfigSchema,
+			minItems: 1
+		},
+		crossBoundaryStyle: withDefault(stringEnum(["alias", "absolute"]), "alias"),
+		defaultSeverity: stringEnum(["error", "warn"]),
+		allowUnknownBoundaries: withDefault(schemaProps.boolean, false),
+		enforceBoundaries: withDefault(schemaProps.boolean, true),
+		barrelFileName: withDefault(schemaProps.string, "index"),
+		fileExtensions: withDefault(schemaProps.stringArray, [
+			".ts",
+			".tsx",
+			".js",
+			".jsx",
+			".mjs",
+			".cjs"
+		])
+	},
+	required: ["boundaries"]
+}];
+
+//#endregion
+//#region src/infrastructure/eslint/ruleSchema.ts
+/**
+* Rule messages for boundary-alias-vs-relative.
+*/
+const ruleMessages = {
+	incorrectImportPath: "Expected '{{expectedPath}}' but got '{{actualPath}}'.",
+	ancestorBarrelImport: "Cannot import from ancestor barrel '{{alias}}'. This would create a circular dependency. Import from the specific file or directory instead.",
+	unknownBoundaryImport: "Cannot import from '{{path}}' - path is outside all configured boundaries. Add this path to boundaries configuration or set 'allowUnknownBoundaries: true'.",
+	boundaryViolation: "Cannot import from '{{to}}' to '{{from}}': {{reason}}"
+};
+
+//#endregion
+//#region src/application/importHandler.ts
 /**
 * Main handler for all import statements.
 * Validates import paths against boundary rules and enforces correct path format.
@@ -612,7 +594,7 @@ function calculateCorrectImportPath(rawSpec, fileDir, fileBoundary, boundaries, 
 * @returns true if a violation was reported, false otherwise
 */
 function handleImport(options) {
-	const { node, rawSpec, fileDir, fileBoundary, boundaries, rootDir, cwd, context, crossBoundaryStyle = "alias", defaultSeverity, allowUnknownBoundaries = false, isTypeOnly = false, skipBoundaryRules = false, barrelFileName = "index", fileExtensions = [
+	const { rawSpec, fileDir, fileBoundary, boundaries, rootDir, cwd, reporter, createFixer, crossBoundaryStyle = "alias", defaultSeverity, allowUnknownBoundaries = false, isTypeOnly = false, skipBoundaryRules = false, barrelFileName = "index", fileExtensions = [
 		".ts",
 		".tsx",
 		".js",
@@ -629,17 +611,15 @@ function handleImport(options) {
 			if (targetBoundary$1 && targetBoundary$1.alias && fileBoundary && targetBoundary$1 !== fileBoundary) {
 				const expectedPath = targetBoundary$1.alias;
 				const severity$1 = fileBoundary.severity || defaultSeverity;
-				const reportOptions$1 = {
-					node,
+				reporter.report({
 					messageId: "incorrectImportPath",
 					data: {
 						expectedPath,
 						actualPath: rawSpec
 					},
-					fix: createFixer(node, expectedPath),
-					...severity$1 && { severity: severity$1 === "warn" ? 1 : 2 }
-				};
-				context.report(reportOptions$1);
+					severity: severity$1,
+					fix: createFixer(expectedPath)
+				});
 				return true;
 			}
 		}
@@ -649,17 +629,15 @@ function handleImport(options) {
 		const violation = checkBoundaryRules(fileBoundary, targetBoundary, boundaries, isTypeOnly);
 		if (violation) {
 			const severity$1 = fileBoundary.severity || defaultSeverity;
-			const reportOptions$1 = {
-				node,
+			reporter.report({
 				messageId: "boundaryViolation",
 				data: {
 					from: getBoundaryIdentifier(fileBoundary),
 					to: getBoundaryIdentifier(targetBoundary),
 					reason: violation.reason
 				},
-				...severity$1 && { severity: severity$1 === "warn" ? 1 : 2 }
-			};
-			context.report(reportOptions$1);
+				severity: severity$1
+			});
 			return true;
 		}
 	}
@@ -668,13 +646,11 @@ function handleImport(options) {
 		if (fileBoundary) {
 			if (crossBoundaryStyle === "alias" ? fileBoundary.alias && rawSpec === fileBoundary.alias : rawSpec === `${rootDir}/${fileBoundary.dir}`.replace(/\\/g, "/") || rawSpec === `${rootDir}/${fileBoundary.dir}/`.replace(/\\/g, "/")) {
 				const severity$1 = fileBoundary.severity || defaultSeverity;
-				const reportOptions$1 = {
-					node,
+				reporter.report({
 					messageId: "ancestorBarrelImport",
 					data: { alias: getBoundaryIdentifier(fileBoundary) },
-					...severity$1 && { severity: severity$1 === "warn" ? 1 : 2 }
-				};
-				context.report(reportOptions$1);
+					severity: severity$1
+				});
 				return true;
 			}
 		}
@@ -682,35 +658,85 @@ function handleImport(options) {
 	}
 	if (correctPath === "UNKNOWN_BOUNDARY") {
 		if (!allowUnknownBoundaries) {
-			const reportOptions$1 = {
-				node,
+			reporter.report({
 				messageId: "unknownBoundaryImport",
 				data: { path: rawSpec },
-				...defaultSeverity && { severity: defaultSeverity === "warn" ? 1 : 2 }
-			};
-			context.report(reportOptions$1);
+				severity: defaultSeverity
+			});
 			return true;
 		}
 		return false;
 	}
 	if (rawSpec === correctPath) return false;
 	const severity = fileBoundary?.severity || defaultSeverity;
-	const reportOptions = {
-		node,
+	reporter.report({
 		messageId: "incorrectImportPath",
 		data: {
 			expectedPath: correctPath,
 			actualPath: rawSpec
 		},
-		fix: createFixer(node, correctPath),
-		...severity && { severity: severity === "warn" ? 1 : 2 }
-	};
-	context.report(reportOptions);
+		severity,
+		fix: createFixer(correctPath)
+	});
 	return true;
 }
 
 //#endregion
-//#region src/ruleVisitors.ts
+//#region src/infrastructure/eslint/fixerAdapter.ts
+/**
+* Create a Fixer factory that can create fixers for a given node and path.
+* This allows the infrastructure layer to create fixers with access to the node.
+*/
+function createFixerFactory(node) {
+	return (newPath) => {
+		return { apply: () => {
+			let sourceNode = null;
+			if ("source" in node && node.source) sourceNode = node.source;
+			else if ("arguments" in node && Array.isArray(node.arguments) && node.arguments[0]) sourceNode = node.arguments[0];
+			if (!sourceNode || !("range" in sourceNode) || !sourceNode.range) return null;
+			const [start, end] = sourceNode.range;
+			return {
+				text: `'${newPath}'`,
+				range: [start, end]
+			};
+		} };
+	};
+}
+/**
+* Convert a port Fixer to an ESLint ReportFixer.
+*/
+function toESLintReportFixer(node, fixer) {
+	return (eslintFixer) => {
+		const result = fixer.apply();
+		if (!result) return null;
+		return eslintFixer.replaceTextRange(result.range, result.text);
+	};
+}
+
+//#endregion
+//#region src/infrastructure/eslint/reporterAdapter.ts
+/**
+* ESLint implementation of the Reporter port.
+*/
+var ESLintReporter = class {
+	constructor(context, node) {
+		this.context = context;
+		this.node = node;
+	}
+	report = (options) => {
+		const reportOptions = {
+			node: this.node,
+			messageId: options.messageId,
+			data: options.data,
+			...options.severity && { severity: options.severity === "warn" ? 1 : 2 }
+		};
+		if (options.fix) reportOptions.fix = toESLintReportFixer(this.node, options.fix);
+		this.context.report(reportOptions);
+	};
+};
+
+//#endregion
+//#region src/infrastructure/eslint/ruleVisitors.ts
 /**
 * Create AST visitor functions for the rule.
 */
@@ -718,21 +744,24 @@ function createRuleVisitors(options) {
 	const { context, getFileData: getFileData$1, clearCache, rootDir, boundaries, cwd, crossBoundaryStyle, defaultSeverity, allowUnknownBoundaries, enforceBoundaries, barrelFileName, fileExtensions } = options;
 	/**
 	* Wrapper function that prepares file data and calls the main import handler.
+	* Creates ESLint adapters and passes them to the application layer.
 	*/
 	function handleImportStatement(node, rawSpec, isTypeOnly = false) {
 		const fileData = getFileData$1();
 		if (!fileData.isValid) return;
 		const { fileDir, fileBoundary } = fileData;
 		if (!fileDir) return;
+		const reporter = new ESLintReporter(context, node);
+		const createFixer = createFixerFactory(node);
 		handleImport({
-			node,
 			rawSpec,
 			fileDir,
 			fileBoundary: fileBoundary ?? null,
 			boundaries,
 			rootDir,
 			cwd,
-			context,
+			reporter,
+			createFixer,
 			crossBoundaryStyle,
 			defaultSeverity,
 			allowUnknownBoundaries,
@@ -769,7 +798,7 @@ function createRuleVisitors(options) {
 }
 
 //#endregion
-//#region src/index.ts
+//#region src/infrastructure/eslint/rule.ts
 const rule = {
 	meta: {
 		type: "problem",
@@ -800,6 +829,9 @@ const rule = {
 		});
 	}
 };
+
+//#endregion
+//#region src/index.ts
 var src_default = { rules: { enforce: rule } };
 
 //#endregion

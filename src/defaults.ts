@@ -3,7 +3,8 @@
  * These can be used as starting points and easily overridden.
  */
 
-import type { RuleOptions } from './types';
+// eslint-disable-next-line import-boundaries/enforce
+import type { RuleOptions } from './shared/types.js';
 
 /**
  * Default hexagonal architecture (ports and adapters) configuration.
