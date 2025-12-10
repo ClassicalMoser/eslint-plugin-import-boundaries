@@ -31,4 +31,3 @@ export function getImportHandlerDefaults() {
     fileExtensions: [...DEFAULT_FILE_EXTENSIONS],
   };
 }
-

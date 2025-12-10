@@ -31,4 +31,3 @@ export function getBarrelPath(
   // Use the first extension in the priority list
   return path.join(dir, `${barrelFileName}${fileExtensions[0]}`);
 }
-

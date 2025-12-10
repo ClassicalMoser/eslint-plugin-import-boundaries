@@ -31,4 +31,3 @@ export function getSeverity(
   // Boundary-specific severity takes precedence over default
   return fileBoundary?.severity ?? defaultSeverity;
 }
-

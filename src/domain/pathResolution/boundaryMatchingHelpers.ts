@@ -1,10 +1,10 @@
 /**
- * Helper functions for boundary matching logic.
+ * Helper functions for boundaryMatching.ts
  * Extracted to improve testability and reduce mutation opportunities.
  */
 
 /**
- * Check if rawSpec matches boundary directory exactly or as a prefix.
+ * Check if boundary dir matches (exact or prefix match).
  */
 export function matchesBoundaryDir(
   rawSpec: string,
@@ -42,4 +42,3 @@ export function matchesBoundarySuffix(
   }
   return false;
 }
-

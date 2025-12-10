@@ -4,7 +4,6 @@
  */
 
 import type { Boundary } from '@shared';
-import type { Fixer, Reporter } from '@ports';
 
 /**
  * Check if alias subpath validation should be performed.
@@ -68,6 +67,9 @@ export function isNullPath(correctPath: string | null): boolean {
  * Type guard: if this returns true, correctPath is guaranteed to be a non-empty string.
  */
 export function isValidPath(correctPath: string | null): correctPath is string {
-  return correctPath !== null && correctPath !== 'UNKNOWN_BOUNDARY' && correctPath.trim().length > 0;
+  return (
+    correctPath !== null &&
+    correctPath !== 'UNKNOWN_BOUNDARY' &&
+    correctPath.trim().length > 0
+  );
 }
-

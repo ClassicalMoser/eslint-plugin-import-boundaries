@@ -54,4 +54,3 @@ export function resolveTarget(
     targetDir: path.dirname(targetAbs),
   };
 }
-

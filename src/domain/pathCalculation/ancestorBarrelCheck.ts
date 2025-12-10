@@ -4,6 +4,10 @@
 
 import type { Boundary } from '@shared';
 import { formatAbsolutePath } from '@domain/path';
+import {
+  absolutePathMatchesAncestorBarrel,
+  aliasMatchesAncestorBarrel,
+} from './ancestorBarrelCheckHelpers';
 
 /**
  * Check if import is an ancestor barrel (forbidden).
@@ -15,10 +19,10 @@ export function checkAncestorBarrel(
   crossBoundaryStyle: 'alias' | 'absolute',
 ): boolean {
   if (crossBoundaryStyle === 'alias') {
-    return fileBoundary.alias !== null && rawSpec === fileBoundary.alias;
+    return aliasMatchesAncestorBarrel(fileBoundary, rawSpec);
   } else {
     // Absolute style: check if rawSpec matches the absolute path to boundary root
     const boundaryAbsPath = formatAbsolutePath(rootDir, fileBoundary.dir);
-    return rawSpec === boundaryAbsPath || rawSpec === `${boundaryAbsPath}/`;
+    return absolutePathMatchesAncestorBarrel(rawSpec, boundaryAbsPath);
   }
 }

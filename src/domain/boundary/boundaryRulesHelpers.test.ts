@@ -94,7 +94,11 @@ describe('boundaryRulesHelpers', () => {
 
     it('should return false when deny list does not exist', () => {
       expect(
-        isInDenyList(entitiesBoundary, queriesBoundary, matchesBoundaryIdentifier),
+        isInDenyList(
+          entitiesBoundary,
+          queriesBoundary,
+          matchesBoundaryIdentifier,
+        ),
       ).toBe(false);
     });
   });
@@ -122,9 +126,12 @@ describe('boundaryRulesHelpers', () => {
 
     it('should return false when allow list does not exist', () => {
       expect(
-        isInAllowList(entitiesBoundary, queriesBoundary, matchesBoundaryIdentifier),
+        isInAllowList(
+          entitiesBoundary,
+          queriesBoundary,
+          matchesBoundaryIdentifier,
+        ),
       ).toBe(false);
     });
   });
 });
-

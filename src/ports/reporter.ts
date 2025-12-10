@@ -9,7 +9,7 @@ export type Severity = 'error' | 'warn';
 export interface ViolationData {
   expectedPath?: string;
   actualPath?: string;
-  alias?: string;
+  boundaryIdentifier?: string; // Canonical boundary identifier (independent of path style)
   path?: string;
   from?: string;
   to?: string;

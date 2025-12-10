@@ -39,7 +39,7 @@ describe('ancestorBarrelDetection', () => {
       expect(reporter.report).toHaveBeenCalled();
       const violation = reporter.getLastReport();
       expect(violation?.messageId).toBe('ancestorBarrelImport');
-      expect(violation?.data?.alias).toBe('@queries');
+      expect(violation?.data?.boundaryIdentifier).toBe('@queries');
       expect(violation?.fix).toBeUndefined();
     });
 

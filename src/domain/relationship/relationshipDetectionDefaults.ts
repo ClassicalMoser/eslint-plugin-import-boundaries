@@ -21,4 +21,3 @@ export const DEFAULT_FILE_EXTENSIONS = [
 export function getDefaultFileExtensions(): string[] {
   return [...DEFAULT_FILE_EXTENSIONS];
 }
-

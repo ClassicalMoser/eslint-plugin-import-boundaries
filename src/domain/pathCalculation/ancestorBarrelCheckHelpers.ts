@@ -24,4 +24,3 @@ export function absolutePathMatchesAncestorBarrel(
 ): boolean {
   return rawSpec === boundaryAbsPath || rawSpec === `${boundaryAbsPath}/`;
 }
-

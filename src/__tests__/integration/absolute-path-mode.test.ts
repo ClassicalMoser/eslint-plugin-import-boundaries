@@ -504,7 +504,7 @@ describe('Absolute Path Mode - Integration Tests', () => {
       const violation = reporter.getLastReport();
       expect(violation?.messageId).toBe('ancestorBarrelImport');
       // In absolute mode, getBoundaryIdentifier returns dir, not absolute path
-      expect(violation?.data?.alias).toBe('application');
+      expect(violation?.data?.boundaryIdentifier).toBe('application');
       expect(violation?.fix).toBeUndefined(); // Not auto-fixable
     });
 
@@ -600,7 +600,7 @@ describe('Absolute Path Mode - Integration Tests', () => {
       const violation = reporter.getLastReport();
       expect(violation?.messageId).toBe('ancestorBarrelImport');
       // In absolute mode, getBoundaryIdentifier returns dir, not absolute path
-      expect(violation?.data?.alias).toBe('application');
+      expect(violation?.data?.boundaryIdentifier).toBe('application');
     });
   });
 

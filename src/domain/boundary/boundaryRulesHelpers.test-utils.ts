@@ -17,4 +17,3 @@ export function matchesBoundaryIdentifier(
   const targetIdentifier = getBoundaryIdentifier(targetBoundary);
   return identifier === targetIdentifier;
 }
-

@@ -248,6 +248,40 @@ describe('README Examples - Integration Tests', () => {
       expect(violation?.data?.expectedPath).toBe('@application/topLevel');
       expect(violation?.data?.actualPath).toBe('../../topLevel');
     });
+
+    it('should use boundary identifier for top-level at boundary root (README example)', () => {
+      const { reporter, createFixer } = createMockPorts();
+      // README Example: File src/domain/entities/subdir/file.ts importing src/domain/entities/topLevel/index.ts
+      // Expected: @entities/topLevel (not ../topLevel)
+      const entitiesBoundary: Boundary = {
+        dir: 'domain/entities',
+        alias: '@entities',
+        absDir: path.resolve(cwd, rootDir, 'domain/entities'),
+        allowImportsFrom: [],
+      };
+      const fileDir = path.resolve(cwd, rootDir, 'domain/entities', 'subdir');
+
+      // ❌ WRONG: Using relative path when boundary identifier is preferred
+      handleImport({
+        rawSpec: '../topLevel',
+        fileDir,
+        fileBoundary: entitiesBoundary,
+        boundaries: [entitiesBoundary],
+        rootDir,
+        cwd,
+        reporter,
+        createFixer,
+        crossBoundaryStyle: 'alias',
+        skipBoundaryRules: true,
+      });
+
+      // Should report that boundary identifier is preferred
+      expect(reporter.report).toHaveBeenCalled();
+      const violation = reporter.getLastReport();
+      expect(violation?.messageId).toBe('incorrectImportPath');
+      expect(violation?.data?.expectedPath).toBe('@entities/topLevel');
+      expect(violation?.data?.actualPath).toBe('../topLevel');
+    });
   });
 
   describe('Architectural Boundary Enforcement', () => {
@@ -436,7 +470,7 @@ describe('README Examples - Integration Tests', () => {
       expect(reporter.report).toHaveBeenCalled();
       const violation = reporter.getLastReport();
       expect(violation?.messageId).toBe('ancestorBarrelImport');
-      expect(violation?.data?.alias).toBe('@application');
+      expect(violation?.data?.boundaryIdentifier).toBe('@application');
       expect(violation?.fix).toBeUndefined(); // Not auto-fixable
     });
   });
@@ -485,7 +519,7 @@ describe('README Examples - Integration Tests', () => {
 
       const violation = reporter.getLastReport();
       expect(violation?.messageId).toBe('ancestorBarrelImport');
-      expect(violation?.data?.alias).toBe('@application');
+      expect(violation?.data?.boundaryIdentifier).toBe('@application');
       // Message format: "Cannot import from ancestor barrel '{{alias}}'. This would create a circular dependency. Import from the specific file or directory instead."
     });
 

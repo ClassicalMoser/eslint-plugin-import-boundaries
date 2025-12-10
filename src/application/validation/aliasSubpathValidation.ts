@@ -54,6 +54,7 @@ export function validateAliasSubpath(
 
   // Only report if all conditions are met (cross-boundary alias subpath)
   if (shouldReportAliasSubpathViolation(targetBoundary, fileBoundary)) {
+    // Type guard ensures targetBoundary is defined and has alias
     const expectedPath = targetBoundary.alias;
     reportViolation({
       reporter,

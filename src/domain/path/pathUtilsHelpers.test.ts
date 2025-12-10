@@ -5,7 +5,11 @@
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  hasExtensionsFilter,
+  hasFileExtension,
+  isEmptyOrCurrentDir,
   isEmptyRelativePath,
+  isExtensionInFilter,
   isNotCurrentDir,
   isOutsidePath,
   isTruthy,
@@ -73,5 +77,50 @@ describe('pathUtilsHelpers', () => {
       expect(isNotCurrentDir('.')).toBe(false);
     });
   });
-});
 
+  describe('isEmptyOrCurrentDir', () => {
+    it('should return true for empty string', () => {
+      expect(isEmptyOrCurrentDir('')).toBe(true);
+    });
+
+    it('should return true for current directory marker', () => {
+      expect(isEmptyOrCurrentDir('.')).toBe(true);
+    });
+
+    it('should return false for non-empty paths', () => {
+      expect(isEmptyOrCurrentDir('a')).toBe(false);
+      expect(isEmptyOrCurrentDir('a/b')).toBe(false);
+    });
+  });
+
+  describe('hasFileExtension', () => {
+    it('should return true for non-empty extensions', () => {
+      expect(hasFileExtension('.ts')).toBe(true);
+      expect(hasFileExtension('.js')).toBe(true);
+    });
+
+    it('should return false for empty string', () => {
+      expect(hasFileExtension('')).toBe(false);
+    });
+  });
+
+  describe('hasExtensionsFilter', () => {
+    it('should return true when extensions array is provided', () => {
+      expect(hasExtensionsFilter(['.ts', '.js'])).toBe(true);
+    });
+
+    it('should return false when extensions is undefined', () => {
+      expect(hasExtensionsFilter(undefined)).toBe(false);
+    });
+  });
+
+  describe('isExtensionInFilter', () => {
+    it('should return true when extension is in filter', () => {
+      expect(isExtensionInFilter('.ts', ['.ts', '.js'])).toBe(true);
+    });
+
+    it('should return false when extension is not in filter', () => {
+      expect(isExtensionInFilter('.tsx', ['.ts', '.js'])).toBe(false);
+    });
+  });
+});

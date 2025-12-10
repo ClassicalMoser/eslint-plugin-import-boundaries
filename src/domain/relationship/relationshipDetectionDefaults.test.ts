@@ -35,14 +35,7 @@ describe('relationshipDetectionDefaults', () => {
   describe('getDefaultFileExtensions', () => {
     it('should return default file extensions as a new array', () => {
       const result = getDefaultFileExtensions();
-      expect(result).toEqual([
-        '.ts',
-        '.tsx',
-        '.js',
-        '.jsx',
-        '.mjs',
-        '.cjs',
-      ]);
+      expect(result).toEqual(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs']);
     });
 
     it('should return a new array each time', () => {
@@ -62,4 +55,3 @@ describe('relationshipDetectionDefaults', () => {
     });
   });
 });
-

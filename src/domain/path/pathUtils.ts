@@ -5,7 +5,11 @@
 
 import path from 'node:path';
 import {
+  hasExtensionsFilter,
+  hasFileExtension,
+  isEmptyOrCurrentDir,
   isEmptyRelativePath,
+  isExtensionInFilter,
   isNotCurrentDir,
   isOutsidePath,
   isTruthy,
@@ -51,9 +55,9 @@ export function isInsideDir(absDir: string, absPath: string): boolean {
  */
 export function hasExtension(filePath: string, extensions?: string[]): boolean {
   const ext = path.extname(filePath);
-  if (!ext) return false;
-  if (extensions) {
-    return extensions.includes(ext);
+  if (!hasFileExtension(ext)) return false;
+  if (hasExtensionsFilter(extensions)) {
+    return isExtensionInFilter(ext, extensions);
   }
   return true; // Any extension
 }
@@ -95,9 +99,11 @@ export function getBasenameWithoutExt(filePath: string): string {
  */
 export function pathToParts(relativePath: string): string[] {
   // Empty string or '.' represents current directory (no segments)
-  if (relativePath === '' || relativePath === '.') {
+  if (isEmptyOrCurrentDir(relativePath)) {
     return [];
   }
   // Split by path separator and filter out empty segments and current dir markers
-  return relativePath.split(path.sep).filter((p) => isTruthy(p) && isNotCurrentDir(p));
+  return relativePath
+    .split(path.sep)
+    .filter((p) => isTruthy(p) && isNotCurrentDir(p));
 }

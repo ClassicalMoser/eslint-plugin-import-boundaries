@@ -11,16 +11,17 @@ import type { Boundary } from '@shared';
  * 1. Target boundary exists and has an alias
  * 2. File boundary exists
  * 3. This is a cross-boundary import (target !== file)
+ *
+ * Type guard: if this returns true, targetBoundary is guaranteed to be defined and have an alias.
  */
 export function shouldReportAliasSubpathViolation(
   targetBoundary: Boundary | undefined,
   fileBoundary: Boundary | null,
-): boolean {
+): targetBoundary is Boundary & { alias: string } {
   return (
-    Boolean(targetBoundary) &&
-    Boolean(targetBoundary?.alias) &&
+    targetBoundary !== undefined &&
+    targetBoundary.alias !== undefined &&
     fileBoundary !== null &&
     targetBoundary !== fileBoundary
   );
 }
-

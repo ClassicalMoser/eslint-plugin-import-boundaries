@@ -113,4 +113,3 @@ describe('Example: Using Port Mocks', () => {
     expect(pathFormatReports.length).toBe(2);
   });
 });
-

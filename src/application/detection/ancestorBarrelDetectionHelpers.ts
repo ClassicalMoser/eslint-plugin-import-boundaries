@@ -4,7 +4,7 @@
  */
 
 import type { Boundary } from '@shared';
-import { checkAncestorBarrel } from '@domain/pathCalculation/ancestorBarrelCheck';
+import { checkAncestorBarrel } from '@domain';
 
 /**
  * Check if an import is an ancestor barrel import.
@@ -16,6 +16,10 @@ export function isAncestorBarrelImport(
   rootDir: string,
   crossBoundaryStyle: 'alias' | 'absolute',
 ): boolean {
-  return checkAncestorBarrel(rawSpec, fileBoundary, rootDir, crossBoundaryStyle);
+  return checkAncestorBarrel(
+    rawSpec,
+    fileBoundary,
+    rootDir,
+    crossBoundaryStyle,
+  );
 }
-

@@ -44,7 +44,9 @@ export function detectAndReportAncestorBarrel(
   // Check if this is an ancestor barrel import
   // Alias style: rawSpec matches boundary alias (e.g., '@domain')
   // Absolute style: rawSpec matches boundary root path (e.g., 'src/domain')
-  if (!isAncestorBarrelImport(rawSpec, fileBoundary, rootDir, crossBoundaryStyle)) {
+  if (
+    !isAncestorBarrelImport(rawSpec, fileBoundary, rootDir, crossBoundaryStyle)
+  ) {
     return false;
   }
 
@@ -53,7 +55,7 @@ export function detectAndReportAncestorBarrel(
     reporter,
     messageId: 'ancestorBarrelImport',
     data: {
-      alias: getBoundaryIdentifier(fileBoundary),
+      boundaryIdentifier: getBoundaryIdentifier(fileBoundary),
     },
     fileBoundary,
     defaultSeverity,

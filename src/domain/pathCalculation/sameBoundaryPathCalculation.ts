@@ -10,6 +10,11 @@ import path from 'node:path';
 import { pathToParts } from '@domain/path';
 import { calculateBoundaryRootPath } from './boundaryRootPathCalculation';
 import { calculateDistantPath } from './distantPathCalculation';
+import {
+  areBothPathsExhausted,
+  hasValidFirstDifferingSegment,
+  isBoundaryRoot,
+} from './sameBoundaryPathCalculationHelpers';
 import { calculateSameDirectoryPath } from './sameDirectoryPathCalculation';
 
 /**
@@ -54,7 +59,7 @@ export function calculateSameBoundaryPath(
   const fileParts = pathToParts(fileRelativeToBoundary);
 
   // Handle boundary root file (target is at boundary root)
-  if (targetParts.length === 0) {
+  if (isBoundaryRoot(targetParts)) {
     return calculateBoundaryRootPath(
       targetAbs,
       fileBoundary,
@@ -68,16 +73,13 @@ export function calculateSameBoundaryPath(
   const firstDifferingIndex = findFirstDifferingIndex(targetParts, fileParts);
 
   // Same directory: both paths exhausted, filename is the differing segment
-  if (
-    firstDifferingIndex >= targetParts.length &&
-    firstDifferingIndex >= fileParts.length
-  ) {
+  if (areBothPathsExhausted(firstDifferingIndex, targetParts, fileParts)) {
     return calculateSameDirectoryPath(targetAbs, barrelFileName);
   }
 
   // Get first differing segment (only - we assume barrel files)
   const firstDifferingSegment = targetParts[firstDifferingIndex];
-  if (!firstDifferingSegment) {
+  if (!hasValidFirstDifferingSegment(firstDifferingSegment)) {
     return null;
   }
 

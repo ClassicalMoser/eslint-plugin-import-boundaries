@@ -38,9 +38,9 @@ describe('aliasSubpathValidationHelpers', () => {
     });
 
     it('should return false when targetBoundary is undefined', () => {
-      expect(shouldReportAliasSubpathViolation(undefined, queriesBoundary)).toBe(
-        false,
-      );
+      expect(
+        shouldReportAliasSubpathViolation(undefined, queriesBoundary),
+      ).toBe(false);
     });
 
     it('should return false when targetBoundary has no alias', () => {
@@ -49,7 +49,10 @@ describe('aliasSubpathValidationHelpers', () => {
         alias: undefined,
       };
       expect(
-        shouldReportAliasSubpathViolation(boundaryWithoutAlias, queriesBoundary),
+        shouldReportAliasSubpathViolation(
+          boundaryWithoutAlias,
+          queriesBoundary,
+        ),
       ).toBe(false);
     });
 
@@ -66,4 +69,3 @@ describe('aliasSubpathValidationHelpers', () => {
     });
   });
 });
-

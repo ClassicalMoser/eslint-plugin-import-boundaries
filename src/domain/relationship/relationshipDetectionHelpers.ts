@@ -16,7 +16,12 @@ export function isAncestorBarrelImport(
   rootDir: string,
   crossBoundaryStyle: 'alias' | 'absolute',
 ): boolean {
-  return checkAncestorBarrel(rawSpec, fileBoundary, rootDir, crossBoundaryStyle);
+  return checkAncestorBarrel(
+    rawSpec,
+    fileBoundary,
+    rootDir,
+    crossBoundaryStyle,
+  );
 }
 
 /**
@@ -31,4 +36,3 @@ export function isCrossBoundaryImport(
 ): boolean {
   return fileBoundary === null || targetBoundary !== fileBoundary;
 }
-

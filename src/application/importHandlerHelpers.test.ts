@@ -44,15 +44,15 @@ describe('importHandlerHelpers', () => {
     };
 
     it('should return true when all conditions are met', () => {
-      expect(
-        shouldValidateBoundaryRules(false, boundary1, boundary2),
-      ).toBe(true);
+      expect(shouldValidateBoundaryRules(false, boundary1, boundary2)).toBe(
+        true,
+      );
     });
 
     it('should return false when skipBoundaryRules is true', () => {
-      expect(
-        shouldValidateBoundaryRules(true, boundary1, boundary2),
-      ).toBe(false);
+      expect(shouldValidateBoundaryRules(true, boundary1, boundary2)).toBe(
+        false,
+      );
     });
 
     it('should return false when fileBoundary is null', () => {
@@ -64,9 +64,9 @@ describe('importHandlerHelpers', () => {
     });
 
     it('should return false when boundaries are the same', () => {
-      expect(
-        shouldValidateBoundaryRules(false, boundary1, boundary1),
-      ).toBe(false);
+      expect(shouldValidateBoundaryRules(false, boundary1, boundary1)).toBe(
+        false,
+      );
     });
 
     it('should return false when both boundaries are null', () => {
@@ -153,4 +153,3 @@ describe('importHandlerHelpers', () => {
     });
   });
 });
-
