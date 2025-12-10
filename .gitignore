@@ -8,5 +8,4 @@ reports
 .vscode
 .idea
 *.tsbuildinfo
-.prettierignore
 .stryker-tmp
