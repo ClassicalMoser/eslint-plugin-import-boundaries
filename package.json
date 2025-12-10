@@ -45,11 +45,6 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "build": "tsdown --config tsdown.config.ts",
-    "test": "vitest run",
-    "test:watch": "vitest watch",
-    "test:coverage": "vitest run --coverage",
-    "test:mutation": "stryker run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -57,6 +52,12 @@
     "format:check": "prettier --check .",
     "validate:fix": "pnpm run lint:fix && pnpm run format && pnpm run typecheck",
     "validate:check": "pnpm run lint && pnpm run format:check && pnpm run typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
+    "test:mutation": "stryker run",
+    "install:ci": "pnpm install --frozen-lockfile",
+    "build": "tsdown --config tsdown.config.ts",
     "prepublishOnly": "npm run build && npm run test && npm run validate:check"
   },
   "peerDependencies": {
