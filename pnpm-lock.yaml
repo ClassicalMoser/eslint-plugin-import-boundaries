@@ -34,6 +34,9 @@ importers:
       eslint-config-prettier:
         specifier: ^10.1.8
         version: 10.1.8(eslint@9.39.1)
+      eslint-plugin-import-boundaries:
+        specifier: ^0.3.1
+        version: 0.3.1(eslint@9.39.1)
       prettier:
         specifier: ^3.7.4
         version: 3.7.4
@@ -2241,6 +2244,15 @@ packages:
     engines: { node: ^14.18.0 || >=16.0.0 }
     peerDependencies:
       eslint: '>=8'
+
+  eslint-plugin-import-boundaries@0.3.1:
+    resolution:
+      {
+        integrity: sha512-958XT5O5hkHtor4qLmKwYul0QkqeVqXna359f9YtXyexxeP7Q6t1h6vNfVBvK1aqEHSylY9gwU+FTWD6AH4C+w==,
+      }
+    engines: { node: '>=18.0.0' }
+    peerDependencies:
+      eslint: '>=9.0.0'
 
   eslint-plugin-import-lite@0.3.0:
     resolution:
@@ -5661,6 +5673,10 @@ snapshots:
       '@eslint-community/regexpp': 4.12.2
       eslint: 9.39.1
       eslint-compat-utils: 0.5.1(eslint@9.39.1)
+
+  eslint-plugin-import-boundaries@0.3.1(eslint@9.39.1):
+    dependencies:
+      eslint: 9.39.1
 
   eslint-plugin-import-lite@0.3.0(eslint@9.39.1)(typescript@5.9.3):
     dependencies:

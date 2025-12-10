@@ -4,6 +4,7 @@
 
 import type { Boundary } from '@shared';
 import { describe, expect, it } from 'vitest';
+import { createBoundary } from '../../__tests__/boundaryTestHelpers.js';
 import {
   hasAllowList,
   hasDenyList,
@@ -13,26 +14,23 @@ import {
 import { matchesBoundaryIdentifier } from './boundaryRulesHelpers.test-utils.js';
 
 describe('boundaryRulesHelpers', () => {
-  const entitiesBoundary: Boundary = {
+  const entitiesBoundary: Boundary = createBoundary({
     dir: 'domain/entities',
     alias: '@entities',
-    identifier: '@entities',
-    absDir: '/project/src/domain/entities',
-  };
+  });
 
-  const queriesBoundary: Boundary = {
+  const queriesBoundary: Boundary = createBoundary({
     dir: 'domain/queries',
     alias: '@queries',
-    identifier: '@queries',
-    absDir: '/project/src/domain/queries',
-  };
+  });
 
   describe('hasAllowList', () => {
     it('should return true when allowImportsFrom exists and has items', () => {
-      const boundary: Boundary = {
-        ...entitiesBoundary,
+      const boundary: Boundary = createBoundary({
+        dir: 'domain/entities',
+        alias: '@entities',
         allowImportsFrom: ['@queries'],
-      };
+      });
       expect(hasAllowList(boundary)).toBe(true);
     });
 
@@ -41,20 +39,22 @@ describe('boundaryRulesHelpers', () => {
     });
 
     it('should return false when allowImportsFrom is empty', () => {
-      const boundary: Boundary = {
-        ...entitiesBoundary,
+      const boundary: Boundary = createBoundary({
+        dir: 'domain/entities',
+        alias: '@entities',
         allowImportsFrom: [],
-      };
+      });
       expect(hasAllowList(boundary)).toBe(false);
     });
   });
 
   describe('hasDenyList', () => {
     it('should return true when denyImportsFrom exists and has items', () => {
-      const boundary: Boundary = {
-        ...entitiesBoundary,
+      const boundary: Boundary = createBoundary({
+        dir: 'domain/entities',
+        alias: '@entities',
         denyImportsFrom: ['@queries'],
-      };
+      });
       expect(hasDenyList(boundary)).toBe(true);
     });
 
@@ -63,30 +63,33 @@ describe('boundaryRulesHelpers', () => {
     });
 
     it('should return false when denyImportsFrom is empty', () => {
-      const boundary: Boundary = {
-        ...entitiesBoundary,
+      const boundary: Boundary = createBoundary({
+        dir: 'domain/entities',
+        alias: '@entities',
         denyImportsFrom: [],
-      };
+      });
       expect(hasDenyList(boundary)).toBe(false);
     });
   });
 
   describe('isInDenyList', () => {
     it('should return true when target is in deny list', () => {
-      const fileBoundary: Boundary = {
-        ...entitiesBoundary,
+      const fileBoundary: Boundary = createBoundary({
+        dir: 'domain/entities',
+        alias: '@entities',
         denyImportsFrom: ['@queries'],
-      };
+      });
       expect(
         isInDenyList(fileBoundary, queriesBoundary, matchesBoundaryIdentifier),
       ).toBe(true);
     });
 
     it('should return false when target is not in deny list', () => {
-      const fileBoundary: Boundary = {
-        ...entitiesBoundary,
+      const fileBoundary: Boundary = createBoundary({
+        dir: 'domain/entities',
+        alias: '@entities',
         denyImportsFrom: ['@events'],
-      };
+      });
       expect(
         isInDenyList(fileBoundary, queriesBoundary, matchesBoundaryIdentifier),
       ).toBe(false);
@@ -105,20 +108,22 @@ describe('boundaryRulesHelpers', () => {
 
   describe('isInAllowList', () => {
     it('should return true when target is in allow list', () => {
-      const fileBoundary: Boundary = {
-        ...entitiesBoundary,
+      const fileBoundary: Boundary = createBoundary({
+        dir: 'domain/entities',
+        alias: '@entities',
         allowImportsFrom: ['@queries'],
-      };
+      });
       expect(
         isInAllowList(fileBoundary, queriesBoundary, matchesBoundaryIdentifier),
       ).toBe(true);
     });
 
     it('should return false when target is not in allow list', () => {
-      const fileBoundary: Boundary = {
-        ...entitiesBoundary,
+      const fileBoundary: Boundary = createBoundary({
+        dir: 'domain/entities',
+        alias: '@entities',
         allowImportsFrom: ['@events'],
-      };
+      });
       expect(
         isInAllowList(fileBoundary, queriesBoundary, matchesBoundaryIdentifier),
       ).toBe(false);

@@ -5,6 +5,7 @@
 import type { Boundary } from '@shared';
 import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createBoundary } from '../../__tests__/boundaryTestHelpers.js';
 import { createMockPorts } from '../../__tests__/testUtils.js';
 import { validateBoundaryRules } from './boundaryRuleValidation';
 
@@ -17,26 +18,32 @@ describe('boundaryRuleValidation', () => {
   let eventsBoundary: Boundary;
 
   beforeEach(() => {
-    entitiesBoundary = {
-      dir: 'domain/entities',
-      alias: '@entities',
-      absDir: path.resolve(cwd, rootDir, 'domain/entities'),
-      allowImportsFrom: ['@events'],
-    };
+    entitiesBoundary = createBoundary(
+      {
+        dir: 'domain/entities',
+        alias: '@entities',
+        allowImportsFrom: ['@events'],
+      },
+      { cwd, rootDir },
+    );
 
-    queriesBoundary = {
-      dir: 'domain/queries',
-      alias: '@queries',
-      absDir: path.resolve(cwd, rootDir, 'domain/queries'),
-      allowImportsFrom: ['@entities'],
-    };
+    queriesBoundary = createBoundary(
+      {
+        dir: 'domain/queries',
+        alias: '@queries',
+        allowImportsFrom: ['@entities'],
+      },
+      { cwd, rootDir },
+    );
 
-    eventsBoundary = {
-      dir: 'domain/events',
-      alias: '@events',
-      absDir: path.resolve(cwd, rootDir, 'domain/events'),
-      allowImportsFrom: [],
-    };
+    eventsBoundary = createBoundary(
+      {
+        dir: 'domain/events',
+        alias: '@events',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
   });
 
   describe('validateBoundaryRules', () => {
@@ -78,11 +85,15 @@ describe('boundaryRuleValidation', () => {
     });
 
     it('should allow type-only imports from allowTypeImportsFrom', () => {
-      const fileBoundaryWithTypeAllow: Boundary = {
-        ...queriesBoundary,
-        allowImportsFrom: ['@entities'],
-        allowTypeImportsFrom: ['@events'],
-      };
+      const fileBoundaryWithTypeAllow: Boundary = createBoundary(
+        {
+          dir: 'domain/queries',
+          alias: '@queries',
+          allowImportsFrom: ['@entities'],
+          allowTypeImportsFrom: ['@events'],
+        },
+        { cwd, rootDir },
+      );
 
       const { reporter } = createMockPorts();
       const boundaries = [entitiesBoundary, queriesBoundary, eventsBoundary];

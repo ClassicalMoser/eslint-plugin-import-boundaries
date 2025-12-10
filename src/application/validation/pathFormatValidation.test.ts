@@ -5,6 +5,7 @@
 import type { Boundary } from '@shared';
 import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createBoundary } from '../../__tests__/boundaryTestHelpers.js';
 import { createMockPorts } from '../../__tests__/testUtils.js';
 import { validatePathFormat } from './pathFormatValidation';
 
@@ -15,12 +16,14 @@ describe('pathFormatValidation', () => {
   let queriesBoundary: Boundary;
 
   beforeEach(() => {
-    queriesBoundary = {
-      dir: 'domain/queries',
-      alias: '@queries',
-      absDir: path.resolve(cwd, rootDir, 'domain/queries'),
-      allowImportsFrom: [],
-    };
+    queriesBoundary = createBoundary(
+      {
+        dir: 'domain/queries',
+        alias: '@queries',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
   });
 
   describe('validatePathFormat', () => {

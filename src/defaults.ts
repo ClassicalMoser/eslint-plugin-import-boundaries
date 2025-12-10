@@ -3,8 +3,7 @@
  * These can be used as starting points and easily overridden.
  */
 
-// eslint-disable-next-line import-boundaries/enforce
-import type { RuleOptions } from './shared/types.js';
+import type { RuleOptions } from '@shared';
 
 /**
  * Default hexagonal architecture (ports and adapters) configuration.
@@ -35,12 +34,14 @@ export function hexagonalDefaults(
     crossBoundaryStyle: 'alias',
     boundaries: [
       {
+        identifier: '@domain',
         dir: 'domain',
         alias: '@domain',
         // Domain is pure - no dependencies on other layers
         denyImportsFrom: ['@application', '@infrastructure', '@composition'],
       },
       {
+        identifier: '@application',
         dir: 'application',
         alias: '@application',
         // Application can use domain, but not infrastructure
@@ -48,6 +49,7 @@ export function hexagonalDefaults(
         denyImportsFrom: ['@infrastructure', '@composition'],
       },
       {
+        identifier: '@ports',
         dir: 'application/ports',
         alias: '@ports',
         // Ports (nested in application) can import from infrastructure
@@ -56,6 +58,7 @@ export function hexagonalDefaults(
         nestedPathFormat: 'relative', // Use ../... for @application imports
       },
       {
+        identifier: '@infrastructure',
         dir: 'infrastructure',
         alias: '@infrastructure',
         // Infrastructure can use domain (values)
@@ -65,6 +68,7 @@ export function hexagonalDefaults(
         denyImportsFrom: ['@composition'],
       },
       {
+        identifier: '@composition',
         dir: 'composition',
         alias: '@composition',
         // Composition (wiring) can import from everything
@@ -103,9 +107,13 @@ export function simpleDefaults(
     rootDir: 'src',
     crossBoundaryStyle: 'alias',
     boundaries: [
-      { dir: 'domain', alias: '@domain' },
-      { dir: 'application', alias: '@application' },
-      { dir: 'infrastructure', alias: '@infrastructure' },
+      { identifier: '@domain', dir: 'domain', alias: '@domain' },
+      { identifier: '@application', dir: 'application', alias: '@application' },
+      {
+        identifier: '@infrastructure',
+        dir: 'infrastructure',
+        alias: '@infrastructure',
+      },
     ],
   };
 

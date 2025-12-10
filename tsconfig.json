@@ -27,7 +27,7 @@
     "isolatedDeclarations": false,
     "skipLibCheck": true
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts", "src/shared/types.ttxt"],
   "exclude": [
     "node_modules",
     "dist",

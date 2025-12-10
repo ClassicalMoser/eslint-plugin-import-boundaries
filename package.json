@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-import-boundaries",
   "type": "module",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Enforce architectural boundaries with deterministic import paths",
   "author": "ClassicalMoser",
   "license": "ISC",
@@ -28,17 +28,18 @@
   ],
   "exports": {
     ".": {
-      "types": "./eslint-plugin-import-boundaries.d.ts",
-      "import": "./eslint-plugin-import-boundaries.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
-  "main": "./eslint-plugin-import-boundaries.js",
-  "types": "./eslint-plugin-import-boundaries.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
+    "CHANGELOG.md",
     "LICENSE",
     "README.md",
-    "eslint-plugin-import-boundaries.d.ts",
-    "eslint-plugin-import-boundaries.js"
+    "dist/index.d.ts",
+    "dist/index.js"
   ],
   "engines": {
     "node": ">=18.0.0"
@@ -71,6 +72,7 @@
     "@vitest/coverage-v8": "^4.0.15",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import-boundaries": "^0.3.1",
     "prettier": "^3.7.4",
     "tsdown": "0.17.2",
     "typescript": "^5.9.3",

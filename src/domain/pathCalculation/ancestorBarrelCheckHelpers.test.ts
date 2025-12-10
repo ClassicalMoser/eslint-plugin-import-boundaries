@@ -5,6 +5,7 @@
 import type { Boundary } from '@shared';
 import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createBoundary } from '../../__tests__/boundaryTestHelpers.js';
 import {
   absolutePathMatchesAncestorBarrel,
   aliasMatchesAncestorBarrel,
@@ -17,12 +18,14 @@ describe('ancestorBarrelCheckHelpers', () => {
   let entitiesBoundary: Boundary;
 
   beforeEach(() => {
-    entitiesBoundary = {
-      dir: 'domain/entities',
-      alias: '@entities',
-      absDir: path.resolve(cwd, rootDir, 'domain/entities'),
-      allowImportsFrom: [],
-    };
+    entitiesBoundary = createBoundary(
+      {
+        dir: 'domain/entities',
+        alias: '@entities',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
   });
 
   describe('aliasMatchesAncestorBarrel', () => {
@@ -39,10 +42,13 @@ describe('ancestorBarrelCheckHelpers', () => {
     });
 
     it('should return false when boundary has no alias', () => {
-      const boundaryWithoutAlias: Boundary = {
-        ...entitiesBoundary,
-        alias: undefined,
-      };
+      const boundaryWithoutAlias: Boundary = createBoundary(
+        {
+          dir: 'domain/entities',
+          allowImportsFrom: [],
+        },
+        { cwd, rootDir },
+      );
       expect(
         aliasMatchesAncestorBarrel(boundaryWithoutAlias, '@entities'),
       ).toBe(false);

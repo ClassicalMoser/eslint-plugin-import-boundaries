@@ -5,6 +5,7 @@
 import type { Boundary } from '@shared';
 import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createBoundary } from '../../__tests__/boundaryTestHelpers.js';
 import { findMatchingBoundary } from './boundaryMatching';
 
 describe('boundaryMatching', () => {
@@ -15,19 +16,23 @@ describe('boundaryMatching', () => {
   let queriesBoundary: Boundary;
 
   beforeEach(() => {
-    entitiesBoundary = {
-      dir: 'domain/entities',
-      alias: '@entities',
-      absDir: path.resolve(cwd, rootDir, 'domain/entities'),
-      allowImportsFrom: [],
-    };
+    entitiesBoundary = createBoundary(
+      {
+        dir: 'domain/entities',
+        alias: '@entities',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
 
-    queriesBoundary = {
-      dir: 'domain/queries',
-      alias: '@queries',
-      absDir: path.resolve(cwd, rootDir, 'domain/queries'),
-      allowImportsFrom: [],
-    };
+    queriesBoundary = createBoundary(
+      {
+        dir: 'domain/queries',
+        alias: '@queries',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
   });
 
   describe('findMatchingBoundary', () => {
@@ -71,12 +76,14 @@ describe('boundaryMatching', () => {
     });
 
     it('should handle boundary with empty dir', () => {
-      const emptyBoundary: Boundary = {
-        dir: '',
-        alias: '@root',
-        absDir: path.resolve(cwd, rootDir),
-        allowImportsFrom: [],
-      };
+      const emptyBoundary: Boundary = createBoundary(
+        {
+          dir: '',
+          alias: '@root',
+          allowImportsFrom: [],
+        },
+        { cwd, rootDir },
+      );
       const boundaries = [emptyBoundary];
       // When boundary dir is empty, boundaryParts.length is 0
       // This tests line 25: if (importParts.length > 0 && boundaryParts.length > 0)
@@ -112,12 +119,14 @@ describe('boundaryMatching', () => {
 
       // Branch 2: importParts.length > 0 = true, boundaryParts.length > 0 = false
       // Need a boundary with empty dir but non-empty import to reach line 25
-      const emptyBoundary: Boundary = {
-        dir: '',
-        alias: '@root',
-        absDir: path.resolve(cwd, rootDir),
-        allowImportsFrom: [],
-      };
+      const emptyBoundary: Boundary = createBoundary(
+        {
+          dir: '',
+          alias: '@root',
+          allowImportsFrom: [],
+        },
+        { cwd, rootDir },
+      );
       const boundaries2 = [emptyBoundary];
       // 'some/path' doesn't match line 17 (b.dir is empty, so rawSpec !== b.dir and !rawSpec.startsWith(''))
       // So we reach line 25 with importParts.length > 0, boundaryParts.length === 0

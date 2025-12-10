@@ -12,16 +12,16 @@ import {
 
 /**
  * Get the identifier for a boundary.
- * Uses the dedicated identifier property if present, otherwise falls back to alias ?? dir.
+ * Returns the canonical identifier property (required).
  * Used for allow/deny rules and error messages.
  */
 export function getBoundaryIdentifier(boundary: Boundary): string {
-  return boundary.identifier ?? boundary.alias ?? boundary.dir;
+  return boundary.identifier;
 }
 
 /**
  * Check if a boundary identifier matches a target boundary.
- * Matches by the canonical identifier property (or falls back to alias/dir).
+ * Matches by the canonical identifier property.
  */
 function matchesBoundaryIdentifier(
   identifier: string,

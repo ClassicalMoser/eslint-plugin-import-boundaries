@@ -5,6 +5,7 @@
 
 import type { Boundary } from '@shared';
 import { resolveToBoundary } from '@domain/boundary';
+import { absoluteToRelativePath, getBasenameWithoutExt } from '@domain/path';
 import {
   calculateCrossBoundaryPath,
   calculateSameBoundaryPath,
@@ -50,6 +51,18 @@ export function calculateCorrectImportPath(
 
   // 1. Cross-boundary: use @boundary (no subpath) or absolute path
   if (isCrossBoundaryImport(fileBoundary, targetBoundary)) {
+    // Special case: boundary isn't enforced (fileBoundary is null) and
+    // path doesn't resolve to a boundary (targetBoundary is null).
+    // In such cases, convert to relative path from fileDir instead of UNKNOWN_BOUNDARY.
+    // Only applies when targetAbs is not empty (internal file, not external package).
+    if (fileBoundary === null && targetBoundary === null && targetAbs) {
+      // Use targetDir if target is a barrel file to avoid /index loops
+      // Check if targetAbs ends with barrelFileName (e.g., /index.ts)
+      const basenameWithoutExt = getBasenameWithoutExt(targetAbs);
+      const pathToUse =
+        basenameWithoutExt === barrelFileName ? targetDir : targetAbs;
+      return absoluteToRelativePath(pathToUse, fileDir, barrelFileName);
+    }
     return calculateCrossBoundaryPath(
       targetBoundary,
       rootDir,

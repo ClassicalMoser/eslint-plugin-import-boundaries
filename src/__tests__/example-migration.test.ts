@@ -14,6 +14,7 @@ describe('Example: Using Port Mocks', () => {
   const rootDir = 'src';
 
   const entitiesBoundary: Boundary = {
+    identifier: '@entities',
     dir: 'domain/entities',
     alias: '@entities',
     absDir: path.resolve(cwd, rootDir, 'domain/entities'),
@@ -21,6 +22,7 @@ describe('Example: Using Port Mocks', () => {
   };
 
   const queriesBoundary: Boundary = {
+    identifier: '@queries',
     dir: 'domain/queries',
     alias: '@queries',
     absDir: path.resolve(cwd, rootDir, 'domain/queries'),

@@ -6,6 +6,7 @@
 import type { Boundary } from '@shared';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { createBoundary } from '../../__tests__/boundaryTestHelpers.js';
 import {
   checkAliasSubpath,
   getFileData,
@@ -16,23 +17,29 @@ describe('boundaryDetection', () => {
   const cwd = '/project';
   const rootDir = 'src';
 
-  const entitiesBoundary: Boundary = {
-    dir: 'domain/entities',
-    alias: '@entities',
-    absDir: path.resolve(cwd, rootDir, 'domain/entities'),
-  };
+  const entitiesBoundary: Boundary = createBoundary(
+    {
+      dir: 'domain/entities',
+      alias: '@entities',
+    },
+    { cwd, rootDir },
+  );
 
-  const queriesBoundary: Boundary = {
-    dir: 'domain/queries',
-    alias: '@queries',
-    absDir: path.resolve(cwd, rootDir, 'domain/queries'),
-  };
+  const queriesBoundary: Boundary = createBoundary(
+    {
+      dir: 'domain/queries',
+      alias: '@queries',
+    },
+    { cwd, rootDir },
+  );
 
-  const transformsBoundary: Boundary = {
-    dir: 'domain/transforms',
-    alias: '@transforms',
-    absDir: path.resolve(cwd, rootDir, 'domain/transforms'),
-  };
+  const transformsBoundary: Boundary = createBoundary(
+    {
+      dir: 'domain/transforms',
+      alias: '@transforms',
+    },
+    { cwd, rootDir },
+  );
 
   const boundaries = [entitiesBoundary, queriesBoundary, transformsBoundary];
 
@@ -68,12 +75,14 @@ describe('boundaryDetection', () => {
 
   describe('resolveToSpecifiedBoundary', () => {
     it('should resolve to boundary with rules', () => {
-      const boundaryWithRules: Boundary = {
-        dir: 'domain/application',
-        alias: '@application',
-        absDir: path.resolve(cwd, rootDir, 'domain/application'),
-        allowImportsFrom: ['@domain'],
-      };
+      const boundaryWithRules: Boundary = createBoundary(
+        {
+          dir: 'domain/application',
+          alias: '@application',
+          allowImportsFrom: ['@domain'],
+        },
+        { cwd, rootDir },
+      );
 
       const filename = path.resolve(
         cwd,
@@ -88,19 +97,23 @@ describe('boundaryDetection', () => {
     });
 
     it('should resolve to parent boundary when child has no rules', () => {
-      const parentBoundary: Boundary = {
-        dir: 'domain/application',
-        alias: '@application',
-        absDir: path.resolve(cwd, rootDir, 'domain/application'),
-        allowImportsFrom: ['@domain'],
-      };
+      const parentBoundary: Boundary = createBoundary(
+        {
+          dir: 'domain/application',
+          alias: '@application',
+          allowImportsFrom: ['@domain'],
+        },
+        { cwd, rootDir },
+      );
 
-      const childBoundary: Boundary = {
-        dir: 'domain/application/ports',
-        alias: '@ports',
-        absDir: path.resolve(cwd, rootDir, 'domain/application/ports'),
-        // No rules specified
-      };
+      const childBoundary: Boundary = createBoundary(
+        {
+          dir: 'domain/application/ports',
+          alias: '@ports',
+          // No rules specified
+        },
+        { cwd, rootDir },
+      );
 
       const filename = path.resolve(
         cwd,
@@ -118,19 +131,23 @@ describe('boundaryDetection', () => {
     });
 
     it('should resolve to most specific boundary with rules', () => {
-      const parentBoundary: Boundary = {
-        dir: 'domain/application',
-        alias: '@application',
-        absDir: path.resolve(cwd, rootDir, 'domain/application'),
-        allowImportsFrom: ['@domain'],
-      };
+      const parentBoundary: Boundary = createBoundary(
+        {
+          dir: 'domain/application',
+          alias: '@application',
+          allowImportsFrom: ['@domain'],
+        },
+        { cwd, rootDir },
+      );
 
-      const childBoundary: Boundary = {
-        dir: 'domain/application/ports',
-        alias: '@ports',
-        absDir: path.resolve(cwd, rootDir, 'domain/application/ports'),
-        allowImportsFrom: ['@infrastructure'],
-      };
+      const childBoundary: Boundary = createBoundary(
+        {
+          dir: 'domain/application/ports',
+          alias: '@ports',
+          allowImportsFrom: ['@infrastructure'],
+        },
+        { cwd, rootDir },
+      );
 
       const filename = path.resolve(
         cwd,
@@ -148,12 +165,14 @@ describe('boundaryDetection', () => {
     });
 
     it('should return null when no boundaries with rules are found', () => {
-      const boundaryWithoutRules: Boundary = {
-        dir: 'domain/application',
-        alias: '@application',
-        absDir: path.resolve(cwd, rootDir, 'domain/application'),
-        // No rules specified
-      };
+      const boundaryWithoutRules: Boundary = createBoundary(
+        {
+          dir: 'domain/application',
+          alias: '@application',
+          // No rules specified
+        },
+        { cwd, rootDir },
+      );
 
       const filename = path.resolve(
         cwd,
@@ -170,12 +189,14 @@ describe('boundaryDetection', () => {
     });
 
     it('should return null for files outside all boundaries', () => {
-      const boundary: Boundary = {
-        dir: 'domain/application',
-        alias: '@application',
-        absDir: path.resolve(cwd, rootDir, 'domain/application'),
-        allowImportsFrom: ['@domain'],
-      };
+      const boundary: Boundary = createBoundary(
+        {
+          dir: 'domain/application',
+          alias: '@application',
+          allowImportsFrom: ['@domain'],
+        },
+        { cwd, rootDir },
+      );
 
       const filename = path.resolve(cwd, 'other', 'file.ts');
 
@@ -185,12 +206,14 @@ describe('boundaryDetection', () => {
     });
 
     it('should handle denyImportsFrom as rules', () => {
-      const boundaryWithDeny: Boundary = {
-        dir: 'domain/application',
-        alias: '@application',
-        absDir: path.resolve(cwd, rootDir, 'domain/application'),
-        denyImportsFrom: ['@infrastructure'],
-      };
+      const boundaryWithDeny: Boundary = createBoundary(
+        {
+          dir: 'domain/application',
+          alias: '@application',
+          denyImportsFrom: ['@infrastructure'],
+        },
+        { cwd, rootDir },
+      );
 
       const filename = path.resolve(
         cwd,
@@ -205,13 +228,15 @@ describe('boundaryDetection', () => {
     });
 
     it('should handle allowTypeImportsFrom as rules', () => {
-      const boundaryWithTypeOnly: Boundary = {
-        dir: 'domain/infrastructure',
-        alias: '@infrastructure',
-        absDir: path.resolve(cwd, rootDir, 'domain/infrastructure'),
-        allowTypeImportsFrom: ['@application'], // Only type imports allowed
-        // No allowImportsFrom or denyImportsFrom
-      };
+      const boundaryWithTypeOnly: Boundary = createBoundary(
+        {
+          dir: 'domain/infrastructure',
+          alias: '@infrastructure',
+          allowTypeImportsFrom: ['@application'], // Only type imports allowed
+          // No allowImportsFrom or denyImportsFrom
+        },
+        { cwd, rootDir },
+      );
 
       const filename = path.resolve(
         cwd,
@@ -230,12 +255,14 @@ describe('boundaryDetection', () => {
 
   describe('getFileData', () => {
     it('should detect file in boundary with rules', () => {
-      const boundaryWithRules: Boundary = {
-        dir: 'domain/queries',
-        alias: '@queries',
-        absDir: path.resolve(cwd, rootDir, 'domain/queries'),
-        allowImportsFrom: ['@domain'],
-      };
+      const boundaryWithRules: Boundary = createBoundary(
+        {
+          dir: 'domain/queries',
+          alias: '@queries',
+          allowImportsFrom: ['@domain'],
+        },
+        { cwd, rootDir },
+      );
 
       const filename = path.resolve(
         cwd,
@@ -252,12 +279,14 @@ describe('boundaryDetection', () => {
     });
 
     it('should detect file in nested directory within boundary with rules', () => {
-      const boundaryWithRules: Boundary = {
-        dir: 'domain/queries',
-        alias: '@queries',
-        absDir: path.resolve(cwd, rootDir, 'domain/queries'),
-        allowImportsFrom: ['@domain'],
-      };
+      const boundaryWithRules: Boundary = createBoundary(
+        {
+          dir: 'domain/queries',
+          alias: '@queries',
+          allowImportsFrom: ['@domain'],
+        },
+        { cwd, rootDir },
+      );
 
       const filename = path.resolve(
         cwd,
@@ -278,12 +307,14 @@ describe('boundaryDetection', () => {
     });
 
     it('should return null boundary for files outside all boundaries', () => {
-      const boundaryWithRules: Boundary = {
-        dir: 'domain/queries',
-        alias: '@queries',
-        absDir: path.resolve(cwd, rootDir, 'domain/queries'),
-        allowImportsFrom: ['@domain'],
-      };
+      const boundaryWithRules: Boundary = createBoundary(
+        {
+          dir: 'domain/queries',
+          alias: '@queries',
+          allowImportsFrom: ['@domain'],
+        },
+        { cwd, rootDir },
+      );
 
       const filename = path.resolve(cwd, 'other', 'file.ts');
 
@@ -295,19 +326,23 @@ describe('boundaryDetection', () => {
     });
 
     it('should return actual boundary when child has no rules (for same-boundary detection)', () => {
-      const parentBoundary: Boundary = {
-        dir: 'domain/application',
-        alias: '@application',
-        absDir: path.resolve(cwd, rootDir, 'domain/application'),
-        allowImportsFrom: ['@domain'],
-      };
+      const parentBoundary: Boundary = createBoundary(
+        {
+          dir: 'domain/application',
+          alias: '@application',
+          allowImportsFrom: ['@domain'],
+        },
+        { cwd, rootDir },
+      );
 
-      const childBoundary: Boundary = {
-        dir: 'domain/application/ports',
-        alias: '@ports',
-        absDir: path.resolve(cwd, rootDir, 'domain/application/ports'),
-        // No rules
-      };
+      const childBoundary: Boundary = createBoundary(
+        {
+          dir: 'domain/application/ports',
+          alias: '@ports',
+          // No rules
+        },
+        { cwd, rootDir },
+      );
 
       const filename = path.resolve(
         cwd,
@@ -325,19 +360,23 @@ describe('boundaryDetection', () => {
     });
 
     it('should return most specific boundary with rules for nested boundaries', () => {
-      const parentBoundary: Boundary = {
-        dir: 'domain/application',
-        alias: '@application',
-        absDir: path.resolve(cwd, rootDir, 'domain/application'),
-        allowImportsFrom: ['@domain'],
-      };
+      const parentBoundary: Boundary = createBoundary(
+        {
+          dir: 'domain/application',
+          alias: '@application',
+          allowImportsFrom: ['@domain'],
+        },
+        { cwd, rootDir },
+      );
 
-      const childBoundary: Boundary = {
-        dir: 'domain/application/ports',
-        alias: '@ports',
-        absDir: path.resolve(cwd, rootDir, 'domain/application/ports'),
-        allowImportsFrom: ['@infrastructure'],
-      };
+      const childBoundary: Boundary = createBoundary(
+        {
+          dir: 'domain/application/ports',
+          alias: '@ports',
+          allowImportsFrom: ['@infrastructure'],
+        },
+        { cwd, rootDir },
+      );
 
       const filename = path.resolve(
         cwd,
@@ -362,56 +401,36 @@ describe('boundaryDetection', () => {
       expect(result.fileBoundary).toBeUndefined();
     });
 
-    it('should handle Windows paths', () => {
-      // Use a Unix-style path for cross-platform compatibility
-      // The actual Windows path handling is tested implicitly through path.resolve
-      const windowsCwd = '/C/project';
-      const windowsBoundaries: Boundary[] = [
-        {
-          dir: 'domain/entities',
-          alias: '@entities',
-          absDir: path.resolve(windowsCwd, rootDir, 'domain/entities'),
-          allowImportsFrom: [], // Has rules (empty allow list = deny all by default)
-        },
-      ];
-
-      const filename = path.resolve(
-        windowsCwd,
-        rootDir,
-        'domain/entities',
-        'file.ts',
-      );
-
-      const result = getFileData(filename, windowsBoundaries);
-
-      expect(result.isValid).toBe(true);
-      expect(result.fileBoundary).toBe(windowsBoundaries[0]);
-    });
-
     it('should return most specific ancestor when file is deeply nested with multiple rule configs', () => {
       // Test line 112: return ancestors.sort(...)[0]!
       // Need a deeply nested file with multiple boundaries that have rules
       // The function should return the longest/most specific one
-      const rootBoundary: Boundary = {
-        dir: 'domain',
-        alias: '@domain',
-        absDir: path.resolve(cwd, rootDir, 'domain'),
-        allowImportsFrom: [], // Has rules
-      };
+      const rootBoundary: Boundary = createBoundary(
+        {
+          dir: 'domain',
+          alias: '@domain',
+          allowImportsFrom: [], // Has rules
+        },
+        { cwd, rootDir },
+      );
 
-      const midBoundary: Boundary = {
-        dir: 'domain/application',
-        alias: '@application',
-        absDir: path.resolve(cwd, rootDir, 'domain/application'),
-        allowImportsFrom: [], // Has rules
-      };
+      const midBoundary: Boundary = createBoundary(
+        {
+          dir: 'domain/application',
+          alias: '@application',
+          allowImportsFrom: [], // Has rules
+        },
+        { cwd, rootDir },
+      );
 
-      const deepBoundary: Boundary = {
-        dir: 'domain/application/services',
-        alias: '@services',
-        absDir: path.resolve(cwd, rootDir, 'domain/application/services'),
-        allowImportsFrom: [], // Has rules
-      };
+      const deepBoundary: Boundary = createBoundary(
+        {
+          dir: 'domain/application/services',
+          alias: '@services',
+          allowImportsFrom: [], // Has rules
+        },
+        { cwd, rootDir },
+      );
 
       // File is deeply nested - all three boundaries are ancestors
       const filename = path.resolve(

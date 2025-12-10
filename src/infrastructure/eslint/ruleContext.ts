@@ -63,10 +63,9 @@ export function extractRuleOptions(context: Rule.RuleContext): RuleContextData {
   // Pre-resolve all boundary directories to absolute paths for efficient comparison
   const resolvedBoundaries: Boundary[] = boundaries.map(
     (b: RuleOptions['boundaries'][number]) => ({
+      identifier: b.identifier, // Required - no fallback needed
       dir: b.dir,
       alias: b.alias,
-      // Use explicit identifier if provided, otherwise fall back to alias or dir
-      identifier: b.identifier ?? b.alias ?? b.dir,
       absDir: path.resolve(cwd, rootDir, b.dir),
       allowImportsFrom: b.allowImportsFrom,
       denyImportsFrom: b.denyImportsFrom,

@@ -5,6 +5,7 @@
 import type { Boundary } from '@shared';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { createBoundary } from '../../__tests__/boundaryTestHelpers.js';
 import {
   isAncestorBarrelImport,
   isCrossBoundaryImport,
@@ -15,12 +16,14 @@ describe('relationshipDetectionHelpers', () => {
   const rootDir = 'src';
 
   describe('isAncestorBarrelImport', () => {
-    const boundary: Boundary = {
-      dir: 'domain/entities',
-      alias: '@entities',
-      absDir: path.resolve(cwd, rootDir, 'domain/entities'),
-      allowImportsFrom: [],
-    };
+    const boundary: Boundary = createBoundary(
+      {
+        dir: 'domain/entities',
+        alias: '@entities',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
 
     it('should return true for ancestor barrel in alias style', () => {
       const result = isAncestorBarrelImport(
@@ -74,19 +77,23 @@ describe('relationshipDetectionHelpers', () => {
   });
 
   describe('isCrossBoundaryImport', () => {
-    const boundary1: Boundary = {
-      dir: 'domain/entities',
-      alias: '@entities',
-      absDir: path.resolve(cwd, rootDir, 'domain/entities'),
-      allowImportsFrom: [],
-    };
+    const boundary1: Boundary = createBoundary(
+      {
+        dir: 'domain/entities',
+        alias: '@entities',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
 
-    const boundary2: Boundary = {
-      dir: 'domain/queries',
-      alias: '@queries',
-      absDir: path.resolve(cwd, rootDir, 'domain/queries'),
-      allowImportsFrom: [],
-    };
+    const boundary2: Boundary = createBoundary(
+      {
+        dir: 'domain/queries',
+        alias: '@queries',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
 
     it('should return true when fileBoundary is null', () => {
       expect(isCrossBoundaryImport(null, boundary1)).toBe(true);

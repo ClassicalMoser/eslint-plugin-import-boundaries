@@ -5,6 +5,7 @@
 import type { Boundary } from '@shared';
 import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createBoundary } from '../../__tests__/testUtils.js';
 import { isAncestorBarrelImport } from './ancestorBarrelDetectionHelpers';
 
 describe('ancestorBarrelDetectionHelpers', () => {
@@ -14,12 +15,14 @@ describe('ancestorBarrelDetectionHelpers', () => {
   let queriesBoundary: Boundary;
 
   beforeEach(() => {
-    queriesBoundary = {
-      dir: 'domain/queries',
-      alias: '@queries',
-      absDir: path.resolve(cwd, rootDir, 'domain/queries'),
-      allowImportsFrom: [],
-    };
+    queriesBoundary = createBoundary(
+      {
+        dir: 'domain/queries',
+        alias: '@queries',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
   });
 
   describe('isAncestorBarrelImport', () => {

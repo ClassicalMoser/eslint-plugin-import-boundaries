@@ -7,7 +7,7 @@ import type { Boundary } from '@shared';
 import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { handleImport } from '@application';
-import { createMockPorts } from '../testUtils.js';
+import { createBoundary, createMockPorts } from '../testUtils.js';
 
 describe('README Examples - Integration Tests', () => {
   const cwd = '/project';
@@ -20,6 +20,7 @@ describe('README Examples - Integration Tests', () => {
 
   beforeEach(() => {
     domainBoundary = {
+      identifier: '@domain',
       dir: 'domain',
       alias: '@domain',
       absDir: path.resolve(cwd, rootDir, 'domain'),
@@ -27,6 +28,7 @@ describe('README Examples - Integration Tests', () => {
     };
 
     applicationBoundary = {
+      identifier: '@application',
       dir: 'application',
       alias: '@application',
       absDir: path.resolve(cwd, rootDir, 'application'),
@@ -34,6 +36,7 @@ describe('README Examples - Integration Tests', () => {
     };
 
     infrastructureBoundary = {
+      identifier: '@infrastructure',
       dir: 'infrastructure',
       alias: '@infrastructure',
       absDir: path.resolve(cwd, rootDir, 'infrastructure'),
@@ -253,12 +256,14 @@ describe('README Examples - Integration Tests', () => {
       const { reporter, createFixer } = createMockPorts();
       // README Example: File src/domain/entities/subdir/file.ts importing src/domain/entities/topLevel/index.ts
       // Expected: @entities/topLevel (not ../topLevel)
-      const entitiesBoundary: Boundary = {
-        dir: 'domain/entities',
-        alias: '@entities',
-        absDir: path.resolve(cwd, rootDir, 'domain/entities'),
-        allowImportsFrom: [],
-      };
+      const entitiesBoundary: Boundary = createBoundary(
+        {
+          dir: 'domain/entities',
+          alias: '@entities',
+          allowImportsFrom: [],
+        },
+        { cwd, rootDir },
+      );
       const fileDir = path.resolve(cwd, rootDir, 'domain/entities', 'subdir');
 
       // ❌ WRONG: Using relative path when boundary identifier is preferred
@@ -335,34 +340,42 @@ describe('README Examples - Integration Tests', () => {
 
   describe('Nested Boundaries', () => {
     it('should enforce independent rules for nested boundaries', () => {
-      const apiBoundary: Boundary = {
-        dir: 'interface/api',
-        alias: '@api',
-        absDir: path.resolve(cwd, rootDir, 'interface/api'),
-        allowImportsFrom: ['@domain', '@public-use-cases'],
-        denyImportsFrom: ['@internal-use-cases'],
-      };
+      const apiBoundary: Boundary = createBoundary(
+        {
+          dir: 'interface/api',
+          alias: '@api',
+          allowImportsFrom: ['@domain', '@public-use-cases'],
+          denyImportsFrom: ['@internal-use-cases'],
+        },
+        { cwd, rootDir },
+      );
 
-      const graphqlBoundary: Boundary = {
-        dir: 'interface/graphql',
-        alias: '@graphql',
-        absDir: path.resolve(cwd, rootDir, 'interface/graphql'),
-        allowImportsFrom: ['@application', '@domain', '@internal-use-cases'], // Must explicitly allow sub-boundaries
-      };
+      const graphqlBoundary: Boundary = createBoundary(
+        {
+          dir: 'interface/graphql',
+          alias: '@graphql',
+          allowImportsFrom: ['@application', '@domain', '@internal-use-cases'], // Must explicitly allow sub-boundaries
+        },
+        { cwd, rootDir },
+      );
 
-      const publicUseCasesBoundary: Boundary = {
-        dir: 'application/public-use-cases',
-        alias: '@public-use-cases',
-        absDir: path.resolve(cwd, rootDir, 'application/public-use-cases'),
-        allowImportsFrom: ['@domain'],
-      };
+      const publicUseCasesBoundary: Boundary = createBoundary(
+        {
+          dir: 'application/public-use-cases',
+          alias: '@public-use-cases',
+          allowImportsFrom: ['@domain'],
+        },
+        { cwd, rootDir },
+      );
 
-      const internalUseCasesBoundary: Boundary = {
-        dir: 'application/internal-use-cases',
-        alias: '@internal-use-cases',
-        absDir: path.resolve(cwd, rootDir, 'application/internal-use-cases'),
-        allowImportsFrom: ['@domain'],
-      };
+      const internalUseCasesBoundary: Boundary = createBoundary(
+        {
+          dir: 'application/internal-use-cases',
+          alias: '@internal-use-cases',
+          allowImportsFrom: ['@domain'],
+        },
+        { cwd, rootDir },
+      );
 
       const nestedBoundaries = [
         ...boundaries,

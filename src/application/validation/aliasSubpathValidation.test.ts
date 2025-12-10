@@ -5,6 +5,7 @@
 import type { Boundary } from '@shared';
 import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createBoundary } from '../../__tests__/boundaryTestHelpers.js';
 import { createMockPorts } from '../../__tests__/testUtils.js';
 import { validateAliasSubpath } from './aliasSubpathValidation';
 
@@ -16,19 +17,23 @@ describe('aliasSubpathValidation', () => {
   let queriesBoundary: Boundary;
 
   beforeEach(() => {
-    entitiesBoundary = {
-      dir: 'domain/entities',
-      alias: '@entities',
-      absDir: path.resolve(cwd, rootDir, 'domain/entities'),
-      allowImportsFrom: [],
-    };
+    entitiesBoundary = createBoundary(
+      {
+        dir: 'domain/entities',
+        alias: '@entities',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
 
-    queriesBoundary = {
-      dir: 'domain/queries',
-      alias: '@queries',
-      absDir: path.resolve(cwd, rootDir, 'domain/queries'),
-      allowImportsFrom: [],
-    };
+    queriesBoundary = createBoundary(
+      {
+        dir: 'domain/queries',
+        alias: '@queries',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
   });
 
   describe('validateAliasSubpath', () => {

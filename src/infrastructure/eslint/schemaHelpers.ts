@@ -49,16 +49,16 @@ function withDefault<T extends SchemaProperty>(
 const boundaryConfigSchema: SchemaProperty = {
   type: 'object',
   properties: {
+    identifier: schemaProps.string, // Canonical boundary identifier (required)
     dir: schemaProps.string,
     alias: schemaProps.string,
-    identifier: schemaProps.string, // Canonical boundary identifier (defaults to alias or dir)
     allowImportsFrom: schemaProps.stringArray,
     denyImportsFrom: schemaProps.stringArray,
     allowTypeImportsFrom: schemaProps.stringArray,
     nestedPathFormat: stringEnum(['alias', 'relative', 'inherit']),
     severity: stringEnum(['error', 'warn']),
   },
-  required: ['dir'],
+  required: ['identifier', 'dir'],
 };
 
 /**

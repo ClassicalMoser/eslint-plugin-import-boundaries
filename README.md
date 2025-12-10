@@ -5,9 +5,11 @@
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-import-boundaries)](https://www.npmjs.com/package/eslint-plugin-import-boundaries)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 
-**Note: This is an alpha release, originally developed for a personal project. It is not yet stable and may have breaking changes.**
+**Note: This is an alpha release, originally developed for a personal project. It is not yet stable and may have breaking changes. Pin the version and watch updates carefully if you would like to try it!**
 
-An opinionated, TypeScript-first ESLint rule that enforces architectural boundaries using deterministic import path expectations. This rule determines when to use boundary identifiers (alias or absolute paths) vs relative imports based on your architecture, rather than enforcing a single pattern for all imports.
+An opinionated, TypeScript-first ESLint rule that enforces architectural boundaries using deterministic import path expectations. This rule determines when to use boundary paths (alias or absolute paths) vs relative imports based on your architecture, rather than enforcing a single pattern (e.g. absolute) for all imports.
+
+**Important:** This rule expects index files (default: `index.ts`) at every directory level. See [Index Files as Module Interface](#index-files-as-module-interface) for details.
 
 ## What Problem Does This Solve?
 
@@ -18,11 +20,13 @@ Most projects struggle to maintain architectural boundaries as they grow:
 - Boundaries are violated without enforcement (e.g., `@application` importing from `@infrastructure`)
 - Circular dependencies sneak in through ancestor barrel imports
 - No automated way to enforce clean architecture, hexagonal architecture, or other boundary patterns
+- Code reviews can easily overlook bad dependency directions for smaller calls
 
 **Import Path Chaos:**
 
 - Inconsistent patterns: sometimes `@domain`, sometimes `../domain`, sometimes `../../src/domain`
 - Unreadable paths: `../../../../../../utils` chains that obscure relationships
+- Long absolute paths in module barrels: `src/domain/entities/user/payment, src/domain/entities/user/meta`
 - No single source of truth for "the correct way" to import
 
 This rule provides **automated architectural boundary enforcement with deterministic import paths** - preventing violations before they happen and eliminating import path debates.
@@ -34,14 +38,12 @@ This rule provides **automated architectural boundary enforcement with determini
 - **Readable Paths**: Always resolves to the most readable filepath (no `../../../../../../` chains)
 - **Architectural Boundaries**: Enforce clean architecture, hexagonal architecture, feature-sliced design, or any other boundary pattern (including nested boundaries)
 - **Auto-fixable**: Legal import paths are auto-fixable and will always converge to the correct import string.
-- **Zero I/O**: Pure path math and AST analysis - fast even on large codebases
-- **Type-aware**: Allows different rules for type-only imports vs value imports
+- **Zero I/O**: Pure path math and AST analysis - fast even on very large codebases
+- **Type-aware**: Allows different rule definitions for type-only imports vs value imports
 - **Test-ready**: Flexible configuration for test files (skip boundary rules while maintaining fixable and deterministic path format)
 - **Circular Dependency Prevention**: Blocks ancestor barrel imports
 
 ## Quick Start
-
-**Important:** This rule expects index files (default: `index.ts`) at every directory level. See [Index Files as Module Interface](#index-files-as-module-interface) for details.
 
 ```bash
 npm install --save-dev eslint-plugin-import-boundaries
@@ -66,11 +68,37 @@ export default {
         rootDir: 'src',
         crossBoundaryStyle: 'alias', // Default: alias paths (preferred for readability)
         boundaries: [
-          { dir: 'domain', alias: '@domain'},
-          { dir: 'application', alias: '@application' allowImportsFrom: ['domain']},
-          { dir: 'infrastructure', alias: '@infrastructure' allowImportsFrom: ['domain'], allowTypeImportsFrom: ['application']},
-          { dir: 'interface', alias: '@interface' allowImportsFrom: ['domain', 'application']},
-          { dir: 'composition', alias: '@composition' allowImportsFrom: ['domain', 'application', 'interface', 'infrastructure']},
+          { dir: 'domain', alias: '@domain', identifier: '@domain' },
+          {
+            dir: 'application',
+            alias: '@application',
+            identifier: '@application',
+            allowImportsFrom: ['@domain'],
+          },
+          {
+            dir: 'infrastructure',
+            alias: '@infrastructure',
+            identifier: '@infrastructure',
+            allowImportsFrom: ['@domain'],
+            allowTypeImportsFrom: ['@application'],
+          },
+          {
+            dir: 'interface',
+            alias: '@interface',
+            identifier: '@interface',
+            allowImportsFrom: ['@domain', '@application'],
+          },
+          {
+            dir: 'composition',
+            alias: '@composition',
+            identifier: '@composition',
+            allowImportsFrom: [
+              '@domain',
+              '@application',
+              '@interface',
+              '@infrastructure',
+            ],
+          },
         ],
       },
     ],
@@ -81,7 +109,7 @@ export default {
 **Import patterns with alias style (default):**
 
 ```typescript
-// Cross-boundary imports → use boundary identifier
+// Cross-boundary imports → use boundary root path (alias)
 import { Entity } from '@domain'; // ✅
 import { UseCase } from '@application'; // ✅
 
@@ -89,15 +117,15 @@ import { UseCase } from '@application'; // ✅
 import { helper } from './helper'; // ✅ Same directory
 import { utils } from '../utils'; // ✅ Parent's sibling
 
-// Same-boundary, distant imports → use boundary identifier
+// Same-boundary, distant imports → use boundary path (alias with subpath)
 import { useCase } from '@application/use-cases'; // ✅ Distant in same boundary
 ```
 
 ## Core Rules
 
-### 1. Cross-Boundary Imports → Boundary Identifier (No Subpath)
+### 1. Cross-Boundary Imports → Boundary Root (No Subpath)
 
-When importing from a different boundary, always use the boundary identifier (e.g., `@domain` when using alias style, or `src/domain` when using absolute style) with no subpath. This imports from the boundary's root barrel file (`domain/index.ts`):
+When importing from a different boundary, always use the boundary's root path (the alias when using alias style, e.g., `@domain`, or the absolute path when using absolute style, e.g., `src/domain`) with no subpath. This imports from the boundary's root barrel file (`domain/index.ts`):
 
 ```typescript
 // ✅ CORRECT
@@ -109,9 +137,9 @@ import { Entity } from '@domain/entities'; // Subpath not allowed for cross-boun
 import { Entity } from '../domain'; // Relative not allowed for cross-boundary
 ```
 
-### 2. Same-Boundary Imports → Relative (when close) or Boundary Identifier (when distant)
+### 2. Same-Boundary Imports → Relative (when close) or Boundary Path (when distant)
 
-When importing within the same boundary, use relative paths for close imports, and boundary identifier paths (alias or absolute, depending on configuration) for distant imports:
+When importing within the same boundary, use relative paths for close imports, and boundary paths (alias or absolute, depending on configuration) for distant imports:
 
 ```typescript
 // Same directory (sibling)
@@ -123,7 +151,7 @@ import { utils } from '../utils'; // ✅ When both are in subdirectories sharing
 // Siblings at boundary root level → Use relative (prevents circular dependencies)
 import { utils } from './utils'; // ✅ When both are at boundary root level
 
-// Distant within same boundary → Use boundary identifier (with subpath allowed for same-boundary imports)
+// Distant within same boundary → Use boundary path (with subpath allowed for same-boundary imports)
 import { useCase } from '@application/use-cases'; // ✅ Same boundary, distant location (alias style shown)
 ```
 
@@ -131,11 +159,21 @@ import { useCase } from '@application/use-cases'; // ✅ Same boundary, distant 
 
 Prevent violations of your architecture:
 
+**Important distinction:** The boundary `identifier` is separate from import paths:
+
+- **`identifier`**: Used for `allowImportsFrom`/`denyImportsFrom` rules and error messages. Can be arbitrary (e.g., `'core'`, `'domain'`, `'@domain'`) and is independent of import path style.
+  - **Standard**: When using alias style, the identifier should match the alias (e.g., `identifier: '@domain'` when `alias: '@domain'`). This ensures consistency between rules and import paths. The identifier exists mainly to support absolute paths when alias isn't feasible (e.g., nested boundaries like `domain/entities/user` where you want a clean identifier like `'@user'`).
+- **Import paths**: Use `alias` (alias style) or `dir` path (absolute style) - these are what you write in your import statements.
+
 ```javascript
 {
-  dir: 'application',
-  alias: '@application',
+  identifier: '@application',  // Required: Canonical boundary identifier
+                                // Used for allowImportsFrom/denyImportsFrom and error messages
+                                // Can be arbitrary - independent of import paths
+  dir: 'application',           // Required: Directory path (used for import paths in absolute style)
+  alias: '@application',        // Required when crossBoundaryStyle is 'alias': Alias path (used for import paths in alias style)
   allowImportsFrom: ['@domain'],  // Only allow imports from @domain (deny-all by default)
+                                  // Uses boundary identifiers, not import paths
   // Note: denyImportsFrom is redundant here - anything not in allowImportsFrom is already denied
 }
 ```
@@ -157,12 +195,14 @@ Boundaries can be nested, and each boundary explicitly declares its import rules
 {
   boundaries: [
     {
+      identifier: '@interface',  // Canonical identifier (matches alias)
       dir: 'interface',
       alias: '@interface',
       allowImportsFrom: ['@application', '@domain'], // @interface can import from @application and @domain
       // Implicitly denies all other boundaries (including @infrastructure, @composition, etc.)
     },
     {
+      identifier: '@api',
       dir: 'interface/api',
       alias: '@api',
       allowImportsFrom: ['@domain', '@public-use-cases'],
@@ -173,6 +213,7 @@ Boundaries can be nested, and each boundary explicitly declares its import rules
       denyImportsFrom: ['@internal-use-cases'],
     },
     {
+      identifier: '@graphql',
       dir: 'interface/graphql',
       alias: '@graphql',
       allowImportsFrom: ['@application', '@domain'],
@@ -180,12 +221,14 @@ Boundaries can be nested, and each boundary explicitly declares its import rules
       // This shows how sibling boundaries can have different rules
     },
     {
+      identifier: '@composition',
       dir: 'composition',
       alias: '@composition',
       allowImportsFrom: ['@domain', '@application', '@infrastructure', '@interface'],
       // @composition can import from all boundaries (wiring layer)
     },
     {
+      identifier: '@di',
       dir: 'composition/di',
       alias: '@di',
       allowImportsFrom: ['@domain', '@application', '@infrastructure'],
@@ -219,9 +262,22 @@ import { Controller } from '@interface'; // ❌ Violation: @di cannot import fro
 
 - **Explicit rules**: Each boundary declares its own rules (via `allowImportsFrom`/`denyImportsFrom`) or defaults to "deny all" if neither is specified
 - **No inheritance**: Each boundary uses its own rules directly - no automatic inheritance from parent boundaries. This ensures rules are explicit and prevents accidental rule propagation.
-- **Parent and child boundaries**: You can define both parent and child boundaries (e.g., `dir: 'application'` and `dir: 'application/use-cases'`). Files use the most specific matching boundary's rules, while imports can reference any defined boundary identifier.
+- **Parent and child boundaries**: You can define both parent and child boundaries (e.g., `dir: 'application'` and `dir: 'application/use-cases'`). Files use the most specific matching boundary's rules, while imports can reference any defined boundary using its alias (alias style) or dir path (absolute style).
 - **Flexible control**: You can make nested boundaries more restrictive OR more permissive than their parents, or give sibling boundaries completely different rules
 - **Flat rule checking**: Rules work the same regardless of nesting depth - files resolve to their most specific boundary (longest matching path), which determines the rules to apply
+- **Identifier vs import path**: The `identifier` (used in rules) can differ from the import path. The main use case is nested absolute paths where you want a clean identifier name. For example, with a nested path like `domain/entities/user`:
+
+  ```javascript
+  {
+    identifier: '@user',              // Clean name for rules and error messages
+                                      // As a standard, it ought to match alias if configured
+                                      // It exists mainly to support absolute paths when alias isn't feasible.
+    dir: 'domain/entities/user',    // Nested directory path (used for import paths in absolute style)
+    alias: '@user',                 // Clean alias (used for import paths in alias style)
+    // Import: import type { UserData } from '@user';  // or 'src/domain/entities/user' (absolute style)
+    // Rule: allowImportsFrom: ['@user']  // Uses identifier, not the full dir path
+  }
+  ```
 
 **Rule semantics:**
 
@@ -232,6 +288,7 @@ import { Controller } from '@interface'; // ❌ Violation: @di cannot import fro
 
   ```javascript
   {
+    identifier: '@interface',
     dir: 'interface',
     alias: '@interface',
     allowImportsFrom: ['@application'],      // Allow all of @application
@@ -249,6 +306,7 @@ Different rules for types vs values (types don't create runtime dependencies):
 
 ```javascript
 {
+  identifier: '@infrastructure',
   dir: 'infrastructure',
   alias: '@infrastructure',
   allowImportsFrom: ['@domain'],           // Value imports from domain
@@ -286,18 +344,18 @@ Here's a complete configuration example with all boundary rules:
   rootDir: 'src',                    // Required: Root directory (default: 'src')
   boundaries: [                    // Required: Array of boundary definitions
     {
+      identifier: '@domain',        // Required: Canonical boundary identifier (should match alias when using alias style)
+                                    // Used for allowImportsFrom/denyImportsFrom and error messages
       dir: 'domain',                // Required: Relative directory path
       alias: '@domain',             // Required when crossBoundaryStyle is 'alias': Import alias (e.g., '@domain')
-      identifier: '@domain',        // Optional: Canonical boundary identifier (defaults to alias or dir)
-                                    // Used for allowImportsFrom/denyImportsFrom and error messages
-                                    // Independent of path style - works for both alias and absolute modes
+                                    // Used for import paths when crossBoundaryStyle is 'alias'
       // Domain is pure - denies all other boundaries
-      severity: 'error',             // Optional: 'error' | 'warn' (overrides defaultSeverity for this boundary)
+      severity: 'error',            // Optional: 'error' | 'warn' (overrides defaultSeverity for this boundary)
     },
     {
-      dir: 'application',
-      alias: '@application',
-      // identifier defaults to '@application' (from alias)
+      identifier: '@application',  // Required: Canonical boundary identifier
+      dir: 'application',           // Required: Relative directory path
+      alias: '@application',        // Required when crossBoundaryStyle is 'alias': Import alias
       allowImportsFrom: ['@domain'], // Application uses domain (deny-all by default)
                                       // References use boundary identifiers, not paths
       // Note: denyImportsFrom is redundant here - anything not in allowImportsFrom is already denied
@@ -306,7 +364,7 @@ Here's a complete configuration example with all boundary rules:
       dir: 'infrastructure',
       alias: '@infrastructure',
       allowImportsFrom: ['@domain'], // Infrastructure uses domain entities
-      allowTypeImportsFrom: ['@application'], // Infrastructure implements application ports (types only)
+      allowTypeImportsFrom: ['application'], // Infrastructure implements application ports (types only)
     },
   ],
   // Optional configuration options (all have sensible defaults):
@@ -322,7 +380,7 @@ Here's a complete configuration example with all boundary rules:
 
 ### Test Files Configuration
 
-**How test exclusion works:** When `enforceBoundaries: false`, the rule skips boundary rule checking (allow/deny rules) but still enforces path format (boundary identifier vs relative). This allows test files to import from any boundary while maintaining consistent import path patterns. The default is `true` (boundary rules are enforced by default).
+**How test exclusion works:** When `enforceBoundaries: false`, the rule skips boundary rule checking (allow/deny rules) but still enforces path format (boundary path vs relative). This allows test files to import from any boundary while maintaining consistent import path patterns. The default is `true` (boundary rules are enforced by default).
 
 **Why skip boundary rules for tests?** Test files often need to:
 
@@ -331,7 +389,7 @@ Here's a complete configuration example with all boundary rules:
 - Access internal implementation details for thorough testing
 - Create test fixtures that span multiple boundaries
 
-By setting `enforceBoundaries: false` for test files, you maintain architectural boundaries in production code while giving tests the flexibility they need. Path format (boundary identifier vs relative) is still enforced, keeping import paths consistent and readable.
+By setting `enforceBoundaries: false` for test files, you maintain architectural boundaries in production code while giving tests the flexibility they need. Path format (boundary path vs relative) is still enforced, keeping import paths consistent and readable.
 
 **Alternative approach:** You can also define separate boundaries for test directories (e.g., `test/domain`, `test/application`) with their own import rules, but this has two downsides: it discourages test collocation (tests must live in separate test directories rather than alongside source files), and it requires much more configuration overhead than most projects need. The `enforceBoundaries: false` approach is simpler and sufficient for most use cases.
 
@@ -343,16 +401,19 @@ import importBoundaries from 'eslint-plugin-import-boundaries';
 // Define boundaries once - shared between regular files and test files
 const boundaries = [
   {
+    identifier: '@domain',
     dir: 'domain',
     alias: '@domain',
     // No imports allowed by default
   },
   {
+    identifier: '@application',
     dir: 'application',
     alias: '@application',
     allowImportsFrom: ['@domain'],
   },
   {
+    identifier: '@infrastructure',
     dir: 'infrastructure',
     alias: '@infrastructure',
     allowImportsFrom: ['@domain'],
@@ -404,7 +465,7 @@ export default [
 
 **What gets checked:**
 
-- ✅ **Always enforced**: Path format (boundary identifier vs relative), barrel file imports, ancestor barrel prevention
+- ✅ **Always enforced**: Path format (absolute vs relative), barrel file imports, ancestor barrel prevention
 - ⚠️ **Test files only**: Boundary allow/deny rules are skipped (tests can import from any boundary)
 - ✅ **Regular files only**: Boundary allow/deny rules are enforced
 
@@ -417,9 +478,10 @@ Alias paths are the default and preferred for readability, but absolute paths ar
   rootDir: 'src',
   crossBoundaryStyle: 'absolute', // Use absolute paths instead of aliases
   boundaries: [
-    { dir: 'domain' }, // No alias required when using absolute paths
-    { dir: 'application' },
-    { dir: 'infrastructure' },
+    { identifier: 'domain', dir: 'domain' }, // No alias required when using absolute paths
+    { identifier: 'application', dir: 'application' },
+    { identifier: 'infrastructure', dir: 'infrastructure' },
+    // identifier is required - use explicit identifier (can differ from dir for cleaner error messages)
   ],
 }
 ```
@@ -475,14 +537,14 @@ When importing within the same boundary, the rule selects paths based on the rel
    - Example: File `application/use-cases/file.ts` importing `application/utils/index.ts`
    - Uses: `./utils` (not `@application/utils`) - relative prevents circular dependencies through boundary index files
 
-4. **Top-level at boundary root** → `@boundary/topLevel` (boundary identifier, even if `../topLevel` would work)
+4. **Top-level at boundary root** → `@boundary/topLevel` (boundary path, even if `../topLevel` would work)
    - When target is at boundary root level AND file is in a subdirectory
    - Example: File `src/domain/entities/subdir/file.ts` importing `src/domain/entities/topLevel/index.ts`
    - Uses: `@entities/topLevel` (not `../topLevel`) - alias style shown, absolute style would use `src/domain/entities/topLevel`
 
-5. **Distant imports (requires more than one `../`)** → `@boundary/segment` (boundary identifier)
+5. **Distant imports (requires more than one `../`)** → `@boundary/segment` (boundary path)
    - When target requires more than one `../` to reach (more than one directory level up)
-   - Boundary identifier (alias or absolute) is preferred for readability - avoids long `../../../../` chains that obscure relationships
+   - Boundary path (alias or absolute) is preferred for readability - avoids long `../../../../` chains that obscure relationships
    - Example: File `src/domain/entities/level1/level2/file.ts` importing `src/domain/entities/target/index.ts`
    - Uses: `@entities/target` (alias style) or `src/domain/entities/target` (absolute style) - clearer and more maintainable than relative path chains
 
@@ -518,7 +580,7 @@ Clear, actionable error messages with full context:
 
 ### Incorrect Import Path
 
-When the import path format is wrong (e.g., using boundary identifier subpath for cross-boundary, or wrong relative/boundary identifier choice):
+When the import path format is wrong (e.g., using boundary subpath for cross-boundary, or wrong relative/boundary path choice):
 
 ```
 Expected '@domain' but got '@domain/entities'
@@ -530,7 +592,7 @@ Expected '@domain' but got '@domain/entities'
 
 - Cross-boundary with subpath: `Expected '@domain' but got '@domain/entities'`
 - Wrong relative for cross-boundary: `Expected '@domain' but got '../domain'`
-- Wrong boundary identifier for close same-boundary: `Expected './sibling' but got '@application/sibling'`
+- Wrong boundary path for close same-boundary: `Expected './sibling' but got '@application/sibling'`
 - Wrong relative for distant same-boundary: `Expected '@application/use-cases' but got '../../use-cases'`
 
 **Auto-fixable**: ✅ Yes - ESLint can automatically fix these to the correct path.
@@ -590,7 +652,7 @@ Cannot import from 'src/shared/utils' - path is outside all configured boundarie
 
 Plugins like `eslint-plugin-no-relative-import-paths` and `eslint-plugin-absolute-imports` only enforce "use absolute paths everywhere" or "use relative paths everywhere." Absolute paths are not always the correct answer, and they become particularly hard to read in index files or other closely-related modules. They also don't handle:
 
-- Deterministic path selection (when to use boundary identifier vs relative)
+- Deterministic path selection (when to use boundary path vs relative)
 - Architectural boundary enforcement
 - Boundary allow/deny rules
 - Type-only import handling
@@ -629,8 +691,8 @@ By enforcing stronger, opinionated constraints, this plugin enables a simpler, f
 // import-boundaries/enforce
 {
   boundaries: [
-    { dir: 'domain', alias: '@domain' },
-    { dir: 'application', alias: '@application' },
+    { dir: 'domain', alias: '@domain', identifier: '@domain' },
+    { dir: 'application', alias: '@application', identifier: '@application' },
   ],
 }
 ```

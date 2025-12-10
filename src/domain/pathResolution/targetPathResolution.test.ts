@@ -6,6 +6,7 @@
 import type { Boundary } from '@shared';
 import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createBoundary } from '../../__tests__/boundaryTestHelpers.js';
 import { resolveTargetPath } from './targetPathResolution';
 
 describe('targetPathResolution', () => {
@@ -18,26 +19,32 @@ describe('targetPathResolution', () => {
   let transformsBoundary: Boundary;
 
   beforeEach(() => {
-    entitiesBoundary = {
-      dir: 'domain/entities',
-      alias: '@entities',
-      absDir: path.resolve(cwd, rootDir, 'domain/entities'),
-      allowImportsFrom: [],
-    };
+    entitiesBoundary = createBoundary(
+      {
+        dir: 'domain/entities',
+        alias: '@entities',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
 
-    queriesBoundary = {
-      dir: 'domain/queries',
-      alias: '@queries',
-      absDir: path.resolve(cwd, rootDir, 'domain/queries'),
-      allowImportsFrom: [],
-    };
+    queriesBoundary = createBoundary(
+      {
+        dir: 'domain/queries',
+        alias: '@queries',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
 
-    transformsBoundary = {
-      dir: 'domain/transforms',
-      alias: '@transforms',
-      absDir: path.resolve(cwd, rootDir, 'domain/transforms'),
-      allowImportsFrom: [],
-    };
+    transformsBoundary = createBoundary(
+      {
+        dir: 'domain/transforms',
+        alias: '@transforms',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
   });
 
   describe('resolveTargetPath', () => {

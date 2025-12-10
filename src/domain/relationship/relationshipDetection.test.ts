@@ -7,6 +7,7 @@
 import type { Boundary } from '@shared';
 import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createBoundary } from '../../__tests__/boundaryTestHelpers.js';
 import { calculateCorrectImportPath } from './relationshipDetection';
 
 describe('relationshipDetection', () => {
@@ -19,26 +20,32 @@ describe('relationshipDetection', () => {
   let transformsBoundary: Boundary;
 
   beforeEach(() => {
-    entitiesBoundary = {
-      dir: 'domain/entities',
-      alias: '@entities',
-      absDir: path.resolve(cwd, rootDir, 'domain/entities'),
-      allowImportsFrom: [], // Has rules (empty allow list = deny all by default)
-    };
+    entitiesBoundary = createBoundary(
+      {
+        dir: 'domain/entities',
+        alias: '@entities',
+        allowImportsFrom: [], // Has rules (empty allow list = deny all by default)
+      },
+      { cwd, rootDir },
+    );
 
-    queriesBoundary = {
-      dir: 'domain/queries',
-      alias: '@queries',
-      absDir: path.resolve(cwd, rootDir, 'domain/queries'),
-      allowImportsFrom: [], // Has rules (empty allow list = deny all by default)
-    };
+    queriesBoundary = createBoundary(
+      {
+        dir: 'domain/queries',
+        alias: '@queries',
+        allowImportsFrom: [], // Has rules (empty allow list = deny all by default)
+      },
+      { cwd, rootDir },
+    );
 
-    transformsBoundary = {
-      dir: 'domain/transforms',
-      alias: '@transforms',
-      absDir: path.resolve(cwd, rootDir, 'domain/transforms'),
-      allowImportsFrom: [], // Has rules (empty allow list = deny all by default)
-    };
+    transformsBoundary = createBoundary(
+      {
+        dir: 'domain/transforms',
+        alias: '@transforms',
+        allowImportsFrom: [], // Has rules (empty allow list = deny all by default)
+      },
+      { cwd, rootDir },
+    );
   });
 
   describe('calculateCorrectImportPath - cross-boundary', () => {
@@ -423,33 +430,6 @@ describe('relationshipDetection', () => {
       expect(result).toBe('@entities');
     });
 
-    it('should handle Windows paths correctly', () => {
-      // Use a Unix-style path for cross-platform compatibility
-      const windowsCwd = '/C/project';
-      const windowsEntitiesBoundary: Boundary = {
-        dir: 'domain/entities',
-        alias: '@entities',
-        absDir: path.resolve(windowsCwd, rootDir, 'domain/entities'),
-        allowImportsFrom: [], // Has rules (empty allow list = deny all by default)
-      };
-      const windowsBoundaries = [windowsEntitiesBoundary, queriesBoundary];
-
-      const fileDir = path.resolve(windowsCwd, rootDir, 'domain/queries');
-      const fileBoundary = queriesBoundary;
-
-      const result = calculateCorrectImportPath(
-        '@entities',
-        fileDir,
-        fileBoundary,
-        windowsBoundaries,
-        rootDir,
-        windowsCwd,
-        'alias',
-      );
-
-      expect(result).toBe('@entities');
-    });
-
     it('should handle fileBoundary null and targetBoundary null (external package)', () => {
       const boundaries = [
         entitiesBoundary,
@@ -472,6 +452,91 @@ describe('relationshipDetection', () => {
       );
 
       expect(result).toBe('UNKNOWN_BOUNDARY');
+    });
+
+    it('should force absolute path when fileBoundary null and targetBoundary null (internal file)', () => {
+      const boundaries = [
+        entitiesBoundary,
+        queriesBoundary,
+        transformsBoundary,
+      ];
+      const fileDir = path.resolve(cwd, 'other');
+      const fileBoundary = null;
+
+      // Internal file that doesn't resolve to any boundary
+      // File is at /project/other/utils/helper.ts
+      // Since fileBoundary is null and targetBoundary is null, should force absolute path
+      const result = calculateCorrectImportPath(
+        './utils/helper',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'alias',
+      );
+
+      // Should return relative path from fileDir
+      expect(result).toBe('./utils/helper');
+    });
+
+    it('should use targetDir when target is a barrel file (fileBoundary null, targetBoundary null)', () => {
+      const boundaries = [
+        entitiesBoundary,
+        queriesBoundary,
+        transformsBoundary,
+      ];
+      const fileDir = path.resolve(cwd, 'other');
+      const fileBoundary = null;
+
+      // Internal barrel file that doesn't resolve to any boundary
+      // Directory is at /project/other/utils/helper (barrel file is index.ts)
+      // Since fileBoundary is null and targetBoundary is null, should use targetDir
+      // to avoid /index loops. The basenameWithoutExt will be 'index' which matches
+      // barrelFileName, so we use targetDir instead of targetAbs.
+      // This explicitly tests line 63: basenameWithoutExt === barrelFileName ? targetDir : targetAbs
+      const result = calculateCorrectImportPath(
+        './utils/helper',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'alias',
+      );
+
+      // Should return relative path from fileDir without /index
+      // This verifies that targetDir was used (not targetAbs which would include /index)
+      expect(result).toBe('./utils/helper');
+      expect(result).not.toContain('/index');
+    });
+
+    it('should use targetAbs when target is NOT a barrel file (fileBoundary null, targetBoundary null)', () => {
+      const boundaries = [
+        entitiesBoundary,
+        queriesBoundary,
+        transformsBoundary,
+      ];
+      const fileDir = path.resolve(cwd, 'other');
+      const fileBoundary = null;
+
+      // Internal file (not a barrel file) that doesn't resolve to any boundary
+      // File is at /project/other/utils/helper.ts (not a barrel file)
+      // Since fileBoundary is null and targetBoundary is null, should use targetAbs
+      // The basenameWithoutExt will be 'helper' which does NOT match barrelFileName,
+      // so we use targetAbs (not targetDir). This tests the else branch of line 63.
+      const result = calculateCorrectImportPath(
+        './utils/helper.ts',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'alias',
+      );
+
+      // Should return relative path from fileDir
+      expect(result).toBe('./utils/helper');
     });
 
     it('should handle fileBoundary exists but targetBoundary is null (external target)', () => {

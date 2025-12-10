@@ -14,6 +14,9 @@ import path from 'node:path';
 
 import { vi } from 'vitest';
 
+// eslint-disable-next-line import-boundaries/enforce
+export { createBoundaries, createBoundary } from './boundaryTestHelpers';
+
 /**
  * Mock reporter with helper methods for testing.
  * The report function is a Vitest spy, so you can use all spy methods like:
@@ -165,23 +168,32 @@ export function createMockPorts(options?: {
 
 /**
  * Helper to create a Boundary object for testing.
- * Automatically computes identifier from alias or dir, and absDir from dir.
+ * Provides smart defaults: identifier defaults to alias ?? dir (works for >95% of tests).
+ * Automatically computes absDir from dir.
  *
  * @example
  * ```typescript
+ * // Most common case - identifier defaults to alias
  * const boundary = createTestBoundary({
  *   dir: 'domain/entities',
  *   alias: '@entities',
  * });
  * // boundary.identifier === '@entities'
- * // boundary.absDir === '/project/src/domain/entities' (if cwd/rootDir are defaults)
+ * // boundary.absDir === '/project/src/domain/entities'
+ *
+ * // Override identifier when needed
+ * const boundary = createTestBoundary({
+ *   identifier: 'core',
+ *   dir: 'domain/entities',
+ *   alias: '@entities',
+ * });
  * ```
  */
 export function createTestBoundary(
   config: {
+    identifier?: string; // Optional - defaults to alias ?? dir (smart default for >95% of tests)
     dir: string;
     alias?: string;
-    identifier?: string;
     allowImportsFrom?: string[];
     denyImportsFrom?: string[];
     allowTypeImportsFrom?: string[];
@@ -196,9 +208,9 @@ export function createTestBoundary(
   const rootDir = options?.rootDir ?? 'src';
   const cwd = options?.cwd ?? '/project';
   return {
+    identifier: config.identifier ?? config.alias ?? config.dir,
     dir: config.dir,
     alias: config.alias,
-    identifier: config.identifier ?? config.alias ?? config.dir,
     absDir: path.resolve(cwd, rootDir, config.dir),
     allowImportsFrom: config.allowImportsFrom,
     denyImportsFrom: config.denyImportsFrom,

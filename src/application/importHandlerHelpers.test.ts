@@ -5,6 +5,7 @@
 import type { Boundary } from '@shared';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { createBoundary } from '../../src/__tests__/boundaryTestHelpers.js';
 import {
   isNullPath,
   isUnknownBoundary,
@@ -29,19 +30,23 @@ describe('importHandlerHelpers', () => {
   });
 
   describe('shouldValidateBoundaryRules', () => {
-    const boundary1: Boundary = {
-      dir: 'domain/entities',
-      alias: '@entities',
-      absDir: path.resolve(cwd, rootDir, 'domain/entities'),
-      allowImportsFrom: [],
-    };
+    const boundary1: Boundary = createBoundary(
+      {
+        dir: 'domain/entities',
+        alias: '@entities',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
 
-    const boundary2: Boundary = {
-      dir: 'domain/queries',
-      alias: '@queries',
-      absDir: path.resolve(cwd, rootDir, 'domain/queries'),
-      allowImportsFrom: [],
-    };
+    const boundary2: Boundary = createBoundary(
+      {
+        dir: 'domain/queries',
+        alias: '@queries',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
 
     it('should return true when all conditions are met', () => {
       expect(shouldValidateBoundaryRules(false, boundary1, boundary2)).toBe(
@@ -75,12 +80,14 @@ describe('importHandlerHelpers', () => {
   });
 
   describe('shouldDetectAncestorBarrel', () => {
-    const boundary: Boundary = {
-      dir: 'domain/entities',
-      alias: '@entities',
-      absDir: path.resolve(cwd, rootDir, 'domain/entities'),
-      allowImportsFrom: [],
-    };
+    const boundary: Boundary = createBoundary(
+      {
+        dir: 'domain/entities',
+        alias: '@entities',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
 
     it('should return true when correctPath is null and fileBoundary exists', () => {
       expect(shouldDetectAncestorBarrel(null, boundary)).toBe(true);

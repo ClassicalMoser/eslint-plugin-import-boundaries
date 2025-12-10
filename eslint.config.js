@@ -1,7 +1,7 @@
 import antfu from '@antfu/eslint-config';
 import prettierConfig from 'eslint-config-prettier';
-import { boundariesConfig } from './boundaries.config.js';
-import importBoundaries from './eslint-plugin-import-boundaries.js';
+import importBoundaries from 'eslint-plugin-import-boundaries';
+import { boundaries } from './boundaries.config.js';
 
 export default antfu(
   {
@@ -15,9 +15,6 @@ export default antfu(
       'reports/**',
       // External files
       'node_modules/**',
-      // Build files
-      'eslint-plugin-import-boundaries.js',
-      'eslint-plugin-import-boundaries.d.ts',
       // Stryker mutation testing sandbox
       '.stryker-tmp/**',
     ],
@@ -36,10 +33,34 @@ export default antfu(
     rules: {
       'no-console': ['error', { allow: ['error'] }],
       'import/no-duplicates': ['error', { 'prefer-inline': false }],
-      'import-boundaries/enforce': ['error', boundariesConfig],
     },
     plugins: {
       'import-boundaries': importBoundaries,
+    },
+  },
+  {
+    files: ['src/**/*.ts', 'src/**/*.js'],
+    rules: {
+      'import-boundaries/enforce': [
+        'error',
+        {
+          rootDir: 'src',
+          boundaries,
+        },
+      ],
+    },
+  },
+  {
+    files: ['**/*.test.ts', '**/*.test.js', '**/__tests__/**/*.ts'],
+    rules: {
+      'import-boundaries/enforce': [
+        'error',
+        {
+          rootDir: 'src',
+          boundaries,
+          enforceBoundaries: false,
+        },
+      ],
     },
   },
   {
@@ -52,8 +73,7 @@ export default antfu(
       '*.yml',
       '**/*.md',
       '**/*.mdx',
-      'eslint-plugin-import-boundaries.js',
-      'eslint-plugin-import-boundaries.d.ts',
+      'dist/**',
       // Test files can import from all layers
       '**/*.test.ts',
     ],

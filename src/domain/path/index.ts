@@ -3,7 +3,11 @@
  */
 
 export { getBarrelPath } from './barrelPath';
-export { choosePathFormat, formatAbsolutePath } from './pathFormatting';
+export {
+  absoluteToRelativePath,
+  choosePathFormat,
+  formatAbsolutePath,
+} from './pathFormatting';
 export {
   getBasenameWithoutExt,
   hasExtension,

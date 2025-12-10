@@ -5,6 +5,7 @@
 import type { Boundary } from '@shared';
 import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createBoundary } from '../../__tests__/boundaryTestHelpers.js';
 import { shouldReportAliasSubpathViolation } from './aliasSubpathValidationHelpers';
 
 describe('aliasSubpathValidationHelpers', () => {
@@ -15,19 +16,23 @@ describe('aliasSubpathValidationHelpers', () => {
   let queriesBoundary: Boundary;
 
   beforeEach(() => {
-    entitiesBoundary = {
-      dir: 'domain/entities',
-      alias: '@entities',
-      absDir: path.resolve(cwd, rootDir, 'domain/entities'),
-      allowImportsFrom: [],
-    };
+    entitiesBoundary = createBoundary(
+      {
+        dir: 'domain/entities',
+        alias: '@entities',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
 
-    queriesBoundary = {
-      dir: 'domain/queries',
-      alias: '@queries',
-      absDir: path.resolve(cwd, rootDir, 'domain/queries'),
-      allowImportsFrom: [],
-    };
+    queriesBoundary = createBoundary(
+      {
+        dir: 'domain/queries',
+        alias: '@queries',
+        allowImportsFrom: [],
+      },
+      { cwd, rootDir },
+    );
   });
 
   describe('shouldReportAliasSubpathViolation', () => {
@@ -44,10 +49,13 @@ describe('aliasSubpathValidationHelpers', () => {
     });
 
     it('should return false when targetBoundary has no alias', () => {
-      const boundaryWithoutAlias: Boundary = {
-        ...entitiesBoundary,
-        alias: undefined,
-      };
+      const boundaryWithoutAlias: Boundary = createBoundary(
+        {
+          dir: 'domain/entities',
+          allowImportsFrom: [],
+        },
+        { cwd, rootDir },
+      );
       expect(
         shouldReportAliasSubpathViolation(
           boundaryWithoutAlias,

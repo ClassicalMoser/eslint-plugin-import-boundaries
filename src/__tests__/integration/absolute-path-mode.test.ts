@@ -8,7 +8,7 @@ import type { Boundary } from '@shared';
 import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { handleImport } from '@application';
-import { createMockPorts } from '../testUtils.js';
+import { createBoundary, createMockPorts } from '../testUtils.js';
 
 describe('Absolute Path Mode - Integration Tests', () => {
   const cwd = '/project';
@@ -22,6 +22,7 @@ describe('Absolute Path Mode - Integration Tests', () => {
 
   beforeEach(() => {
     domainBoundary = {
+      identifier: 'domain',
       dir: 'domain',
       alias: undefined, // Optional in absolute mode
       absDir: path.resolve(cwd, rootDir, 'domain'),
@@ -29,6 +30,7 @@ describe('Absolute Path Mode - Integration Tests', () => {
     };
 
     applicationBoundary = {
+      identifier: 'application',
       dir: 'application',
       alias: undefined, // Optional in absolute mode
       absDir: path.resolve(cwd, rootDir, 'application'),
@@ -36,6 +38,7 @@ describe('Absolute Path Mode - Integration Tests', () => {
     };
 
     infrastructureBoundary = {
+      identifier: 'infrastructure',
       dir: 'infrastructure',
       alias: undefined,
       absDir: path.resolve(cwd, rootDir, 'infrastructure'),
@@ -364,38 +367,42 @@ describe('Absolute Path Mode - Integration Tests', () => {
 
   describe('Nested Boundaries', () => {
     it('should enforce independent rules for nested boundaries', () => {
-      const apiBoundary: Boundary = {
-        dir: 'interface/api',
-        alias: undefined,
-        absDir: path.resolve(cwd, rootDir, 'interface/api'),
-        allowImportsFrom: ['domain', 'application/public-use-cases'],
-        denyImportsFrom: ['application/internal-use-cases'],
-      };
+      const apiBoundary: Boundary = createBoundary(
+        {
+          dir: 'interface/api',
+          allowImportsFrom: ['domain', 'application/public-use-cases'],
+          denyImportsFrom: ['application/internal-use-cases'],
+        },
+        { cwd, rootDir },
+      );
 
-      const graphqlBoundary: Boundary = {
-        dir: 'interface/graphql',
-        alias: undefined,
-        absDir: path.resolve(cwd, rootDir, 'interface/graphql'),
-        allowImportsFrom: [
-          'application',
-          'domain',
-          'application/internal-use-cases',
-        ],
-      };
+      const graphqlBoundary: Boundary = createBoundary(
+        {
+          dir: 'interface/graphql',
+          allowImportsFrom: [
+            'application',
+            'domain',
+            'application/internal-use-cases',
+          ],
+        },
+        { cwd, rootDir },
+      );
 
-      const publicUseCasesBoundary: Boundary = {
-        dir: 'application/public-use-cases',
-        alias: undefined,
-        absDir: path.resolve(cwd, rootDir, 'application/public-use-cases'),
-        allowImportsFrom: ['domain'],
-      };
+      const publicUseCasesBoundary: Boundary = createBoundary(
+        {
+          dir: 'application/public-use-cases',
+          allowImportsFrom: ['domain'],
+        },
+        { cwd, rootDir },
+      );
 
-      const internalUseCasesBoundary: Boundary = {
-        dir: 'application/internal-use-cases',
-        alias: undefined,
-        absDir: path.resolve(cwd, rootDir, 'application/internal-use-cases'),
-        allowImportsFrom: ['domain'],
-      };
+      const internalUseCasesBoundary: Boundary = createBoundary(
+        {
+          dir: 'application/internal-use-cases',
+          allowImportsFrom: ['domain'],
+        },
+        { cwd, rootDir },
+      );
 
       const nestedBoundaries = [
         ...boundaries,
@@ -627,12 +634,13 @@ describe('Absolute Path Mode - Integration Tests', () => {
     });
 
     it('should handle deep nested boundaries correctly', () => {
-      const deepBoundary: Boundary = {
-        dir: 'domain/entities/user/account',
-        alias: undefined,
-        absDir: path.resolve(cwd, rootDir, 'domain/entities/user/account'),
-        allowImportsFrom: [],
-      };
+      const deepBoundary: Boundary = createBoundary(
+        {
+          dir: 'domain/entities/user/account',
+          allowImportsFrom: [],
+        },
+        { cwd, rootDir },
+      );
 
       const deepBoundaries = [...boundaries, deepBoundary];
       const { reporter, createFixer } = createMockPorts();
@@ -657,19 +665,21 @@ describe('Absolute Path Mode - Integration Tests', () => {
 
     it('should handle rootDir variations correctly', () => {
       const customRootDir = 'lib';
-      const customDomainBoundary: Boundary = {
-        dir: 'domain',
-        alias: undefined,
-        absDir: path.resolve(cwd, customRootDir, 'domain'),
-        allowImportsFrom: [],
-      };
+      const customDomainBoundary: Boundary = createBoundary(
+        {
+          dir: 'domain',
+          allowImportsFrom: [],
+        },
+        { cwd, rootDir: customRootDir },
+      );
 
-      const customApplicationBoundary: Boundary = {
-        dir: 'application',
-        alias: undefined,
-        absDir: path.resolve(cwd, customRootDir, 'application'),
-        allowImportsFrom: ['domain'],
-      };
+      const customApplicationBoundary: Boundary = createBoundary(
+        {
+          dir: 'application',
+          allowImportsFrom: ['domain'],
+        },
+        { cwd, rootDir: customRootDir },
+      );
 
       const customBoundaries = [
         customDomainBoundary,
@@ -800,12 +810,13 @@ describe('Absolute Path Mode - Integration Tests', () => {
       const fileDir = path.resolve(cwd, rootDir, 'application');
 
       // Cross-boundary to nested boundary
-      const nestedBoundary: Boundary = {
-        dir: 'domain/entities/user',
-        alias: undefined,
-        absDir: path.resolve(cwd, rootDir, 'domain/entities/user'),
-        allowImportsFrom: [],
-      };
+      const nestedBoundary: Boundary = createBoundary(
+        {
+          dir: 'domain/entities/user',
+          allowImportsFrom: [],
+        },
+        { cwd, rootDir },
+      );
 
       const boundariesWithNested = [...boundaries, nestedBoundary];
 

@@ -24,6 +24,7 @@ describe('importHandler', () => {
 
   beforeEach(() => {
     entitiesBoundary = {
+      identifier: '@entities',
       dir: 'domain/entities',
       alias: '@entities',
       absDir: path.resolve(cwd, rootDir, 'domain/entities'),
@@ -31,6 +32,7 @@ describe('importHandler', () => {
     };
 
     queriesBoundary = {
+      identifier: '@queries',
       dir: 'domain/queries',
       alias: '@queries',
       absDir: path.resolve(cwd, rootDir, 'domain/queries'),
@@ -38,6 +40,7 @@ describe('importHandler', () => {
     };
 
     eventsBoundary = {
+      identifier: '@events',
       dir: 'domain/events',
       alias: '@events',
       absDir: path.resolve(cwd, rootDir, 'domain/events'),
@@ -722,6 +725,64 @@ describe('importHandler', () => {
       // Should return false (no violation when unknown boundaries are allowed)
       expect(result).toBe(false);
       expect(reporter.report).not.toHaveBeenCalled();
+    });
+
+    it('should handle when correctPath is invalid (empty or whitespace) - defensive path at line 188', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
+      const { reporter, createFixer } = createMockPorts();
+
+      // Mock calculateCorrectImportPath to return empty string (invalid path)
+      // This should never happen in practice, but we test the defensive branch
+      const calculateCorrectImportPathSpy = vi.spyOn(
+        domain,
+        'calculateCorrectImportPath',
+      );
+      calculateCorrectImportPathSpy.mockReturnValue(''); // Empty string - invalid
+
+      const options = createOptions({
+        rawSpec: './sibling',
+        fileDir,
+        skipBoundaryRules: true,
+        reporter,
+        createFixer,
+      });
+      const result = handleImport(options);
+
+      // Should return false (defensive path at line 188)
+      // This branch exists for type safety and to handle edge cases gracefully
+      expect(result).toBe(false);
+      expect(calculateCorrectImportPathSpy).toHaveBeenCalled();
+      expect(reporter.report).not.toHaveBeenCalled();
+
+      calculateCorrectImportPathSpy.mockRestore();
+    });
+
+    it('should handle when correctPath is whitespace-only - defensive path at line 188', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
+      const { reporter, createFixer } = createMockPorts();
+
+      // Mock calculateCorrectImportPath to return whitespace-only string (invalid path)
+      const calculateCorrectImportPathSpy = vi.spyOn(
+        domain,
+        'calculateCorrectImportPath',
+      );
+      calculateCorrectImportPathSpy.mockReturnValue('   '); // Whitespace-only - invalid
+
+      const options = createOptions({
+        rawSpec: './sibling',
+        fileDir,
+        skipBoundaryRules: true,
+        reporter,
+        createFixer,
+      });
+      const result = handleImport(options);
+
+      // Should return false (defensive path at line 188)
+      expect(result).toBe(false);
+      expect(calculateCorrectImportPathSpy).toHaveBeenCalled();
+      expect(reporter.report).not.toHaveBeenCalled();
+
+      calculateCorrectImportPathSpy.mockRestore();
     });
   });
 });
