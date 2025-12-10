@@ -76,6 +76,11 @@ export default antfu(
       'dist/**',
       // Test files can import from all layers
       '**/*.test.ts',
+      // Config files
+      'vitest.config.ts',
+      'tsdown.config.ts',
+      'eslint.config.js',
+      'boundaries.config.js',
     ],
   },
   prettierConfig,
