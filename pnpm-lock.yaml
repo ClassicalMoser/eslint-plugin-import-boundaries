@@ -14,6 +14,9 @@ importers:
       '@rolldown/binding-darwin-x64':
         specifier: 1.0.0-beta.53
         version: 1.0.0-beta.53
+      '@rolldown/binding-linux-x64-gnu':
+        specifier: 1.0.0-beta.53
+        version: 1.0.0-beta.53
       '@stryker-mutator/core':
         specifier: ^9.4.0
         version: 9.4.0(@types/node@24.10.3)
@@ -710,7 +713,6 @@ packages:
   '@rolldown/binding-darwin-x64@1.0.0-beta.53':
     resolution: {integrity: sha512-GTXe+mxsCGUnJOFMhfGWmefP7Q9TpYUseHvhAhr21nCTgdS8jPsvirb0tJwM3lN0/u/cg7bpFNa16fQrjKrCjQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
-    cpu: [x64]
     os: [darwin]
 
   '@rolldown/binding-freebsd-x64@1.0.0-beta.53':
@@ -3293,8 +3295,7 @@ snapshots:
   '@rolldown/binding-linux-arm64-musl@1.0.0-beta.53':
     optional: true
 
-  '@rolldown/binding-linux-x64-gnu@1.0.0-beta.53':
-    optional: true
+  '@rolldown/binding-linux-x64-gnu@1.0.0-beta.53': {}
 
   '@rolldown/binding-linux-x64-musl@1.0.0-beta.53':
     optional: true

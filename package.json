@@ -66,6 +66,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^6.5.1",
     "@rolldown/binding-darwin-x64": "1.0.0-beta.53",
+    "@rolldown/binding-linux-x64-gnu": "1.0.0-beta.53",
     "@stryker-mutator/core": "^9.4.0",
     "@stryker-mutator/typescript-checker": "^9.4.0",
     "@stryker-mutator/vitest-runner": "^9.4.0",
