@@ -449,5 +449,274 @@ describe('relationshipDetection', () => {
 
       expect(result).toBe('@entities');
     });
+
+    it('should handle fileBoundary null and targetBoundary null (external package)', () => {
+      const boundaries = [
+        entitiesBoundary,
+        queriesBoundary,
+        transformsBoundary,
+      ];
+      const fileDir = path.resolve(cwd, 'other');
+      const fileBoundary = null;
+
+      // External package (targetAbs is empty, so targetBoundary is null)
+      // This should return UNKNOWN_BOUNDARY from calculateCrossBoundaryPath
+      const result = calculateCorrectImportPath(
+        'lodash',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'alias',
+      );
+
+      expect(result).toBe('UNKNOWN_BOUNDARY');
+    });
+
+    it('should handle fileBoundary exists but targetBoundary is null (external target)', () => {
+      const boundaries = [
+        entitiesBoundary,
+        queriesBoundary,
+        transformsBoundary,
+      ];
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
+      const fileBoundary = queriesBoundary;
+
+      // File in boundary importing external package
+      // targetBoundary will be null, so should use cross-boundary path (UNKNOWN_BOUNDARY)
+      const result = calculateCorrectImportPath(
+        'lodash',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'alias',
+      );
+
+      expect(result).toBe('UNKNOWN_BOUNDARY');
+    });
+
+    it('should handle fileBoundary null and targetBoundary exists (file outside boundary)', () => {
+      const boundaries = [
+        entitiesBoundary,
+        queriesBoundary,
+        transformsBoundary,
+      ];
+      const fileDir = path.resolve(cwd, 'other');
+      const fileBoundary = null;
+
+      // File outside boundaries importing from boundary
+      // This is cross-boundary, should return alias
+      const result = calculateCorrectImportPath(
+        '@entities',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'alias',
+      );
+
+      expect(result).toBe('@entities');
+    });
+
+    it('should handle same boundary when checkAncestorBarrel returns false', () => {
+      const boundaries = [
+        entitiesBoundary,
+        queriesBoundary,
+        transformsBoundary,
+      ];
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
+      const fileBoundary = queriesBoundary;
+
+      // Same boundary, not an ancestor barrel (checkAncestorBarrel returns false)
+      // Should proceed to calculateSameBoundaryPath
+      const result = calculateCorrectImportPath(
+        './sibling.ts',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'alias',
+      );
+
+      expect(result).toBe('./sibling');
+    });
+
+    it('should use custom barrelFileName when provided', () => {
+      const boundaries = [
+        entitiesBoundary,
+        queriesBoundary,
+        transformsBoundary,
+      ];
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
+      const fileBoundary = queriesBoundary;
+
+      // Test with custom barrelFileName
+      const result = calculateCorrectImportPath(
+        '../barrel',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'alias',
+        'barrel', // custom barrelFileName
+      );
+
+      // Should still work with custom barrel file name
+      expect(result).toBeDefined();
+    });
+
+    it('should use custom fileExtensions when provided', () => {
+      const boundaries = [
+        entitiesBoundary,
+        queriesBoundary,
+        transformsBoundary,
+      ];
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
+      const fileBoundary = queriesBoundary;
+
+      // Test with custom fileExtensions
+      const result = calculateCorrectImportPath(
+        './sibling.vue',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'alias',
+        'index',
+        ['.vue', '.ts'], // custom fileExtensions
+      );
+
+      // Should handle custom extensions
+      expect(result).toBe('./sibling');
+    });
+
+    it('should handle cross-boundary when fileBoundary exists and targetBoundary is different', () => {
+      const boundaries = [
+        entitiesBoundary,
+        queriesBoundary,
+        transformsBoundary,
+      ];
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
+      const fileBoundary = queriesBoundary;
+
+      // File in queries boundary, importing from entities boundary
+      // fileBoundary !== targetBoundary, so should use cross-boundary path
+      const result = calculateCorrectImportPath(
+        '@entities',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'alias',
+      );
+
+      expect(result).toBe('@entities');
+    });
+
+    it('should handle absolute style when fileBoundary is null', () => {
+      const boundaries = [
+        entitiesBoundary,
+        queriesBoundary,
+        transformsBoundary,
+      ];
+      const fileDir = path.resolve(cwd, 'other');
+      const fileBoundary = null;
+
+      // File outside boundaries, absolute style
+      const result = calculateCorrectImportPath(
+        'src/domain/entities',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'absolute',
+      );
+
+      expect(result).toBe('src/domain/entities');
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle when isAncestorBarrelImport returns false (not an ancestor barrel)', () => {
+      const boundaries = [
+        entitiesBoundary,
+        queriesBoundary,
+        transformsBoundary,
+      ];
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
+      const fileBoundary = queriesBoundary;
+
+      // Same-boundary import that is NOT an ancestor barrel
+      const result = calculateCorrectImportPath(
+        './sibling',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'alias',
+      );
+
+      // Should not return null (not an ancestor barrel)
+      expect(result).not.toBeNull();
+      expect(result).toBe('./sibling');
+    });
+
+    it('should handle when isCrossBoundaryImport returns false (same boundary)', () => {
+      const boundaries = [
+        entitiesBoundary,
+        queriesBoundary,
+        transformsBoundary,
+      ];
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
+      const fileBoundary = queriesBoundary;
+
+      // Same-boundary import
+      const result = calculateCorrectImportPath(
+        './sibling',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'alias',
+      );
+
+      // Should use same-boundary path calculation, not cross-boundary
+      expect(result).toBe('./sibling');
+    });
+
+    it('should handle when targetBoundary is null (external package)', () => {
+      const boundaries = [
+        entitiesBoundary,
+        queriesBoundary,
+        transformsBoundary,
+      ];
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
+      const fileBoundary = queriesBoundary;
+
+      // External package (targetBoundary will be null)
+      const result = calculateCorrectImportPath(
+        'lodash',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'alias',
+      );
+
+      // Should return UNKNOWN_BOUNDARY for external packages
+      expect(result).toBe('UNKNOWN_BOUNDARY');
+    });
   });
 });

@@ -48,6 +48,7 @@
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
+    "test:mutation": "stryker run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -63,6 +64,9 @@
   "devDependencies": {
     "@antfu/eslint-config": "^6.5.1",
     "@rolldown/binding-darwin-x64": "1.0.0-beta.53",
+    "@stryker-mutator/core": "^9.4.0",
+    "@stryker-mutator/typescript-checker": "^9.4.0",
+    "@stryker-mutator/vitest-runner": "^9.4.0",
     "@types/node": "^24.10.2",
     "@vitest/coverage-v8": "^4.0.15",
     "eslint": "^9.39.1",

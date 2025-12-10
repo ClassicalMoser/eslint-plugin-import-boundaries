@@ -8,4 +8,3 @@
 export function isExternalPackage(targetAbs: string): boolean {
   return !targetAbs;
 }
-

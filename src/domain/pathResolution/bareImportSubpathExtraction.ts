@@ -3,6 +3,11 @@
  */
 
 import type { Boundary } from '@shared';
+import {
+  extractExactMatchSubpath,
+  extractPrefixMatchSubpath,
+  extractSuffixMatchSubpath,
+} from './bareImportSubpathExtractionHelpers';
 
 /**
  * Extract subpath from bare import relative to matching boundary.
@@ -11,21 +16,20 @@ export function extractBareImportSubpath(
   rawSpec: string,
   matchingBoundary: Boundary,
 ): string {
-  if (rawSpec === matchingBoundary.dir) {
-    return '';
-  } else if (rawSpec.startsWith(`${matchingBoundary.dir}/`)) {
-    return rawSpec.slice(matchingBoundary.dir.length + 1);
-  } else {
-    // Find the matching suffix and get the subpath
-    const boundaryParts = matchingBoundary.dir.split('/');
-    for (let i = boundaryParts.length - 1; i >= 0; i--) {
-      const boundarySuffix = boundaryParts.slice(i).join('/');
-      if (rawSpec.startsWith(`${boundarySuffix}/`)) {
-        return rawSpec.slice(boundarySuffix.length + 1);
-      } else if (rawSpec === boundarySuffix) {
-        return '';
-      }
-    }
-    return '';
+  const boundaryDir = matchingBoundary.dir;
+
+  // Try exact match first
+  const exactMatch = extractExactMatchSubpath(rawSpec, boundaryDir);
+  if (exactMatch !== null) {
+    return exactMatch;
   }
+
+  // Try prefix match
+  const prefixMatch = extractPrefixMatchSubpath(rawSpec, boundaryDir);
+  if (prefixMatch !== null) {
+    return prefixMatch;
+  }
+
+  // Try suffix match (fallback)
+  return extractSuffixMatchSubpath(rawSpec, boundaryDir);
 }

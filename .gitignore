@@ -3,7 +3,9 @@ dist
 *.log
 .DS_Store
 coverage
+reports
 .vscode
 .idea
 *.tsbuildinfo
 .prettierignore
+.stryker-tmp

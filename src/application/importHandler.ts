@@ -13,6 +13,15 @@ import {
 } from '@domain';
 import { detectAndReportAncestorBarrel, isExternalPackage } from './detection';
 import { handleUnknownBoundary } from './handling';
+import { getImportHandlerDefaults } from './importHandlerDefaults';
+import {
+  isNullPath,
+  isUnknownBoundary,
+  isValidPath,
+  shouldDetectAncestorBarrel,
+  shouldValidateAliasSubpath,
+  shouldValidateBoundaryRules,
+} from './importHandlerHelpers';
 import {
   validateAliasSubpath,
   validateBoundaryRules,
@@ -47,6 +56,7 @@ export interface HandleImportOptions {
  * @returns true if a violation was reported, false otherwise
  */
 export function handleImport(options: HandleImportOptions): boolean {
+  const defaults = getImportHandlerDefaults();
   const {
     rawSpec,
     fileDir,
@@ -56,13 +66,13 @@ export function handleImport(options: HandleImportOptions): boolean {
     cwd,
     reporter,
     createFixer,
-    crossBoundaryStyle = 'alias',
+    crossBoundaryStyle = defaults.crossBoundaryStyle,
     defaultSeverity,
-    allowUnknownBoundaries = false,
-    isTypeOnly = false,
-    skipBoundaryRules = false,
-    barrelFileName = 'index',
-    fileExtensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
+    allowUnknownBoundaries = defaults.allowUnknownBoundaries,
+    isTypeOnly = defaults.isTypeOnly,
+    skipBoundaryRules = defaults.skipBoundaryRules,
+    barrelFileName = defaults.barrelFileName,
+    fileExtensions = defaults.fileExtensions,
   } = options;
 
   // Resolve target path first to determine if it's internal or external
@@ -85,19 +95,18 @@ export function handleImport(options: HandleImportOptions): boolean {
 
   // Handle cross-boundary alias subpaths (e.g., '@entities/army' -> '@entities')
   // Only check this if using alias style
-  if (crossBoundaryStyle === 'alias') {
-    if (
-      validateAliasSubpath({
-        rawSpec,
-        boundaries,
-        fileBoundary,
-        reporter,
-        createFixer,
-        defaultSeverity,
-      })
-    ) {
-      return true;
-    }
+  if (
+    shouldValidateAliasSubpath(crossBoundaryStyle) &&
+    validateAliasSubpath({
+      rawSpec,
+      boundaries,
+      fileBoundary,
+      reporter,
+      createFixer,
+      defaultSeverity,
+    })
+  ) {
+    return true;
   }
 
   // Resolve target to nearest boundary (even if it has no rules)
@@ -108,23 +117,21 @@ export function handleImport(options: HandleImportOptions): boolean {
   // Skip this check for test files if skipBoundaryRules is true (but still enforce path format)
   // Every boundary has rules (explicit or implicit "deny all"), so use the boundary itself
   if (
-    !skipBoundaryRules &&
-    fileBoundary &&
-    targetBoundary &&
-    fileBoundary !== targetBoundary
+    shouldValidateBoundaryRules(
+      skipBoundaryRules,
+      fileBoundary,
+      targetBoundary,
+    ) &&
+    validateBoundaryRules({
+      fileBoundary: fileBoundary!,
+      targetBoundary: targetBoundary!,
+      boundaries,
+      isTypeOnly,
+      reporter,
+      defaultSeverity,
+    })
   ) {
-    if (
-      validateBoundaryRules({
-        fileBoundary,
-        targetBoundary,
-        boundaries,
-        isTypeOnly,
-        reporter,
-        defaultSeverity,
-      })
-    ) {
-      return true;
-    }
+    return true;
   }
 
   // Calculate correct path (for path format enforcement)
@@ -140,22 +147,21 @@ export function handleImport(options: HandleImportOptions): boolean {
     fileExtensions,
   );
 
-  if (!correctPath) {
+  if (isNullPath(correctPath)) {
     // Check if it's ancestor barrel (not fixable)
     // calculateCorrectImportPath returns null only for ancestor barrels
-    if (fileBoundary) {
-      if (
-        detectAndReportAncestorBarrel({
-          rawSpec,
-          fileBoundary,
-          rootDir,
-          crossBoundaryStyle,
-          reporter,
-          defaultSeverity,
-        })
-      ) {
-        return true;
-      }
+    if (
+      shouldDetectAncestorBarrel(correctPath, fileBoundary) &&
+      detectAndReportAncestorBarrel({
+        rawSpec,
+        fileBoundary: fileBoundary!,
+        rootDir,
+        crossBoundaryStyle,
+        reporter,
+        defaultSeverity,
+      })
+    ) {
+      return true;
     }
     // Defensive: should never reach here in practice
     // calculateCorrectImportPath only returns null for ancestor barrels
@@ -164,13 +170,22 @@ export function handleImport(options: HandleImportOptions): boolean {
   }
 
   // Check for unknown boundary (target outside all boundaries)
-  if (correctPath === 'UNKNOWN_BOUNDARY') {
+  if (isUnknownBoundary(correctPath)) {
     return handleUnknownBoundary({
       rawSpec,
       allowUnknownBoundaries,
       reporter,
       defaultSeverity,
     });
+  }
+
+  // Ensure correctPath is a valid non-empty string before validation
+  // This is a defensive check to prevent passing invalid paths to validatePathFormat
+  if (!isValidPath(correctPath)) {
+    // Defensive: should never reach here in practice
+    // calculateCorrectImportPath should always return null, UNKNOWN_BOUNDARY, or a valid path
+    // This branch exists for type safety and to handle edge cases gracefully
+    return false;
   }
 
   // Check if current path is correct and report violations

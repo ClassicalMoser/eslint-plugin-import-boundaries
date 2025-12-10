@@ -72,5 +72,17 @@ describe('bareImportResolution', () => {
       expect(result.targetAbs).toBe('');
       expect(result.targetDir).toBe('');
     });
+
+    it('should resolve bare import with just boundary dir (no subpath)', () => {
+      const boundaries = [entitiesBoundary];
+      const result = resolveBareImport('domain/entities', boundaries, 'index', [
+        '.ts',
+      ]);
+
+      expect(result.targetAbs).toBe(
+        path.join(entitiesBoundary.absDir, 'index.ts'),
+      );
+      expect(result.targetDir).toBe(entitiesBoundary.absDir);
+    });
   });
 });

@@ -17,9 +17,11 @@ export function calculateDistantPath(
   rootDir: string,
   crossBoundaryStyle: 'alias' | 'absolute',
 ): string {
-  // If first differing segment is at fileParts.length, it's in our directory (subdirectory)
+  // If first differing segment is at fileParts.length, it's a sibling (same parent directory)
+  // This includes siblings at boundary root level (fileParts.length === 0, firstDifferingIndex === 0)
+  // and subdirectories (fileParts.length > 0, firstDifferingIndex === fileParts.length)
   if (firstDifferingIndex === fileParts.length) {
-    // Directory in our directory - use first differing segment only (barrel file)
+    // Sibling or subdirectory - use relative path to prevent circular dependencies through boundary index
     return `./${firstDifferingSegment}`;
   }
 

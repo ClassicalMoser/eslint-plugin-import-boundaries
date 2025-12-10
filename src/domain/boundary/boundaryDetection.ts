@@ -92,26 +92,6 @@ export function resolveToSpecifiedBoundary(
     )[0]!;
   }
 
-  // If no specified boundaries match, find the nearest ancestor with rules
-  // An empty array counts as having rules (empty allow = deny all, empty deny = allow all)
-  // allowTypeImportsFrom also counts as having rules (even if only for type imports)
-  const allSpecifiedBoundaries = boundaries.filter(
-    (b) =>
-      b.allowImportsFrom !== undefined ||
-      b.denyImportsFrom !== undefined ||
-      b.allowTypeImportsFrom !== undefined,
-  );
-
-  // Find ancestors (boundaries that contain the file)
-  const ancestors = allSpecifiedBoundaries.filter((b) =>
-    isInsideDir(b.absDir, filename),
-  );
-
-  if (ancestors.length > 0) {
-    // Return the most specific ancestor (longest path)
-    return ancestors.sort((a, b) => b.absDir.length - a.absDir.length)[0]!;
-  }
-
   // No specified boundaries found - return null (import will be rejected)
   return null;
 }

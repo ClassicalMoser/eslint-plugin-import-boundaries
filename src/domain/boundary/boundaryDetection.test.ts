@@ -387,5 +387,50 @@ describe('boundaryDetection', () => {
       expect(result.isValid).toBe(true);
       expect(result.fileBoundary).toBe(windowsBoundaries[0]);
     });
+
+    it('should return most specific ancestor when file is deeply nested with multiple rule configs', () => {
+      // Test line 112: return ancestors.sort(...)[0]!
+      // Need a deeply nested file with multiple boundaries that have rules
+      // The function should return the longest/most specific one
+      const rootBoundary: Boundary = {
+        dir: 'domain',
+        alias: '@domain',
+        absDir: path.resolve(cwd, rootDir, 'domain'),
+        allowImportsFrom: [], // Has rules
+      };
+
+      const midBoundary: Boundary = {
+        dir: 'domain/application',
+        alias: '@application',
+        absDir: path.resolve(cwd, rootDir, 'domain/application'),
+        allowImportsFrom: [], // Has rules
+      };
+
+      const deepBoundary: Boundary = {
+        dir: 'domain/application/services',
+        alias: '@services',
+        absDir: path.resolve(cwd, rootDir, 'domain/application/services'),
+        allowImportsFrom: [], // Has rules
+      };
+
+      // File is deeply nested - all three boundaries are ancestors
+      const filename = path.resolve(
+        cwd,
+        rootDir,
+        'domain/application/services/nested/deep',
+        'file.ts',
+      );
+
+      const result = resolveToSpecifiedBoundary(filename, [
+        rootBoundary,
+        midBoundary,
+        deepBoundary,
+      ]);
+
+      // Should return the most specific (longest path) ancestor - line 112
+      expect(result).toBe(deepBoundary);
+      expect(result?.absDir.length).toBeGreaterThan(midBoundary.absDir.length);
+      expect(result?.absDir.length).toBeGreaterThan(rootBoundary.absDir.length);
+    });
   });
 });

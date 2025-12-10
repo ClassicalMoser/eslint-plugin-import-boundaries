@@ -65,6 +65,8 @@ export function extractRuleOptions(context: Rule.RuleContext): RuleContextData {
     (b: RuleOptions['boundaries'][number]) => ({
       dir: b.dir,
       alias: b.alias,
+      // Use explicit identifier if provided, otherwise fall back to alias or dir
+      identifier: b.identifier ?? b.alias ?? b.dir,
       absDir: path.resolve(cwd, rootDir, b.dir),
       allowImportsFrom: b.allowImportsFrom,
       denyImportsFrom: b.denyImportsFrom,

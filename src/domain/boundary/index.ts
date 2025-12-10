@@ -10,6 +10,3 @@ export {
 } from './boundaryDetection';
 
 export { checkBoundaryRules, getBoundaryIdentifier } from './boundaryRules';
-
-
-

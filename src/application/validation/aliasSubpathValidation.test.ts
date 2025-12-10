@@ -3,11 +3,9 @@
  */
 
 import type { Boundary } from '@shared';
-import type { Rule } from 'eslint';
 import path from 'node:path';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createFixerFactory } from '../../infrastructure/eslint/fixerAdapter.js';
-import { ESLintReporter } from '../../infrastructure/eslint/reporterAdapter.js';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { createMockPorts } from '../../__tests__/testUtils.js';
 import { validateAliasSubpath } from './aliasSubpathValidation';
 
 describe('aliasSubpathValidation', () => {
@@ -16,15 +14,6 @@ describe('aliasSubpathValidation', () => {
 
   let entitiesBoundary: Boundary;
   let queriesBoundary: Boundary;
-  let mockContext: Rule.RuleContext;
-  let mockNode: Rule.Node;
-  let reportedViolations: Array<{
-    node: Rule.Node;
-    messageId: string;
-    data?: Record<string, string>;
-    fix?: Rule.ReportFixer;
-    severity?: number;
-  }>;
 
   beforeEach(() => {
     entitiesBoundary = {
@@ -40,29 +29,11 @@ describe('aliasSubpathValidation', () => {
       absDir: path.resolve(cwd, rootDir, 'domain/queries'),
       allowImportsFrom: [],
     };
-
-    reportedViolations = [];
-
-    mockNode = {
-      type: 'ImportDeclaration',
-      source: {
-        type: 'Literal',
-        value: '@entities',
-        raw: "'@entities'",
-      },
-    } as Rule.Node;
-
-    mockContext = {
-      report: vi.fn((descriptor) => {
-        reportedViolations.push(descriptor as any);
-      }),
-    } as unknown as Rule.RuleContext;
   });
 
   describe('validateAliasSubpath', () => {
     it('should flag cross-boundary alias subpaths', () => {
-      const reporter = new ESLintReporter(mockContext, mockNode);
-      const createFixer = createFixerFactory(mockNode);
+      const { reporter, createFixer } = createMockPorts();
       const boundaries = [entitiesBoundary, queriesBoundary];
 
       const result = validateAliasSubpath({
@@ -74,18 +45,16 @@ describe('aliasSubpathValidation', () => {
       });
 
       expect(result).toBe(true);
-      expect(mockContext.report).toHaveBeenCalled();
-      const violation = reportedViolations[0];
-      expect(violation.messageId).toBe('incorrectImportPath');
-      expect(violation.data?.expectedPath).toBe('@entities');
-      expect(violation.fix).toBeDefined();
+      expect(reporter.report).toHaveBeenCalled();
+      const violation = reporter.getLastReport();
+      expect(violation?.messageId).toBe('incorrectImportPath');
+      expect(violation?.data?.expectedPath).toBe('@entities');
+      expect(violation?.fix).toBeDefined();
     });
 
     it('should not flag subpaths within same boundary', () => {
-      const reporter = new ESLintReporter(mockContext, mockNode);
-      const createFixer = createFixerFactory(mockNode);
+      const { reporter, createFixer } = createMockPorts();
       const boundaries = [entitiesBoundary, queriesBoundary];
-      reportedViolations = [];
 
       const result = validateAliasSubpath({
         rawSpec: '@queries/otherSubdir',
@@ -96,19 +65,12 @@ describe('aliasSubpathValidation', () => {
       });
 
       expect(result).toBe(false);
-      const subpathViolation = reportedViolations.find(
-        (v) =>
-          v.data?.actualPath === '@queries/otherSubdir' &&
-          v.data?.expectedPath === '@queries',
-      );
-      expect(subpathViolation).toBeUndefined();
+      expect(reporter.report).not.toHaveBeenCalled();
     });
 
     it('should return false when not a subpath', () => {
-      const reporter = new ESLintReporter(mockContext, mockNode);
-      const createFixer = createFixerFactory(mockNode);
+      const { reporter, createFixer } = createMockPorts();
       const boundaries = [entitiesBoundary, queriesBoundary];
-      reportedViolations = [];
 
       const result = validateAliasSubpath({
         rawSpec: '@entities',
@@ -119,8 +81,7 @@ describe('aliasSubpathValidation', () => {
       });
 
       expect(result).toBe(false);
-      expect(mockContext.report).not.toHaveBeenCalled();
+      expect(reporter.report).not.toHaveBeenCalled();
     });
   });
 });
-

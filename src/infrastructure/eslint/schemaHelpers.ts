@@ -51,6 +51,7 @@ const boundaryConfigSchema: SchemaProperty = {
   properties: {
     dir: schemaProps.string,
     alias: schemaProps.string,
+    identifier: schemaProps.string, // Canonical boundary identifier (defaults to alias or dir)
     allowImportsFrom: schemaProps.stringArray,
     denyImportsFrom: schemaProps.stringArray,
     allowTypeImportsFrom: schemaProps.stringArray,

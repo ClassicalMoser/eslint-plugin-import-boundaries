@@ -3,29 +3,32 @@
  */
 
 import type { Boundary } from '@shared';
+import {
+  hasAllowList,
+  hasDenyList,
+  isInAllowList,
+  isInDenyList,
+} from './boundaryRulesHelpers';
 
 /**
- * Get the identifier for a boundary (alias if present, otherwise dir).
+ * Get the identifier for a boundary.
+ * Uses the dedicated identifier property if present, otherwise falls back to alias ?? dir.
  * Used for allow/deny rules and error messages.
  */
 export function getBoundaryIdentifier(boundary: Boundary): string {
-  return boundary.alias ?? boundary.dir;
+  return boundary.identifier ?? boundary.alias ?? boundary.dir;
 }
 
 /**
  * Check if a boundary identifier matches a target boundary.
- * Matches by alias (if present) or by dir path.
+ * Matches by the canonical identifier property (or falls back to alias/dir).
  */
 function matchesBoundaryIdentifier(
   identifier: string,
   targetBoundary: Boundary,
 ): boolean {
-  // Try alias first if present
-  if (targetBoundary.alias && identifier === targetBoundary.alias) {
-    return true;
-  }
-  // Fall back to dir
-  return identifier === targetBoundary.dir;
+  const targetIdentifier = getBoundaryIdentifier(targetBoundary);
+  return identifier === targetIdentifier;
 }
 
 /**
@@ -65,26 +68,19 @@ export function checkBoundaryRules(
     return null; // Type imports explicitly allowed
   }
 
-  const hasAllowList =
-    fileBoundary.allowImportsFrom && fileBoundary.allowImportsFrom.length > 0;
-  const hasDenyList =
-    fileBoundary.denyImportsFrom && fileBoundary.denyImportsFrom.length > 0;
+  const fileHasAllowList = hasAllowList(fileBoundary);
+  const fileHasDenyList = hasDenyList(fileBoundary);
 
   // Check deny list first - deny takes precedence for safety
   // This handles the case where you allow a parent boundary but deny a specific sub-boundary
-  if (
-    hasDenyList &&
-    fileBoundary.denyImportsFrom!.some((id) =>
-      matchesBoundaryIdentifier(id, targetBoundary),
-    )
-  ) {
+  if (isInDenyList(fileBoundary, targetBoundary, matchesBoundaryIdentifier)) {
     // Check if it's also in allow list - if so, this is a configuration error
     // Deny still takes precedence for safety
-    const alsoInAllowList =
-      hasAllowList &&
-      fileBoundary.allowImportsFrom!.some((id) =>
-        matchesBoundaryIdentifier(id, targetBoundary),
-      );
+    const alsoInAllowList = isInAllowList(
+      fileBoundary,
+      targetBoundary,
+      matchesBoundaryIdentifier,
+    );
     return {
       reason: alsoInAllowList
         ? `Boundary '${fileIdentifier}' explicitly denies imports from '${targetIdentifier}' (deny takes precedence over allow)`
@@ -93,24 +89,19 @@ export function checkBoundaryRules(
   }
 
   // Check allow list - only if not in deny list
-  if (
-    hasAllowList &&
-    fileBoundary.allowImportsFrom!.some((id) =>
-      matchesBoundaryIdentifier(id, targetBoundary),
-    )
-  ) {
+  if (isInAllowList(fileBoundary, targetBoundary, matchesBoundaryIdentifier)) {
     return null; // Explicitly allowed
   }
 
   // If only allow list exists: deny-all by default
-  if (hasAllowList && !hasDenyList) {
+  if (fileHasAllowList && !fileHasDenyList) {
     return {
       reason: `Cross-boundary import from '${targetIdentifier}' to '${fileIdentifier}' is not allowed. Add '${targetIdentifier}' to 'allowImportsFrom' if this import is intentional.`,
     };
   }
 
   // If only deny list exists: allow-all by default (except denied items)
-  if (hasDenyList && !hasAllowList) {
+  if (fileHasDenyList && !fileHasAllowList) {
     return null; // Allowed (not in deny list)
   }
 

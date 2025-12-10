@@ -34,8 +34,10 @@ export default defineConfig({
       provider: 'v8',
       include: ['src/**/*.ts'],
       exclude: [
+        'src/__tests__/**', // Test utils: Skip coverage
         'src/**/*.test.ts', // Test files: Skip coverage
         'src/**/*.js', // Build files: Skip coverage
+        'src/**/index.ts', // Barrel files: Skip coverage
         'src/**/types.ts', // Types: Declarations only
         'src/**/defaults.ts', // Defaults: Configuration only
         'src/infrastructure/**', // Adapters: Don't test what you don't own

@@ -1,21 +1,16 @@
 /**
  * Same-boundary path calculation.
+ *
+ * Calculates the correct import path for imports within the same boundary.
+ * Handles same-directory, cousin, top-level, and distant imports.
  */
 
 import type { Boundary } from '@shared';
 import path from 'node:path';
+import { pathToParts } from '@domain/path';
 import { calculateBoundaryRootPath } from './boundaryRootPathCalculation';
 import { calculateDistantPath } from './distantPathCalculation';
 import { calculateSameDirectoryPath } from './sameDirectoryPathCalculation';
-
-/**
- * Convert boundary-relative paths to arrays for comparison.
- */
-function pathToParts(relativePath: string): string[] {
-  return relativePath === '' || relativePath === '.'
-    ? []
-    : relativePath.split(path.sep).filter((p) => p && p !== '.');
-}
 
 /**
  * Find first differing segment between target and file paths.

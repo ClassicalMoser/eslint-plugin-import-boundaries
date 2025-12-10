@@ -4,6 +4,7 @@
 
 import type { Fixer, Reporter } from '@ports';
 import type { Boundary } from '@shared';
+import { reportViolation } from '@application/reporting';
 
 export interface PathFormatValidationOptions {
   rawSpec: string;
@@ -17,6 +18,10 @@ export interface PathFormatValidationOptions {
 /**
  * Validate and report incorrect import path format.
  *
+ * Compares the actual import path against the expected path and reports
+ * a violation if they don't match. Provides an auto-fix to correct the path.
+ *
+ * @param options - Validation options
  * @returns true if a violation was reported, false otherwise
  */
 export function validatePathFormat(
@@ -31,22 +36,21 @@ export function validatePathFormat(
     defaultSeverity,
   } = options;
 
-  // Check if current path is correct
+  // Check if current path is correct - no violation if it matches
   if (rawSpec === correctPath) {
-    return false; // No violation
+    return false;
   }
 
-  // Determine severity for this boundary
-  const severity = fileBoundary?.severity || defaultSeverity;
-
-  // Show the expected path directly
-  reporter.report({
+  // Report violation with expected path and auto-fix
+  reportViolation({
+    reporter,
     messageId: 'incorrectImportPath',
     data: {
       expectedPath: correctPath,
       actualPath: rawSpec,
     },
-    severity,
+    fileBoundary,
+    defaultSeverity,
     fix: createFixer(correctPath),
   });
 

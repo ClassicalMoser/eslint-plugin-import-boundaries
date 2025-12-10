@@ -5,30 +5,34 @@
 
 import type { Boundary } from '@shared';
 import { describe, expect, it } from 'vitest';
-import { checkBoundaryRules } from './boundaryRules';
+import { checkBoundaryRules, getBoundaryIdentifier } from './boundaryRules';
 
 describe('boundaryRules', () => {
   const entitiesBoundary: Boundary = {
     dir: 'domain/entities',
     alias: '@entities',
+    identifier: '@entities',
     absDir: '/project/src/domain/entities',
   };
 
   const queriesBoundary: Boundary = {
     dir: 'domain/queries',
     alias: '@queries',
+    identifier: '@queries',
     absDir: '/project/src/domain/queries',
   };
 
   const eventsBoundary: Boundary = {
     dir: 'domain/events',
     alias: '@events',
+    identifier: '@events',
     absDir: '/project/src/domain/events',
   };
 
   const utilsBoundary: Boundary = {
     dir: 'domain/utils',
     alias: '@utils',
+    identifier: '@utils',
     absDir: '/project/src/domain/utils',
   };
 
@@ -279,6 +283,47 @@ describe('boundaryRules', () => {
       );
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('getBoundaryIdentifier', () => {
+    it('should return the identifier property', () => {
+      const boundary: Boundary = {
+        dir: 'domain/entities',
+        alias: '@entities',
+        identifier: '@entities',
+        absDir: '/project/src/domain/entities',
+      };
+
+      const result = getBoundaryIdentifier(boundary);
+
+      expect(result).toBe('@entities');
+    });
+
+    it('should return identifier even when different from alias', () => {
+      const boundary: Boundary = {
+        dir: 'domain/entities',
+        alias: '@entities',
+        identifier: 'entities', // Explicit identifier different from alias
+        absDir: '/project/src/domain/entities',
+      };
+
+      const result = getBoundaryIdentifier(boundary);
+
+      expect(result).toBe('entities');
+    });
+
+    it('should return identifier when alias is undefined', () => {
+      const boundary: Boundary = {
+        dir: 'domain/entities',
+        alias: undefined,
+        identifier: 'domain/entities',
+        absDir: '/project/src/domain/entities',
+      };
+
+      const result = getBoundaryIdentifier(boundary);
+
+      expect(result).toBe('domain/entities');
     });
   });
 });

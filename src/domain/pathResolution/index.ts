@@ -8,7 +8,5 @@ export { resolveBareImport } from './bareImportResolution';
 export { extractBareImportSubpath } from './bareImportSubpathExtraction';
 export { findMatchingBoundary } from './boundaryMatching';
 export { resolveRelativeImport } from './relativeImportResolution';
+export { resolveTarget } from './resolveTarget';
 export { resolveTargetPath } from './targetPathResolution';
-
-
-

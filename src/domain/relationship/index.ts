@@ -3,6 +3,3 @@
  */
 
 export { calculateCorrectImportPath } from './relationshipDetection';
-
-
-

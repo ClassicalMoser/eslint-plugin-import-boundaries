@@ -9,10 +9,11 @@
 export interface Boundary {
   dir: string; // Relative directory path (e.g., 'domain/entities')
   alias?: string; // Import alias (e.g., '@entities') - optional when crossBoundaryStyle is 'absolute'
+  identifier?: string; // Canonical boundary identifier - used for allow/deny rules and error messages (independent of path style). Defaults to alias ?? dir if not provided.
   absDir: string; // Absolute resolved directory path
-  allowImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that can be imported from
-  denyImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that cannot be imported from
-  allowTypeImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that can be imported as types (overrides allowImportsFrom for type-only imports)
+  allowImportsFrom?: string[]; // Array of boundary identifiers that can be imported from
+  denyImportsFrom?: string[]; // Array of boundary identifiers that cannot be imported from
+  allowTypeImportsFrom?: string[]; // Array of boundary identifiers that can be imported as types (overrides allowImportsFrom for type-only imports)
   nestedPathFormat?: 'alias' | 'relative' | 'inherit'; // Path format for nested boundaries
   severity?: 'error' | 'warn'; // Severity for violations in this boundary
 }
@@ -33,9 +34,10 @@ export interface FileData {
 export interface BoundaryConfig {
   dir: string; // Relative directory path (e.g., 'domain/entities')
   alias?: string; // Import alias (e.g., '@entities') - required when crossBoundaryStyle is 'alias', optional when 'absolute'
-  allowImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that can be imported from
-  denyImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that cannot be imported from
-  allowTypeImportsFrom?: string[]; // Array of boundary identifiers (alias or dir) that can be imported as types (overrides allowImportsFrom for type-only imports)
+  identifier?: string; // Canonical boundary identifier - used for allow/deny rules and error messages (defaults to alias if present, otherwise dir)
+  allowImportsFrom?: string[]; // Array of boundary identifiers that can be imported from
+  denyImportsFrom?: string[]; // Array of boundary identifiers that cannot be imported from
+  allowTypeImportsFrom?: string[]; // Array of boundary identifiers that can be imported as types (overrides allowImportsFrom for type-only imports)
   nestedPathFormat?: 'alias' | 'relative' | 'inherit'; // Path format for nested boundaries
   severity?: 'error' | 'warn'; // Severity for violations in this boundary (default: 'error')
 }

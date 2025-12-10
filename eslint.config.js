@@ -12,11 +12,14 @@ export default antfu(
     ignores: [
       // Reports
       'coverage/**',
+      'reports/**',
       // External files
       'node_modules/**',
       // Build files
       'eslint-plugin-import-boundaries.js',
       'eslint-plugin-import-boundaries.d.ts',
+      // Stryker mutation testing sandbox
+      '.stryker-tmp/**',
     ],
     languageOptions: {
       globals: {
@@ -44,6 +47,8 @@ export default antfu(
       'pnpm-lock.yaml',
       'node_modules/**',
       'coverage/**',
+      '.stryker-tmp/**',
+      'reports/**',
       '*.yml',
       '**/*.md',
       '**/*.mdx',

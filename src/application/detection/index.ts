@@ -4,6 +4,3 @@
 
 export { detectAndReportAncestorBarrel } from './ancestorBarrelDetection';
 export { isExternalPackage } from './externalPackageDetection';
-
-
-

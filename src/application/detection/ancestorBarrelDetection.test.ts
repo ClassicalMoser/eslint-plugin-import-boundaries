@@ -3,10 +3,9 @@
  */
 
 import type { Boundary } from '@shared';
-import type { Rule } from 'eslint';
 import path from 'node:path';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ESLintReporter } from '../../infrastructure/eslint/reporterAdapter.js';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { createMockPorts } from '../../__tests__/testUtils.js';
 import { detectAndReportAncestorBarrel } from './ancestorBarrelDetection';
 
 describe('ancestorBarrelDetection', () => {
@@ -14,15 +13,6 @@ describe('ancestorBarrelDetection', () => {
   const rootDir = 'src';
 
   let queriesBoundary: Boundary;
-  let mockContext: Rule.RuleContext;
-  let mockNode: Rule.Node;
-  let reportedViolations: Array<{
-    node: Rule.Node;
-    messageId: string;
-    data?: Record<string, string>;
-    fix?: Rule.ReportFixer;
-    severity?: number;
-  }>;
 
   beforeEach(() => {
     queriesBoundary = {
@@ -31,28 +21,11 @@ describe('ancestorBarrelDetection', () => {
       absDir: path.resolve(cwd, rootDir, 'domain/queries'),
       allowImportsFrom: [],
     };
-
-    reportedViolations = [];
-
-    mockNode = {
-      type: 'ImportDeclaration',
-      source: {
-        type: 'Literal',
-        value: '@queries',
-        raw: "'@queries'",
-      },
-    } as Rule.Node;
-
-    mockContext = {
-      report: vi.fn((descriptor) => {
-        reportedViolations.push(descriptor as any);
-      }),
-    } as unknown as Rule.RuleContext;
   });
 
   describe('detectAndReportAncestorBarrel', () => {
     it('should report ancestor barrel imports in alias style', () => {
-      const reporter = new ESLintReporter(mockContext, mockNode);
+      const { reporter } = createMockPorts();
 
       const result = detectAndReportAncestorBarrel({
         rawSpec: '@queries',
@@ -63,15 +36,15 @@ describe('ancestorBarrelDetection', () => {
       });
 
       expect(result).toBe(true);
-      expect(mockContext.report).toHaveBeenCalled();
-      const violation = reportedViolations[0];
-      expect(violation.messageId).toBe('ancestorBarrelImport');
-      expect(violation.data?.alias).toBe('@queries');
-      expect(violation.fix).toBeUndefined();
+      expect(reporter.report).toHaveBeenCalled();
+      const violation = reporter.getLastReport();
+      expect(violation?.messageId).toBe('ancestorBarrelImport');
+      expect(violation?.data?.alias).toBe('@queries');
+      expect(violation?.fix).toBeUndefined();
     });
 
     it('should report ancestor barrel imports in absolute style', () => {
-      const reporter = new ESLintReporter(mockContext, mockNode);
+      const { reporter } = createMockPorts();
 
       const result = detectAndReportAncestorBarrel({
         rawSpec: 'src/domain/queries',
@@ -82,14 +55,30 @@ describe('ancestorBarrelDetection', () => {
       });
 
       expect(result).toBe(true);
-      expect(mockContext.report).toHaveBeenCalled();
-      const violation = reportedViolations[0];
-      expect(violation.messageId).toBe('ancestorBarrelImport');
+      expect(reporter.report).toHaveBeenCalled();
+      const violation = reporter.getLastReport();
+      expect(violation?.messageId).toBe('ancestorBarrelImport');
+    });
+
+    it('should report ancestor barrel imports in absolute style with trailing slash', () => {
+      const { reporter } = createMockPorts();
+
+      const result = detectAndReportAncestorBarrel({
+        rawSpec: 'src/domain/queries/',
+        fileBoundary: queriesBoundary,
+        rootDir,
+        crossBoundaryStyle: 'absolute',
+        reporter,
+      });
+
+      expect(result).toBe(true);
+      expect(reporter.report).toHaveBeenCalled();
+      const violation = reporter.getLastReport();
+      expect(violation?.messageId).toBe('ancestorBarrelImport');
     });
 
     it('should return false when not an ancestor barrel', () => {
-      const reporter = new ESLintReporter(mockContext, mockNode);
-      reportedViolations = [];
+      const { reporter } = createMockPorts();
 
       const result = detectAndReportAncestorBarrel({
         rawSpec: '@entities',
@@ -100,8 +89,7 @@ describe('ancestorBarrelDetection', () => {
       });
 
       expect(result).toBe(false);
-      expect(mockContext.report).not.toHaveBeenCalled();
+      expect(reporter.report).not.toHaveBeenCalled();
     });
   });
 });
-

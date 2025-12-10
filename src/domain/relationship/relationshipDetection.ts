@@ -8,9 +8,17 @@ import { resolveToBoundary } from '@domain/boundary';
 import {
   calculateCrossBoundaryPath,
   calculateSameBoundaryPath,
-  checkAncestorBarrel,
 } from '@domain/pathCalculation';
 import { resolveTargetPath } from '@domain/pathResolution';
+import {
+  DEFAULT_BARREL_FILE_NAME,
+  DEFAULT_CROSS_BOUNDARY_STYLE,
+  getDefaultFileExtensions,
+} from './relationshipDetectionDefaults';
+import {
+  isAncestorBarrelImport,
+  isCrossBoundaryImport,
+} from './relationshipDetectionHelpers';
 
 /**
  * Calculate the correct import path using the simplified algorithm.
@@ -22,9 +30,9 @@ export function calculateCorrectImportPath(
   boundaries: Boundary[],
   rootDir: string,
   cwd: string,
-  crossBoundaryStyle: 'alias' | 'absolute' = 'alias',
-  barrelFileName: string = 'index',
-  fileExtensions: string[] = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
+  crossBoundaryStyle: 'alias' | 'absolute' = DEFAULT_CROSS_BOUNDARY_STYLE,
+  barrelFileName: string = DEFAULT_BARREL_FILE_NAME,
+  fileExtensions: string[] = getDefaultFileExtensions(),
 ): string | null {
   // Resolve target path
   const { targetAbs, targetDir } = resolveTargetPath(
@@ -41,7 +49,7 @@ export function calculateCorrectImportPath(
   const targetBoundary = resolveToBoundary(targetAbs, boundaries);
 
   // 1. Cross-boundary: use @boundary (no subpath) or absolute path
-  if (!fileBoundary || targetBoundary !== fileBoundary) {
+  if (isCrossBoundaryImport(fileBoundary, targetBoundary)) {
     return calculateCrossBoundaryPath(
       targetBoundary,
       rootDir,
@@ -49,17 +57,22 @@ export function calculateCorrectImportPath(
     );
   }
 
-  // 2. Ancestor barrel: forbidden
-  if (checkAncestorBarrel(rawSpec, fileBoundary, rootDir, crossBoundaryStyle)) {
+  // 2. Ancestor barrel: forbidden (same-boundary only)
+  // Early return if ancestor barrel detected
+  // At this point, fileBoundary is guaranteed to be non-null (same-boundary check above)
+  if (
+    isAncestorBarrelImport(rawSpec, fileBoundary!, rootDir, crossBoundaryStyle)
+  ) {
     return null; // Handled separately (not fixable)
   }
 
   // 3. Same boundary: calculate path based on relationship
+  // At this point, fileBoundary is guaranteed to be non-null (same-boundary check above)
   return calculateSameBoundaryPath(
     targetDir,
     targetAbs,
     fileDir,
-    fileBoundary,
+    fileBoundary!,
     rootDir,
     barrelFileName,
     crossBoundaryStyle,
