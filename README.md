@@ -1,15 +1,15 @@
 # eslint-plugin-import-boundaries
 
-> Enforce architectural boundaries with deterministic import paths.
+> Automatically enforce architectural boundaries with deterministic import paths.
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-import-boundaries)](https://www.npmjs.com/package/eslint-plugin-import-boundaries)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 
 **Note: This is an alpha release, originally developed for a personal project. It is not yet stable and may have breaking changes.**
 
-An opinionated ESLint rule that enforces architectural boundaries using deterministic import path rules. This rule determines when to use alias vs relative imports based on your architecture, rather than enforcing a single pattern for all imports.
+An opinionated, TypeScript-first ESLint rule that enforces architectural boundaries using deterministic import path expectations. This rule determines when to use alias (or absolute) vs relative imports based on your architecture, rather than enforcing a single pattern for all imports.
 
-**Important:** This rule expects an index or barrel file at every directory level. This barrel file represents the external accessibility of the module as a boundary interface, enabling zero I/O path resolution.
+**Important:** This rule expects index files (default: `index.ts`) at every directory level. See [Index Files as Module Interface](#index-files-as-module-interface) for details.
 
 ## Features
 
@@ -19,10 +19,9 @@ An opinionated ESLint rule that enforces architectural boundaries using determin
 - **Architectural Boundaries**: Enforce clean architecture, hexagonal architecture, feature-sliced design, or any other boundary pattern (including nested boundaries)
 - **Auto-fixable**: Legal import paths are auto-fixable and will always converge to the correct import string.
 - **Zero I/O**: Pure path math and AST analysis - fast even on large codebases
-- **Type-aware**: Different rules for type-only imports vs value imports
-- **Test-ready**: Flexible configuration for test files (skip boundary rules while maintaining path format)
+- **Type-aware**: Allows different rules for type-only imports vs value imports
+- **Test-ready**: Flexible configuration for test files (skip boundary rules while maintaining fixable and deterministic path format)
 - **Circular Dependency Prevention**: Blocks ancestor barrel imports
-- **Configurable**: Works with any architectural pattern
 
 ## Quick Start
 
@@ -31,6 +30,8 @@ npm install --save-dev eslint-plugin-import-boundaries
 ```
 
 ### Using Alias Paths (Default)
+
+Aliases (e.g., `@domain`, `@application`) are the default and preferred for readability. Both alias and absolute paths are fully supported - see [Using Absolute Paths](#using-absolute-paths) if your build configuration doesn't support path aliases.
 
 ```javascript
 // eslint.config.js
@@ -45,11 +46,13 @@ export default {
       'error',
       {
         rootDir: 'src',
-        crossBoundaryStyle: 'alias', // Default: use alias paths
+        crossBoundaryStyle: 'alias', // Default: alias paths (preferred for readability)
         boundaries: [
-          { dir: 'domain', alias: '@domain' },
-          { dir: 'application', alias: '@application' },
-          { dir: 'infrastructure', alias: '@infrastructure' },
+          { dir: 'domain', alias: '@domain'},
+          { dir: 'application', alias: '@application' allowImportsFrom: ['domain']},
+          { dir: 'infrastructure', alias: '@infrastructure' allowImportsFrom: ['domain'], allowTypeImportsFrom: ['application']},
+          { dir: 'interface', alias: '@interface' allowImportsFrom: ['domain', 'application']},
+          { dir: 'composition', alias: '@composition' allowImportsFrom: ['domain', 'application', 'interface', 'infrastructure']},
         ],
       },
     ],
@@ -74,33 +77,27 @@ import { useCase } from '@application/use-cases'; // ✅ Distant in same boundar
 
 ## What Problem Does This Solve?
 
-Most projects suffer from inconsistent import patterns that create ambiguity and technical debt:
+Most projects struggle to maintain architectural boundaries as they grow:
 
-**Path Inconsistency:**
-
-- No clear rules: sometimes `@domain`, sometimes `../domain`, sometimes `../../src/domain`
-- Unreadable paths: `../../../../../../utils` chains that obscure relationships
-- Absolute paths that don't fit your architecture (too long, harder to evaluate barrel files)
-
-**Architectural Issues:**
+**Architectural Violations:**
 
 - Boundaries are violated without enforcement (e.g., `@application` importing from `@infrastructure`)
 - Circular dependencies sneak in through ancestor barrel imports
-- Directories bypass barrel files, breaking encapsulation
+- No automated way to enforce clean architecture, hexagonal architecture, or other boundary patterns
 
-**Maintainability Problems:**
+**Import Path Chaos:**
 
-- Import formatting debates waste time in code reviews
-- Refactoring is risky because import paths are ambiguous
+- Inconsistent patterns: sometimes `@domain`, sometimes `../domain`, sometimes `../../src/domain`
+- Unreadable paths: `../../../../../../utils` chains that obscure relationships
 - No single source of truth for "the correct way" to import
 
-This rule provides **deterministic import paths with architectural boundary enforcement** - one correct answer for every import, eliminating debates and making refactoring safer.
+This rule provides **automated architectural boundary enforcement with deterministic import paths** - preventing violations before they happen and eliminating import path debates.
 
 ## Core Rules
 
-### 1. Cross-Boundary Imports → Alias
+### 1. Cross-Boundary Imports → Boundary Identifier (No Subpath)
 
-When importing from a different boundary, always use the boundary alias (no subpaths):
+When importing from a different boundary, always use the boundary identifier (the configured alias, e.g., `@domain`) with no subpath. This imports from the boundary's root barrel file (`domain/index.ts`):
 
 ```typescript
 // ✅ CORRECT
@@ -108,8 +105,8 @@ import { Entity } from '@domain';
 import { UseCase } from '@application';
 
 // ❌ WRONG
-import { Entity } from '@domain/entities'; // Subpath not allowed
-import { Entity } from '../domain'; // Relative not allowed
+import { Entity } from '@domain/entities'; // Subpath not allowed for cross-boundary
+import { Entity } from '../domain'; // Relative not allowed for cross-boundary
 ```
 
 ### 2. Same-Boundary Imports → Relative (when close)
@@ -219,6 +216,7 @@ import { Controller } from '@interface'; // ❌ Violation: @di cannot import fro
 
 - **Explicit rules**: Each boundary declares its own rules (via `allowImportsFrom`/`denyImportsFrom`) or defaults to "deny all" if neither is specified
 - **No inheritance**: Each boundary uses its own rules directly - no automatic inheritance from parent boundaries. This ensures rules are explicit and prevents accidental rule propagation.
+- **Parent and child boundaries**: You can define both parent and child boundaries (e.g., `dir: 'application'` and `dir: 'application/use-cases'`). Files use the most specific matching boundary's rules, while imports can reference any defined boundary identifier.
 - **Flexible control**: You can make nested boundaries more restrictive OR more permissive than their parents, or give sibling boundaries completely different rules
 - **Flat rule checking**: Rules work the same regardless of nesting depth - files resolve to their most specific boundary (longest matching path), which determines the rules to apply
 
@@ -287,7 +285,7 @@ Here's a complete configuration example with all boundary rules:
     {
       dir: 'domain',                // Required: Relative directory path
       alias: '@domain',             // Required: Import alias (e.g., '@domain')
-      denyImportsFrom: ['@application', '@infrastructure', '@interface', '@composition'], // Domain is pure - denies all other boundaries
+      // Domain is pure - denies all other boundaries
       severity: 'error',             // Optional: 'error' | 'warn' (overrides defaultSeverity for this boundary)
     },
     {
@@ -404,7 +402,7 @@ export default [
 
 ### Using Absolute Paths
 
-By default, the rule uses alias paths (e.g., `@domain`). If your build configuration doesn't support path aliases, or you prefer absolute paths, you can use `crossBoundaryStyle: 'absolute'`:
+Alias paths are the default and preferred for readability, but absolute paths are fully supported. Use `crossBoundaryStyle: 'absolute'` if your build configuration doesn't support path aliases, or if you prefer explicit paths:
 
 ```javascript
 {
@@ -446,19 +444,18 @@ import { useCase } from 'src/application/use-cases'; // ✅ Distant in same boun
 The rule uses pure path math - no file I/O, just deterministic algorithms:
 
 1. **Boundary Detection**: Determines which boundary a file belongs to
-2. **Path Calculation**: Calculates the correct import path using the "first differing segment" algorithm
+2. **Path Calculation**: Calculates the correct import path based on file relationships (sibling, cousin, cross-boundary, etc.)
 3. **Boundary Rules**: Checks allow/deny rules for cross-boundary imports
 4. **Type Detection**: Distinguishes type-only imports from value imports
 
-### Barrel Files as Module Interface
+### Index Files as Module Interface
 
-The rule assumes barrel files (default: `index.ts`, configurable) are the module interface for each directory. This enables zero I/O path resolution: because we know every directory has a barrel file, we can determine correct paths using pure path math - no file system access needed.
+The rule assumes index files (default: `index.ts`, configurable) are the module interface for each directory. This enables zero I/O path resolution: because we know every directory has an index file, we can determine correct paths using pure path math - no file system access needed.
 
-- `./dir` imports from `dir/index.ts` (the barrel) - you cannot bypass the barrel
-- The rule is barrel-agnostic - it enforces the path pattern, not what the barrel exports
+- `./dir` imports from `dir/index.ts` - you cannot bypass the index from outside the directory
+- The rule enforces path patterns and boundary contracts, not index file contents - forcing explicit clarity about what each directory exposes
 - Supports multiple file extensions (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs` by default), configurable via `fileExtensions` and `barrelFileName` options
-
-**Scale considerations**: Works at any scale. For large projects, use selective exports for better performance. For monorepos, configure boundaries that span packages (e.g., `{ dir: 'packages/pkg-a/src/domain', alias: '@pkg-a/domain' }`).
+- Works at any scale - zero I/O means fast performance even on very large codebases and monorepos
 
 ## What Gets Skipped vs Checked
 
@@ -466,8 +463,8 @@ The rule distinguishes between **external packages** (skipped) and **files outsi
 
 **Skipped (External Packages):**
 
-- npm packages like `lodash`, `react`, `@types/node` - imports that don't resolve to any file path (e.g., `import _ from 'lodash'`)
-- These are detected because `resolveTargetPath` returns an empty `targetAbs` (the import doesn't match any boundary pattern and isn't a relative/absolute path)
+- npm packages like `vitest`, `react`, `@types/node` - imports that don't resolve to any file path (e.g., `import { vi } from 'vitest'`)
+- If the import string doesn't match any configured boundary and isn't a relative/absolute path, it's treated as an external package and skipped. The rule does not hit the filesystem to verify existence.
 
 **Checked (Files Outside Boundaries):**
 
@@ -475,7 +472,7 @@ The rule distinguishes between **external packages** (skipped) and **files outsi
 - These trigger an "unknown boundary" error unless `allowUnknownBoundaries: true` is set
 - The rule detects these because the import resolves to a file path, but that path isn't inside any boundary
 
-**Detection method**: The rule tries to resolve every import. If it resolves to a file path but that file isn't in any boundary, it's an "unknown boundary" error. If it doesn't resolve to any file path at all, it's treated as an external package and skipped.
+**Detection method**: The rule uses pattern matching to classify imports. If the import string doesn't match any configured boundary and isn't a relative/absolute path, it's treated as an external package and skipped. The rule does not hit the filesystem to verify existence - it's purely pattern-based. If an import matches a relative/absolute path pattern but that path isn't inside any configured boundary, it triggers an "unknown boundary" error.
 
 ## Error Messages
 
@@ -484,7 +481,7 @@ Clear, actionable error messages:
 ```
 Expected '@domain' but got '@domain/entities'
 Expected './sibling' but got '@application/sibling'
-Expected '../cousin' but got '@application/nested/cousin'
+Expected '../cousin' but got 'src/hexagonal/application/nested/cousin'
 Cannot import from '@infrastructure' to '@application': Import not allowed
 Cannot import from ancestor barrel '@application'. This would create a circular dependency.
 Cannot import from 'src/shared/utils' - path is outside all configured boundaries. Add this path to boundaries configuration or set 'allowUnknownBoundaries: true'.
@@ -494,14 +491,14 @@ Cannot import from 'src/shared/utils' - path is outside all configured boundarie
 
 ### Simple Path Enforcers
 
-Plugins like `eslint-plugin-no-relative-import-paths` and `eslint-plugin-absolute-imports` only enforce "use absolute paths everywhere" or "use relative paths everywhere." They don't handle:
+Plugins like `eslint-plugin-no-relative-import-paths` and `eslint-plugin-absolute-imports` only enforce "use absolute paths everywhere" or "use relative paths everywhere." Absolute paths are not always the correct answer, and they become particularly hard to read in index files or other closely-related modules. They also don't handle:
 
-- Deterministic alias vs relative (when to use which)
-- Architectural boundaries
-- Allow/deny rules between boundaries
+- Deterministic path selection (when to use alias vs relative)
+- Architectural boundary enforcement
+- Boundary allow/deny rules
 - Type-only import handling
 - Circular dependency prevention
-- Barrel file enforcement
+- Index file enforcement
 
 ### Architectural Boundary Plugins
 
@@ -511,7 +508,7 @@ Plugins like `eslint-plugin-no-relative-import-paths` and `eslint-plugin-absolut
 - File I/O for resolution
 - Hierarchical inheritance for nested boundaries
 
-This plugin uses a simpler, path-based approach:
+By enforcing stronger, opinionated constraints, this plugin enables a simpler, faster, path-based approach:
 
 - Directory paths instead of element types
 - Zero I/O (pure path math)

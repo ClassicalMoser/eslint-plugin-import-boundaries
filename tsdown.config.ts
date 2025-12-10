@@ -8,7 +8,7 @@ export default defineConfig({
   entry: {
     'eslint-plugin-import-boundaries': path.resolve(
       __dirname,
-      'eslint-plugin-import-boundaries/index.ts',
+      'src/index.ts',
     ),
   },
   format: ['esm'],

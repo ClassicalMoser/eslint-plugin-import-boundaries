@@ -1,15 +1,13 @@
 /**
- * Unit tests for relationshipDetection.ts
- * Tests the core path calculation algorithm.
+ * Integration tests for relationshipDetection.ts
+ * Tests the main calculateCorrectImportPath function that orchestrates
+ * target path resolution and import path calculation.
  */
 
 import type { Boundary } from './types.js';
 import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import {
-  calculateCorrectImportPath,
-  resolveTargetPath,
-} from './relationshipDetection.js';
+import { calculateCorrectImportPath } from './relationshipDetection.js';
 
 describe('relationshipDetection', () => {
   const cwd = '/project';
@@ -43,150 +41,6 @@ describe('relationshipDetection', () => {
     };
   });
 
-  describe('resolveTargetPath', () => {
-    it('should resolve alias imports without subpath', () => {
-      const boundaries = [
-        entitiesBoundary,
-        queriesBoundary,
-        transformsBoundary,
-      ];
-      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
-      const result = resolveTargetPath(
-        '@entities',
-        fileDir,
-        boundaries,
-        rootDir,
-        cwd,
-      );
-
-      expect(result.targetAbs).toBe(
-        path.join(entitiesBoundary.absDir, 'index.ts'),
-      );
-      expect(result.targetDir).toBe(entitiesBoundary.absDir);
-    });
-
-    it('should resolve alias imports with directory subpath', () => {
-      const boundaries = [
-        entitiesBoundary,
-        queriesBoundary,
-        transformsBoundary,
-      ];
-      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
-      const result = resolveTargetPath(
-        '@entities/army',
-        fileDir,
-        boundaries,
-        rootDir,
-        cwd,
-      );
-
-      expect(result.targetAbs).toBe(
-        path.join(entitiesBoundary.absDir, 'army', 'index.ts'),
-      );
-      expect(result.targetDir).toBe(path.join(entitiesBoundary.absDir, 'army'));
-    });
-
-    it('should resolve alias imports with file subpath', () => {
-      const boundaries = [
-        entitiesBoundary,
-        queriesBoundary,
-        transformsBoundary,
-      ];
-      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
-      const result = resolveTargetPath(
-        '@entities/army.ts',
-        fileDir,
-        boundaries,
-        rootDir,
-        cwd,
-      );
-
-      expect(result.targetAbs).toBe(
-        path.join(entitiesBoundary.absDir, 'army.ts'),
-      );
-      expect(result.targetDir).toBe(entitiesBoundary.absDir);
-    });
-
-    it('should resolve relative imports', () => {
-      const boundaries = [
-        entitiesBoundary,
-        queriesBoundary,
-        transformsBoundary,
-      ];
-      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
-      const result = resolveTargetPath(
-        './sibling',
-        fileDir,
-        boundaries,
-        rootDir,
-        cwd,
-      );
-
-      expect(result.targetAbs).toBe(path.join(fileDir, 'sibling', 'index.ts'));
-      expect(result.targetDir).toBe(path.join(fileDir, 'sibling'));
-    });
-
-    it('should resolve relative imports with ../', () => {
-      const boundaries = [
-        entitiesBoundary,
-        queriesBoundary,
-        transformsBoundary,
-      ];
-      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
-      const result = resolveTargetPath(
-        '../cousin',
-        fileDir,
-        boundaries,
-        rootDir,
-        cwd,
-      );
-
-      expect(result.targetAbs).toBe(
-        path.join(path.dirname(fileDir), 'cousin', 'index.ts'),
-      );
-      expect(result.targetDir).toBe(path.join(path.dirname(fileDir), 'cousin'));
-    });
-
-    it('should resolve absolute paths', () => {
-      const boundaries = [
-        entitiesBoundary,
-        queriesBoundary,
-        transformsBoundary,
-      ];
-      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
-      const result = resolveTargetPath(
-        'src/domain/entities',
-        fileDir,
-        boundaries,
-        rootDir,
-        cwd,
-      );
-
-      expect(result.targetAbs).toBe(
-        path.join(cwd, 'src/domain/entities', 'index.ts'),
-      );
-      expect(result.targetDir).toBe(path.join(cwd, 'src/domain/entities'));
-    });
-
-    it('should return empty strings for unknown aliases', () => {
-      const boundaries = [
-        entitiesBoundary,
-        queriesBoundary,
-        transformsBoundary,
-      ];
-      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
-      const result = resolveTargetPath(
-        '@unknown',
-        fileDir,
-        boundaries,
-        rootDir,
-        cwd,
-      );
-
-      expect(result.targetAbs).toBe('');
-      expect(result.targetDir).toBe('');
-    });
-  });
 
   describe('calculateCorrectImportPath - cross-boundary', () => {
     it('should return alias for cross-boundary imports (alias style)', () => {
@@ -231,6 +85,50 @@ describe('relationshipDetection', () => {
       );
 
       expect(result).toBe('src/domain/entities');
+    });
+
+    it('should return absolute path for same-boundary boundary root files (absolute style)', () => {
+      const boundaries = [
+        entitiesBoundary,
+        queriesBoundary,
+        transformsBoundary,
+      ];
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
+      const fileBoundary = queriesBoundary;
+
+      const result = calculateCorrectImportPath(
+        '../getLine.ts',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'absolute',
+      );
+
+      expect(result).toBe('src/domain/queries/getLine');
+    });
+
+    it('should return absolute path for same-boundary top-level imports (absolute style)', () => {
+      const boundaries = [
+        entitiesBoundary,
+        queriesBoundary,
+        transformsBoundary,
+      ];
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
+      const fileBoundary = queriesBoundary;
+
+      const result = calculateCorrectImportPath(
+        '../topLevel',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'absolute',
+      );
+
+      expect(result).toBe('src/domain/queries/topLevel');
     });
 
     it('should return UNKNOWN_BOUNDARY for paths outside all boundaries', () => {
@@ -405,6 +303,7 @@ describe('relationshipDetection', () => {
       const fileBoundary = queriesBoundary;
 
       // Importing ./index from subdir means importing subdir/index.ts (ancestor barrel)
+      // This should be forbidden per the spec - ancestor barrels create circular dependencies
       const result = calculateCorrectImportPath(
         './index',
         fileDir,
@@ -415,10 +314,7 @@ describe('relationshipDetection', () => {
         'alias',
       );
 
-      // The implementation returns './index' for same-directory index, but it should be null
-      // This is a known limitation - the rule detects ancestor barrels at the boundary level
-      // but not at the directory level. For now, we'll test the actual behavior.
-      expect(result).toBe('./index');
+      expect(result).toBeNull();
     });
 
     it('should return @boundary/index for boundary root index (not null)', () => {
@@ -555,4 +451,5 @@ describe('relationshipDetection', () => {
       expect(result).toBe('@entities');
     });
   });
+
 });
