@@ -112,6 +112,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install:ci
 
+      # Build (required for ESLint to import the plugin)
+      - name: Build
+        run: pnpm build
+
       # Run ESLint
       - name: Run ESLint
         run: pnpm lint
