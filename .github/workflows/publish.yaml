@@ -39,10 +39,5 @@ jobs:
       - name: Update npm to latest
         run: npm install -g npm@latest
 
-      - name: Verify npm version and authentication
-        run: |
-          npm --version
-          npm whoami --registry=https://registry.npmjs.org || echo "Not authenticated (this is expected if trusted publisher isn't set up)"
-
       - name: Publish to npm
         run: npm publish --access public
