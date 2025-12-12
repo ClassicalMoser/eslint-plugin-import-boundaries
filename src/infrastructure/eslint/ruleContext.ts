@@ -42,9 +42,10 @@ export function extractRuleOptions(context: Rule.RuleContext): RuleContextData {
     defaultSeverity,
     allowUnknownBoundaries = false,
     enforceBoundaries = true,
-    barrelFileName = 'index',
     fileExtensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
   } = options;
+  // barrelFileName is not configurable - must be 'index' to match runtime module resolution
+  const barrelFileName = 'index';
   const cwd = context.getCwd?.() ?? process.cwd();
 
   // Validate: aliases are required when crossBoundaryStyle is 'alias'

@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2025-12-12
+
+### Breaking Changes
+
+- **Removed `barrelFileName` configuration option**: The `barrelFileName` option has been removed from the configuration schema. Index files must be named `index` (e.g., `index.ts`, `index.js`) to match runtime module resolution behavior, and this is no longer configurable.
+
+  **Migration**: Remove `barrelFileName` from your configuration if present. The rule now always uses `index` as the index file name.
+
+  ```javascript
+  // Before (0.4.x)
+  {
+    rootDir: 'src',
+    barrelFileName: 'index', // This option is removed
+    boundaries: [...],
+  }
+
+  // After (0.5.0)
+  {
+    rootDir: 'src',
+    // barrelFileName removed - always uses 'index'
+    boundaries: [...],
+  }
+  ```
+
+### Improvements
+
+- **Terminology update**: Replaced references to "barrel files" with "directory interface" and "index files" throughout documentation and code comments. Index files are now explicitly described as directory interfaces that define the public API of a directory and act as boundaries.
+- **Error message clarity**: Updated error messages to use "ancestor directory" instead of "ancestor barrel" for better clarity.
+- **Documentation**: Enhanced documentation to emphasize that index files are NOT "barrel files" but rather directory interfaces that enforce boundaries and define explicit exports.
+- **Export best practices**: Added documentation recommending explicit named exports (e.g., `export { Entity } from './entity'`) instead of `export *` in index files for better tree shaking and bundle size optimization.
+
+### Planned Changes
+
+- **Future enforcement of explicit exports**: A future version will add a rule to enforce explicit named exports in index files, blocking `export *` statements. This will improve tree shaking and make directory interfaces more explicit about their exports.
+
 ## [0.4.0] - 2025-12-10
 
 ### Breaking Changes

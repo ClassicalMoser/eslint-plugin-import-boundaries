@@ -19,11 +19,11 @@ export function formatAbsolutePath(
  * Convert an absolute file or directory path to a relative path from fileDir.
  * Used when boundary isn't enforced and path doesn't resolve to a boundary.
  * Removes file extensions as import paths typically don't include them.
- * Also removes barrel file names (e.g., /index) from directory imports.
+ * Also removes index file names (e.g., /index) from directory imports.
  *
  * @param targetPath - Absolute file or directory path
  * @param fileDir - Directory containing the importing file
- * @param barrelFileName - Name of barrel file (typically 'index')
+ * @param barrelFileName - Name of index file (typically 'index')
  * @returns Relative path from fileDir (e.g., './helper' or '../utils/helper')
  */
 export function absoluteToRelativePath(
@@ -48,7 +48,7 @@ export function absoluteToRelativePath(
   if (ext) {
     // File path: remove extension
     result = result.slice(0, -ext.length);
-    // Remove barrel file name if path ends with it (e.g., /index)
+    // Remove index file name if path ends with it (e.g., /index)
     const basename = path.basename(result);
     if (basename === barrelFileName) {
       // Remove the barrel file name and preceding slash

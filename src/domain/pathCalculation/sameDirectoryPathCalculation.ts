@@ -15,5 +15,5 @@ export function calculateSameDirectoryPath(
   if (targetBasename !== barrelFileName) {
     return `./${targetBasename}`;
   }
-  return null; // Ancestor barrel (barrel file in same directory)
+  return null; // Ancestor directory (index file in same directory)
 }

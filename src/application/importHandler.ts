@@ -45,7 +45,6 @@ export interface HandleImportOptions {
   allowUnknownBoundaries?: boolean;
   isTypeOnly?: boolean;
   skipBoundaryRules?: boolean;
-  barrelFileName?: string;
   fileExtensions?: string[];
 }
 
@@ -71,7 +70,6 @@ export function handleImport(options: HandleImportOptions): boolean {
     allowUnknownBoundaries = defaults.allowUnknownBoundaries,
     isTypeOnly = defaults.isTypeOnly,
     skipBoundaryRules = defaults.skipBoundaryRules,
-    barrelFileName = defaults.barrelFileName,
     fileExtensions = defaults.fileExtensions,
   } = options;
 
@@ -83,7 +81,7 @@ export function handleImport(options: HandleImportOptions): boolean {
     boundaries,
     rootDir,
     cwd,
-    barrelFileName,
+    'index', // barrelFileName is not configurable - must be 'index' to match runtime
     fileExtensions,
   );
 
@@ -143,13 +141,13 @@ export function handleImport(options: HandleImportOptions): boolean {
     rootDir,
     cwd,
     crossBoundaryStyle,
-    barrelFileName,
+    'index', // barrelFileName is not configurable - must be 'index' to match runtime
     fileExtensions,
   );
 
   if (isNullPath(correctPath)) {
-    // Check if it's ancestor barrel (not fixable)
-    // calculateCorrectImportPath returns null only for ancestor barrels
+    // Check if it's ancestor directory import (not fixable)
+    // calculateCorrectImportPath returns null only for ancestor directory imports
     if (
       shouldDetectAncestorBarrel(correctPath, fileBoundary) &&
       detectAndReportAncestorBarrel({
@@ -164,7 +162,7 @@ export function handleImport(options: HandleImportOptions): boolean {
       return true;
     }
     // Defensive: should never reach here in practice
-    // calculateCorrectImportPath only returns null for ancestor barrels
+    // calculateCorrectImportPath only returns null for ancestor directory imports
     // which are all handled above. This branch exists for type safety.
     return false;
   }

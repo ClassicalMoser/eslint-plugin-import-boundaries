@@ -44,7 +44,6 @@ export function createRuleVisitors(
     defaultSeverity,
     allowUnknownBoundaries,
     enforceBoundaries,
-    barrelFileName,
     fileExtensions,
   } = options;
 
@@ -83,7 +82,6 @@ export function createRuleVisitors(
       allowUnknownBoundaries,
       isTypeOnly,
       skipBoundaryRules: !enforceBoundaries, // Invert: enforceBoundaries=false means skip rules
-      barrelFileName,
       fileExtensions,
     });
   }

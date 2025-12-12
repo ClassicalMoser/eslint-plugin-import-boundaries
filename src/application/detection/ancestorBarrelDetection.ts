@@ -1,7 +1,7 @@
 /**
- * Ancestor barrel detection and reporting.
+ * Ancestor directory detection and reporting.
  *
- * Detects imports from a boundary's own barrel file (e.g., importing '@domain'
+ * Detects imports from a boundary's own directory interface (e.g., importing '@domain'
  * from within the '@domain' boundary), which would create circular dependencies.
  */
 
@@ -21,13 +21,13 @@ export interface AncestorBarrelDetectionOptions {
 }
 
 /**
- * Detect and report ancestor barrel imports (not fixable).
+ * Detect and report ancestor directory imports (not fixable).
  *
- * An ancestor barrel import occurs when a file imports from its own boundary's
- * root barrel file. This creates a circular dependency and is forbidden.
+ * An ancestor directory import occurs when a file imports from its own boundary's
+ * root directory interface. This creates a circular dependency and is forbidden.
  *
  * @param options - Detection options
- * @returns true if an ancestor barrel was detected and reported, false otherwise
+ * @returns true if an ancestor directory import was detected and reported, false otherwise
  */
 export function detectAndReportAncestorBarrel(
   options: AncestorBarrelDetectionOptions,
@@ -41,7 +41,7 @@ export function detectAndReportAncestorBarrel(
     defaultSeverity,
   } = options;
 
-  // Check if this is an ancestor barrel import
+  // Check if this is an ancestor directory import
   // Alias style: rawSpec matches boundary alias (e.g., '@domain')
   // Absolute style: rawSpec matches boundary root path (e.g., 'src/domain')
   if (

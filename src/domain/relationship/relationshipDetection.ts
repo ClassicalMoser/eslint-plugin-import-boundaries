@@ -56,7 +56,7 @@ export function calculateCorrectImportPath(
     // In such cases, convert to relative path from fileDir instead of UNKNOWN_BOUNDARY.
     // Only applies when targetAbs is not empty (internal file, not external package).
     if (fileBoundary === null && targetBoundary === null && targetAbs) {
-      // Use targetDir if target is a barrel file to avoid /index loops
+      // Use targetDir if target is an index file to avoid /index loops
       // Check if targetAbs ends with barrelFileName (e.g., /index.ts)
       const basenameWithoutExt = getBasenameWithoutExt(targetAbs);
       const pathToUse =
@@ -70,8 +70,8 @@ export function calculateCorrectImportPath(
     );
   }
 
-  // 2. Ancestor barrel: forbidden (same-boundary only)
-  // Early return if ancestor barrel detected
+  // 2. Ancestor directory: forbidden (same-boundary only)
+  // Early return if ancestor directory import detected
   // At this point, fileBoundary is guaranteed to be non-null (same-boundary check above)
   if (
     isAncestorBarrelImport(rawSpec, fileBoundary!, rootDir, crossBoundaryStyle)

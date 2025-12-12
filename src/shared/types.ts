@@ -55,7 +55,7 @@ export interface RuleOptions {
   allowUnknownBoundaries?: boolean; // Allow imports from paths not in any boundary (default: false)
   enforceBoundaries?: boolean; // Enforce boundary allow/deny rules (default: true). When false, boundary rules are skipped but path format is still enforced.
   testFilePatterns?: string[]; // Patterns to detect test files (default: common test patterns)
-  barrelFileName?: string; // Name of barrel files without extension (default: 'index')
+  // Note: barrelFileName is not configurable - index files must be named 'index' to match runtime module resolution
   fileExtensions?: string[]; // File extensions to recognize (default: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'])
 }
 

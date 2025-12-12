@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-import-boundaries",
   "type": "module",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Enforce architectural boundaries with deterministic import paths",
   "author": "ClassicalMoser",
   "license": "ISC",
@@ -22,7 +22,7 @@
     "architecture",
     "clean-architecture",
     "hexagonal-architecture",
-    "barrel-files",
+    "directory-interface",
     "deterministic",
     "import-paths"
   ],

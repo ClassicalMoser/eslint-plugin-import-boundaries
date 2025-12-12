@@ -14,7 +14,6 @@ import path from 'node:path';
 
 import { vi } from 'vitest';
 
-// eslint-disable-next-line import-boundaries/enforce
 export { createBoundaries, createBoundary } from './boundaryTestHelpers';
 
 /**

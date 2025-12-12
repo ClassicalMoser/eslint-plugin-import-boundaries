@@ -9,7 +9,7 @@
 
 An opinionated, TypeScript-first ESLint rule that enforces architectural boundaries using deterministic import path expectations. This rule determines when to use boundary paths (alias or absolute paths) vs relative imports based on your architecture, rather than enforcing a single pattern (e.g. absolute) for all imports.
 
-**Important:** This rule expects index files (default: `index.ts`) at every directory level. See [Index Files as Module Interface](#index-files-as-module-interface) for details.
+**Important:** This rule expects index files (default: `index.ts`) at every directory level. See [Index Files as Directory Interface](#index-files-as-directory-interface) for details.
 
 ## What Problem Does This Solve?
 
@@ -26,7 +26,7 @@ Most projects struggle to maintain architectural boundaries as they grow:
 
 - Inconsistent patterns: sometimes `@domain`, sometimes `../domain`, sometimes `../../src/domain`
 - Unreadable paths: `../../../../../../utils` chains that obscure relationships
-- Long absolute paths in module barrels: `src/domain/entities/user/payment, src/domain/entities/user/meta`
+- Long absolute paths in module directories: `src/domain/entities/user/payment, src/domain/entities/user/meta`
 - No single source of truth for "the correct way" to import
 
 This rule provides **automated architectural boundary enforcement with deterministic import paths** - preventing violations before they happen and eliminating import path debates.
@@ -34,14 +34,14 @@ This rule provides **automated architectural boundary enforcement with determini
 ## Features
 
 - **Deterministic**: One correct path for every import
-- **Explicit Exports**: Ensures every directory is explicit about what it exports (via barrel files)
+- **Explicit Exports**: Ensures every directory is explicit about what it exports (via index files as directory interfaces)
 - **Readable Paths**: Always resolves to the most readable filepath (no `../../../../../../` chains)
 - **Architectural Boundaries**: Enforce clean architecture, hexagonal architecture, feature-sliced design, or any other boundary pattern (including nested boundaries)
 - **Auto-fixable**: Legal import paths are auto-fixable and will always converge to the correct import string.
 - **Zero I/O**: Pure path math and AST analysis - fast even on very large codebases
 - **Type-aware**: Allows different rule definitions for type-only imports vs value imports
 - **Test-ready**: Flexible configuration for test files (skip boundary rules while maintaining fixable and deterministic path format)
-- **Circular Dependency Prevention**: Blocks ancestor barrel imports
+- **Circular Dependency Prevention**: Blocks imports from ancestor directories
 
 ## Quick Start
 
@@ -125,7 +125,7 @@ import { useCase } from '@application/use-cases'; // ✅ Distant in same boundar
 
 ### 1. Cross-Boundary Imports → Boundary Root (No Subpath)
 
-When importing from a different boundary, always use the boundary's root path (the alias when using alias style, e.g., `@domain`, or the absolute path when using absolute style, e.g., `src/domain`) with no subpath. This imports from the boundary's root barrel file (`domain/index.ts`):
+When importing from a different boundary, always use the boundary's root path (the alias when using alias style, e.g., `@domain`, or the absolute path when using absolute style, e.g., `src/domain`) with no subpath. This imports from the boundary's interface (`domain/index.ts`):
 
 ```typescript
 // ✅ CORRECT
@@ -161,7 +161,7 @@ Prevent violations of your architecture:
 
 **Important distinction:** The boundary `identifier` is separate from import paths:
 
-- **`identifier`**: Used for `allowImportsFrom`/`denyImportsFrom` rules and error messages. Can be arbitrary (e.g., `'core'`, `'domain'`, `'@domain'`) and is independent of import path style.
+- **`identifier`**: Used for `allowImportsFrom`/`denyImportsFrom` rules and error messages. Can be arbitrary (e.g., `'core'`, `'domain'`, `'@domain'`) and is independent of import path style. **Preferred**: Use `@` prefix for consistency (e.g., `'@domain'`, `'@user'`).
   - **Standard**: When using alias style, the identifier should match the alias (e.g., `identifier: '@domain'` when `alias: '@domain'`). This ensures consistency between rules and import paths. The identifier exists mainly to support absolute paths when alias isn't feasible (e.g., nested boundaries like `domain/entities/user` where you want a clean identifier like `'@user'`).
 - **Import paths**: Use `alias` (alias style) or `dir` path (absolute style) - these are what you write in your import statements.
 
@@ -322,14 +322,14 @@ import type { RepositoryPort } from '@application';
 import { UseCase } from '@application';
 ```
 
-### 5. Ancestor Barrel Prevention
+### 5. Circular Dependency Prevention
 
-Prevents circular dependencies by blocking ancestor barrel imports:
+Prevents circular dependencies by blocking imports from ancestor directories:
 
 ```typescript
 // ❌ FORBIDDEN: Would create circular dependency
 import { something } from '@application'; // When inside @application boundary
-// Error: Cannot import from ancestor barrel '@application'.
+// Error: Cannot import from ancestor directory '@application'.
 //        This would create a circular dependency.
 ```
 
@@ -361,17 +361,17 @@ Here's a complete configuration example with all boundary rules:
       // Note: denyImportsFrom is redundant here - anything not in allowImportsFrom is already denied
     },
     {
+      identifier: '@infrastructure',  // Required: Canonical boundary identifier
       dir: 'infrastructure',
       alias: '@infrastructure',
       allowImportsFrom: ['@domain'], // Infrastructure uses domain entities
-      allowTypeImportsFrom: ['application'], // Infrastructure implements application ports (types only)
+      allowTypeImportsFrom: ['@application'], // Infrastructure implements application ports (types only)
     },
   ],
   // Optional configuration options (all have sensible defaults):
   defaultSeverity: 'error',         // 'error' | 'warn' (default: 'error')
   enforceBoundaries: true,          // Enforce boundary rules (default: true)
   allowUnknownBoundaries: false,    // Allow imports outside boundaries (default: false)
-  barrelFileName: 'index',          // Barrel file name without extension (default: 'index')
   fileExtensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'], // Extensions to recognize (default: all common JS/TS extensions)
 }
 ```
@@ -465,7 +465,7 @@ export default [
 
 **What gets checked:**
 
-- ✅ **Always enforced**: Path format (absolute vs relative), barrel file imports, ancestor barrel prevention
+- ✅ **Always enforced**: Path format (absolute vs relative), index file imports, ancestor directory prevention
 - ⚠️ **Test files only**: Boundary allow/deny rules are skipped (tests can import from any boundary)
 - ✅ **Regular files only**: Boundary allow/deny rules are enforced
 
@@ -478,10 +478,20 @@ Alias paths are the default and preferred for readability, but absolute paths ar
   rootDir: 'src',
   crossBoundaryStyle: 'absolute', // Use absolute paths instead of aliases
   boundaries: [
-    { identifier: 'domain', dir: 'domain' }, // No alias required when using absolute paths
-    { identifier: 'application', dir: 'application' },
-    { identifier: 'infrastructure', dir: 'infrastructure' },
+    { identifier: '@domain', dir: 'domain' }, // No alias required when using absolute paths
+    {
+      identifier: '@application',
+      dir: 'application',
+      allowImportsFrom: ['@domain'], // Use identifier with @ for consistency (identifier is separate from import path style)
+    },
+    {
+      identifier: '@infrastructure',
+      dir: 'infrastructure',
+      allowImportsFrom: ['@domain'], // Use identifier with @ for consistency
+    },
     // identifier is required - use explicit identifier (can differ from dir for cleaner error messages)
+    // Note: Identifiers use @ for consistency regardless of import path style (alias or absolute)
+    // In allowImportsFrom/denyImportsFrom, reference identifiers exactly as defined (with @)
   ],
 }
 ```
@@ -548,13 +558,21 @@ When importing within the same boundary, the rule selects paths based on the rel
    - Example: File `src/domain/entities/level1/level2/file.ts` importing `src/domain/entities/target/index.ts`
    - Uses: `@entities/target` (alias style) or `src/domain/entities/target` (absolute style) - clearer and more maintainable than relative path chains
 
-### Index Files as Module Interface
+### Index Files as Directory Interface
 
-The rule assumes index files (default: `index.ts`, configurable) are the module interface for each directory. This enables zero I/O path resolution: because we know every directory has an index file, we can determine correct paths using pure path math - no file system access needed.
+**Index files are NOT "barrel" files.** An index file is a **directory interface** - it defines the public API of a directory and acts as a boundary beyond which nothing can reach.
 
+The rule assumes index files (default: `index.ts`, configurable) are the directory interface for each directory. This enables zero I/O path resolution: because we know every directory has an index file, we can determine correct paths using pure path math - no file system access needed.
+
+**Key principles:**
+
+- **Directory interface**: An index file is the public interface of its directory. It explicitly declares what the directory exports.
+- **Boundary enforcement**: The index file is itself a boundary. Files outside the directory cannot bypass the index to reach files inside - they must import through the directory interface.
 - `./dir` imports from `dir/index.ts` - you cannot bypass the index from outside the directory
 - The rule enforces path patterns and boundary contracts, not index file contents - forcing explicit clarity about what each directory exposes
-- Supports multiple file extensions (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs` by default), configurable via `fileExtensions` and `barrelFileName` options
+- **Make Exports Explicit**: DO NOT use `export *` in index files. Use explicit named exports (e.g., `export { Entity } from './entity'` instead of `export * from './entity'`). This improves tree shaking, reduces bundle size, and makes the directory interface explicit about what it exports.
+- Supports multiple file extensions (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs` by default), configurable via `fileExtensions` option
+- Index files must be named `index` (e.g., `index.ts`, `index.js`) to match runtime module resolution behavior
 - Works at any scale - zero I/O means fast performance even on very large codebases and monorepos
 
 ## What Gets Skipped vs Checked
@@ -617,20 +635,20 @@ Cannot import from '@infrastructure' to '@application': Cross-boundary import fr
 
 **Auto-fixable**: ❌ No - These require configuration changes or architectural decisions.
 
-### Ancestor Barrel Import
+### Ancestor Directory Import
 
-When importing from an ancestor barrel (would create circular dependency):
+When importing from an ancestor directory (would create circular dependency):
 
 ```
-Cannot import from ancestor barrel '@application'. This would create a circular dependency. Import from the specific file or directory instead.
+Cannot import from ancestor directory '@application'. This would create a circular dependency. Import from the specific file or directory instead.
 ```
 
-**Full ESLint message format**: `"Cannot import from ancestor barrel '{{alias}}'. This would create a circular dependency. Import from the specific file or directory instead."`
+**Full ESLint message format**: `"Cannot import from ancestor directory '{{boundaryIdentifier}}'. This would create a circular dependency. Import from the specific file or directory instead."`
 
 **Examples**:
 
-- Alias style: `Cannot import from ancestor barrel '@application'. This would create a circular dependency. Import from the specific file or directory instead.`
-- Absolute style: `Cannot import from ancestor barrel 'src/domain/entities'. This would create a circular dependency. Import from the specific file or directory instead.`
+- Alias style: `Cannot import from ancestor directory '@application'. This would create a circular dependency. Import from the specific file or directory instead.`
+- Absolute style: `Cannot import from ancestor directory 'src/domain/entities'. This would create a circular dependency. Import from the specific file or directory instead.`
 
 **Auto-fixable**: ❌ No - Requires manual fix to import from specific file/directory.
 
@@ -818,7 +836,7 @@ After configuring multiple import rules:
 1. Run ESLint on your codebase: `eslint .`
 2. Check for conflicting errors (same import flagged by multiple rules for different reasons)
 3. Verify auto-fix doesn't create conflicts: `eslint --fix`
-4. Correct unfixable errors (circular dependencies, boundary violations, missing barrel files.)
+4. Correct unfixable errors (circular dependencies, boundary violations, missing index files.)
 
 ## Examples
 
