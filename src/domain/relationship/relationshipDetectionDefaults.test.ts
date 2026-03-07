@@ -13,7 +13,7 @@ import {
 describe('relationshipDetectionDefaults', () => {
   describe('constants', () => {
     it('should export default cross boundary style', () => {
-      expect(DEFAULT_CROSS_BOUNDARY_STYLE).toBe('alias');
+      expect(DEFAULT_CROSS_BOUNDARY_STYLE).toBe('absolute');
     });
 
     it('should export default barrel file name', () => {

@@ -16,7 +16,7 @@ import {
 describe('importHandlerDefaults', () => {
   describe('constants', () => {
     it('should export default cross boundary style', () => {
-      expect(DEFAULT_CROSS_BOUNDARY_STYLE).toBe('alias');
+      expect(DEFAULT_CROSS_BOUNDARY_STYLE).toBe('absolute');
     });
 
     it('should export default allow unknown boundaries', () => {
@@ -51,7 +51,7 @@ describe('importHandlerDefaults', () => {
     it('should return all default values', () => {
       const defaults = getImportHandlerDefaults();
 
-      expect(defaults.crossBoundaryStyle).toBe('alias');
+      expect(defaults.crossBoundaryStyle).toBe('absolute');
       expect(defaults.allowUnknownBoundaries).toBe(false);
       expect(defaults.isTypeOnly).toBe(false);
       expect(defaults.skipBoundaryRules).toBe(false);

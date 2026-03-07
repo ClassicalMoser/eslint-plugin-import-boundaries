@@ -3,7 +3,7 @@
  * Extracted to reduce mutation opportunities and improve testability.
  */
 
-export const DEFAULT_CROSS_BOUNDARY_STYLE = 'alias' as const;
+export const DEFAULT_CROSS_BOUNDARY_STYLE = 'absolute' as const;
 export const DEFAULT_ALLOW_UNKNOWN_BOUNDARIES = false;
 export const DEFAULT_IS_TYPE_ONLY = false;
 export const DEFAULT_SKIP_BOUNDARY_RULES = false;

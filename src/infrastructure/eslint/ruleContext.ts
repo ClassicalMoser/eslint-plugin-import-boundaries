@@ -38,7 +38,7 @@ export function extractRuleOptions(context: Rule.RuleContext): RuleContextData {
   const {
     rootDir = 'src',
     boundaries,
-    crossBoundaryStyle = 'alias',
+    crossBoundaryStyle = 'absolute',
     defaultSeverity,
     allowUnknownBoundaries = false,
     enforceBoundaries = true,

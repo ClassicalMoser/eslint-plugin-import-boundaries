@@ -365,12 +365,12 @@ describe('importHandler', () => {
         fileDir,
         reporter,
         createFixer,
-        // crossBoundaryStyle not provided - should default to 'alias'
+        // crossBoundaryStyle not provided - should default to 'absolute'
       });
 
       const result = handleImport(options);
 
-      // Should validate alias subpath (only checked when crossBoundaryStyle is 'alias')
+      // With default 'absolute', path format expects 'src/entities' not '@entities/army'
       expect(result).toBe(true);
       expect(reporter.report).toHaveBeenCalled();
     });

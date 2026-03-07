@@ -3,7 +3,7 @@
  * Extracted to reduce mutation opportunities and improve testability.
  */
 
-export const DEFAULT_CROSS_BOUNDARY_STYLE = 'alias' as const;
+export const DEFAULT_CROSS_BOUNDARY_STYLE = 'absolute' as const;
 export const DEFAULT_BARREL_FILE_NAME = 'index';
 export const DEFAULT_FILE_EXTENSIONS = [
   '.ts',

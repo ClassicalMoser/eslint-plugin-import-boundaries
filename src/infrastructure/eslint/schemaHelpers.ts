@@ -76,7 +76,7 @@ export const ruleSchema: Rule.RuleMetaData['schema'] = [
       },
       crossBoundaryStyle: withDefault(
         stringEnum(['alias', 'absolute']),
-        'alias',
+        'absolute',
       ),
       defaultSeverity: stringEnum(['error', 'warn']),
       allowUnknownBoundaries: withDefault(schemaProps.boolean, false),

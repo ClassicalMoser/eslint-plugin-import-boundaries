@@ -48,7 +48,7 @@ export interface BoundaryConfig {
 export interface RuleOptions {
   rootDir?: string; // Root directory (defaults to 'src')
   boundaries: BoundaryConfig[]; // Array of boundary definitions
-  crossBoundaryStyle?: 'alias' | 'absolute'; // Style for cross-boundary imports (default: 'alias')
+  crossBoundaryStyle?: 'alias' | 'absolute'; // Style for cross-boundary imports (default: 'absolute')
   // 'alias': Use alias paths like @entities
   // 'absolute': Use absolute paths relative to rootDir like src/domain/entities
   defaultSeverity?: 'error' | 'warn'; // Default severity for violations (if not set, uses rule-level severity)

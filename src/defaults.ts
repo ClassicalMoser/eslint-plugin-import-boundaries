@@ -31,7 +31,7 @@ export function hexagonalDefaults(
 ): RuleOptions {
   const defaults: RuleOptions = {
     rootDir: 'src',
-    crossBoundaryStyle: 'alias',
+    crossBoundaryStyle: 'absolute',
     boundaries: [
       {
         identifier: '@domain',
@@ -105,7 +105,7 @@ export function simpleDefaults(
 ): RuleOptions {
   const defaults: RuleOptions = {
     rootDir: 'src',
-    crossBoundaryStyle: 'alias',
+    crossBoundaryStyle: 'absolute',
     boundaries: [
       { identifier: '@domain', dir: 'domain', alias: '@domain' },
       { identifier: '@application', dir: 'application', alias: '@application' },

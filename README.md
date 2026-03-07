@@ -49,9 +49,9 @@ This rule provides **automated architectural boundary enforcement with determini
 npm install --save-dev eslint-plugin-import-boundaries
 ```
 
-### Using Alias Paths (Default)
+### Using Absolute Paths (Default)
 
-Aliases (e.g., `@domain`, `@application`) are the default and preferred for readability. Both alias and absolute paths are fully supported - see [Using Absolute Paths](#using-absolute-paths) if your build configuration doesn't support path aliases.
+Absolute paths (e.g., `src/domain`, `src/application`) are the default. No path aliases or build config required—works out of the box.
 
 ```javascript
 // eslint.config.js
@@ -66,38 +66,19 @@ export default {
       'error',
       {
         rootDir: 'src',
-        crossBoundaryStyle: 'alias', // Default: alias paths (preferred for readability)
+        // crossBoundaryStyle: 'absolute' is default - omit for ease of use
         boundaries: [
-          { dir: 'domain', alias: '@domain', identifier: '@domain' },
+          { identifier: '@domain', dir: 'domain' },
           {
-            dir: 'application',
-            alias: '@application',
             identifier: '@application',
+            dir: 'application',
             allowImportsFrom: ['@domain'],
           },
           {
-            dir: 'infrastructure',
-            alias: '@infrastructure',
             identifier: '@infrastructure',
+            dir: 'infrastructure',
             allowImportsFrom: ['@domain'],
             allowTypeImportsFrom: ['@application'],
-          },
-          {
-            dir: 'interface',
-            alias: '@interface',
-            identifier: '@interface',
-            allowImportsFrom: ['@domain', '@application'],
-          },
-          {
-            dir: 'composition',
-            alias: '@composition',
-            identifier: '@composition',
-            allowImportsFrom: [
-              '@domain',
-              '@application',
-              '@interface',
-              '@infrastructure',
-            ],
           },
         ],
       },
@@ -106,19 +87,35 @@ export default {
 };
 ```
 
-**Import patterns with alias style (default):**
+**Import patterns with absolute style (default):**
 
 ```typescript
-// Cross-boundary imports → use boundary root path (alias)
-import { Entity } from '@domain'; // ✅
-import { UseCase } from '@application'; // ✅
+// Cross-boundary imports → use boundary root path (rootDir + dir)
+import { Entity } from 'src/domain'; // ✅
+import { UseCase } from 'src/application'; // ✅
 
 // Same-boundary, close imports → use relative
 import { helper } from './helper'; // ✅ Same directory
 import { utils } from '../utils'; // ✅ Parent's sibling
 
-// Same-boundary, distant imports → use boundary path (alias with subpath)
-import { useCase } from '@application/use-cases'; // ✅ Distant in same boundary
+// Same-boundary, distant imports → use absolute path with subpath
+import { useCase } from 'src/application/use-cases'; // ✅ Distant in same boundary
+```
+
+### Using Alias Paths (Optional)
+
+If your build supports path aliases (e.g. TypeScript `paths`, Vite `resolve.alias`), set `crossBoundaryStyle: 'alias'` and add `alias` to each boundary for shorter import paths:
+
+```javascript
+{
+  rootDir: 'src',
+  crossBoundaryStyle: 'alias',
+  boundaries: [
+    { dir: 'domain', alias: '@domain', identifier: '@domain' },
+    { dir: 'application', alias: '@application', identifier: '@application', allowImportsFrom: ['@domain'] },
+    // ...
+  ],
+}
 ```
 
 ## Core Rules
@@ -369,8 +366,9 @@ Here's a complete configuration example with all boundary rules:
     },
   ],
   // Optional configuration options (all have sensible defaults):
+  crossBoundaryStyle: 'absolute',   // 'absolute' | 'alias' (default: 'absolute')
   defaultSeverity: 'error',         // 'error' | 'warn' (default: 'error')
-  enforceBoundaries: true,          // Enforce boundary rules (default: true)
+  enforceBoundaries: true,         // Enforce boundary rules (default: true)
   allowUnknownBoundaries: false,    // Allow imports outside boundaries (default: false)
   fileExtensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'], // Extensions to recognize (default: all common JS/TS extensions)
 }
@@ -469,55 +467,12 @@ export default [
 - ⚠️ **Test files only**: Boundary allow/deny rules are skipped (tests can import from any boundary)
 - ✅ **Regular files only**: Boundary allow/deny rules are enforced
 
-### Using Absolute Paths
+### Absolute vs Alias (reference)
 
-Alias paths are the default and preferred for readability, but absolute paths are fully supported. Use `crossBoundaryStyle: 'absolute'` if your build configuration doesn't support path aliases, or if you prefer explicit paths:
+- **Absolute (default):** `crossBoundaryStyle: 'absolute'` or omit. Import paths like `src/domain`, `src/application`. No alias config or build setup required. Easiest to adopt.
+- **Alias:** Set `crossBoundaryStyle: 'alias'` and add `alias` to each boundary. Import paths like `@domain`, `@application`. Requires path aliases in your build (TypeScript `paths`, Vite `resolve.alias`, etc.). Use when you want shorter paths and already have aliases configured.
 
-```javascript
-{
-  rootDir: 'src',
-  crossBoundaryStyle: 'absolute', // Use absolute paths instead of aliases
-  boundaries: [
-    { identifier: '@domain', dir: 'domain' }, // No alias required when using absolute paths
-    {
-      identifier: '@application',
-      dir: 'application',
-      allowImportsFrom: ['@domain'], // Use identifier with @ for consistency (identifier is separate from import path style)
-    },
-    {
-      identifier: '@infrastructure',
-      dir: 'infrastructure',
-      allowImportsFrom: ['@domain'], // Use identifier with @ for consistency
-    },
-    // identifier is required - use explicit identifier (can differ from dir for cleaner error messages)
-    // Note: Identifiers use @ for consistency regardless of import path style (alias or absolute)
-    // In allowImportsFrom/denyImportsFrom, reference identifiers exactly as defined (with @)
-  ],
-}
-```
-
-**Import patterns with absolute paths:**
-
-```typescript
-// Cross-boundary imports → use absolute path
-import { Entity } from 'src/domain'; // ✅
-import { UseCase } from 'src/application'; // ✅
-
-// Same-boundary, close imports → use relative (same as alias style)
-import { helper } from './helper'; // ✅ Same directory
-import { utils } from '../utils'; // ✅ Parent's sibling
-
-// Same-boundary, distant imports → use absolute path
-import { useCase } from 'src/application/use-cases'; // ✅ Distant in same boundary
-```
-
-**When to use absolute paths:**
-
-- Your build configuration doesn't support path aliases (e.g., some bundlers or older tooling)
-- You prefer explicit paths over aliases for clarity
-- You're working in a codebase that already uses absolute paths
-
-**Note:** Alias paths are recommended for readability, especially for boundaries defined at deeper directory levels (e.g., `@entities/user` vs `src/hexagonal/domain/entities/user`). However, this rule does not require them since not all build configurations support path aliases. When using `crossBoundaryStyle: 'absolute'`, the `alias` property in boundary definitions becomes optional, and the rule will use paths like `src/domain` instead of `@domain`.
+When using `crossBoundaryStyle: 'absolute'`, the `alias` property in boundary definitions is optional. When using `alias`, every boundary must have an `alias` property.
 
 ## How It Works
 
