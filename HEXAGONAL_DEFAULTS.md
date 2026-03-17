@@ -12,12 +12,14 @@ For a typical hexagonal architecture project, the following boundaries are recom
   crossBoundaryStyle: 'alias', // or 'absolute'
   boundaries: [
     {
+      identifier: '@domain',
       dir: 'domain',
       alias: '@domain',
       // Domain is pure - no dependencies on other layers
       denyImportsFrom: ['@application', '@infrastructure', '@interface', '@composition'],
     },
     {
+      identifier: '@application',
       dir: 'application',
       alias: '@application',
       // Application defines use cases and ports (interfaces)
@@ -26,6 +28,7 @@ For a typical hexagonal architecture project, the following boundaries are recom
       denyImportsFrom: ['@infrastructure', '@interface', '@composition'],
     },
     {
+      identifier: '@infrastructure',
       dir: 'infrastructure',
       alias: '@infrastructure',
       // Infrastructure implements ports defined by Application
@@ -35,6 +38,7 @@ For a typical hexagonal architecture project, the following boundaries are recom
       denyImportsFrom: ['@interface', '@composition'],
     },
     {
+      identifier: '@interface',
       dir: 'interface',
       alias: '@interface',
       // Interface (driving adapters) - HTTP controllers, CLI, etc.
@@ -43,6 +47,7 @@ For a typical hexagonal architecture project, the following boundaries are recom
       denyImportsFrom: ['@infrastructure', '@composition'],
     },
     {
+      identifier: '@composition',
       dir: 'composition',
       alias: '@composition',
       // Composition (wiring) can import from everything
