@@ -9,8 +9,6 @@
  */
 
 import type { Fixer, FixResult, Reporter, ReportOptions } from '@ports';
-import type { Boundary } from '@shared';
-import path from 'node:path';
 
 import { vi } from 'vitest';
 
@@ -165,56 +163,3 @@ export function createMockPorts(options?: {
   };
 }
 
-/**
- * Helper to create a Boundary object for testing.
- * Provides smart defaults: identifier defaults to alias ?? dir (works for >95% of tests).
- * Automatically computes absDir from dir.
- *
- * @example
- * ```typescript
- * // Most common case - identifier defaults to alias
- * const boundary = createTestBoundary({
- *   dir: 'domain/entities',
- *   alias: '@entities',
- * });
- * // boundary.identifier === '@entities'
- * // boundary.absDir === '/project/src/domain/entities'
- *
- * // Override identifier when needed
- * const boundary = createTestBoundary({
- *   identifier: 'core',
- *   dir: 'domain/entities',
- *   alias: '@entities',
- * });
- * ```
- */
-export function createTestBoundary(
-  config: {
-    identifier?: string; // Optional - defaults to alias ?? dir (smart default for >95% of tests)
-    dir: string;
-    alias?: string;
-    allowImportsFrom?: string[];
-    denyImportsFrom?: string[];
-    allowTypeImportsFrom?: string[];
-    nestedPathFormat?: 'alias' | 'relative' | 'inherit';
-    severity?: 'error' | 'warn';
-  },
-  options?: {
-    rootDir?: string;
-    cwd?: string;
-  },
-): Boundary {
-  const rootDir = options?.rootDir ?? 'src';
-  const cwd = options?.cwd ?? '/project';
-  return {
-    identifier: config.identifier ?? config.alias ?? config.dir,
-    dir: config.dir,
-    alias: config.alias,
-    absDir: path.resolve(cwd, rootDir, config.dir),
-    allowImportsFrom: config.allowImportsFrom,
-    denyImportsFrom: config.denyImportsFrom,
-    allowTypeImportsFrom: config.allowTypeImportsFrom,
-    nestedPathFormat: config.nestedPathFormat,
-    severity: config.severity,
-  };
-}

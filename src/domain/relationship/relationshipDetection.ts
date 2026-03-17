@@ -65,8 +65,12 @@ export function calculateCorrectImportPath(
     }
     return calculateCrossBoundaryPath(
       targetBoundary,
+      fileBoundary,
+      fileDir,
+      targetDir,
       rootDir,
       crossBoundaryStyle,
+      barrelFileName,
     );
   }
 

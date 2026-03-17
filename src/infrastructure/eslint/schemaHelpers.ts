@@ -81,6 +81,7 @@ export const ruleSchema: Rule.RuleMetaData['schema'] = [
       defaultSeverity: stringEnum(['error', 'warn']),
       allowUnknownBoundaries: withDefault(schemaProps.boolean, false),
       enforceBoundaries: withDefault(schemaProps.boolean, true),
+      skipIndexFiles: withDefault(schemaProps.boolean, false),
       fileExtensions: withDefault(schemaProps.stringArray, [
         '.ts',
         '.tsx',

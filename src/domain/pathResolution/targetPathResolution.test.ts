@@ -190,5 +190,42 @@ describe('targetPathResolution', () => {
       expect(result.targetAbs).toBe('');
       expect(result.targetDir).toBe('');
     });
+
+    it('should NOT treat src-utils/foo as an absolute import when rootDir is src', () => {
+      // Regression test for the startsWith(rootDir) bug:
+      // 'src-utils/foo'.startsWith('src') was true, incorrectly matching
+      const boundaries = [entitiesBoundary];
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
+      const result = resolveTargetPath(
+        'src-utils/foo',
+        fileDir,
+        boundaries,
+        rootDir,
+        cwd,
+      );
+
+      // Should be treated as a bare import (external package), NOT absolute
+      // Returns empty strings because it doesn't match any boundary dir
+      expect(result.targetAbs).toBe('');
+      expect(result.targetDir).toBe('');
+    });
+
+    it('should treat src/domain as an absolute import when rootDir is src', () => {
+      const boundaries = [entitiesBoundary];
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
+      const result = resolveTargetPath(
+        'src/domain/entities',
+        fileDir,
+        boundaries,
+        rootDir,
+        cwd,
+      );
+
+      // Should be treated as absolute import
+      expect(result.targetAbs).toBe(
+        path.resolve(cwd, 'src/domain/entities', 'index.ts'),
+      );
+    });
   });
 });
+
