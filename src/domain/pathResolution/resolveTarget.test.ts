@@ -309,9 +309,7 @@ describe('resolveTarget', () => {
         fileExtensions,
       );
 
-      expect(result.targetAbs).toBe(
-        path.resolve(baseDir, 'styles/main.css'),
-      );
+      expect(result.targetAbs).toBe(path.resolve(baseDir, 'styles/main.css'));
       expect(result.targetDir).toBe(path.resolve(baseDir, 'styles'));
     });
 
