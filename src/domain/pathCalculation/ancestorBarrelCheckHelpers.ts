@@ -12,7 +12,7 @@ export function aliasMatchesAncestorBarrel(
   fileBoundary: Boundary,
   rawSpec: string,
 ): boolean {
-  return fileBoundary.alias !== null && rawSpec === fileBoundary.alias;
+  return fileBoundary.alias != null && rawSpec === fileBoundary.alias;
 }
 
 /**

@@ -19,6 +19,8 @@ export interface RuleContextData {
   defaultSeverity?: 'error' | 'warn';
   allowUnknownBoundaries: boolean;
   enforceBoundaries: boolean;
+  skipIndexFiles: boolean;
+  maxRelativeDepth: number;
   barrelFileName: string;
   fileExtensions: string[];
   cwd: string;
@@ -31,7 +33,7 @@ export function extractRuleOptions(context: Rule.RuleContext): RuleContextData {
   // Validate that options are provided
   if (!context.options || context.options.length === 0) {
     throw new Error(
-      'boundary-alias-vs-relative requires boundaries configuration',
+      'import-boundaries/enforce requires a boundaries configuration',
     );
   }
   const options: RuleOptions = context.options[0];
@@ -42,6 +44,8 @@ export function extractRuleOptions(context: Rule.RuleContext): RuleContextData {
     defaultSeverity,
     allowUnknownBoundaries = false,
     enforceBoundaries = true,
+    skipIndexFiles = false,
+    maxRelativeDepth = 1,
     fileExtensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
   } = options;
   // barrelFileName is not configurable - must be 'index' to match runtime module resolution
@@ -83,6 +87,8 @@ export function extractRuleOptions(context: Rule.RuleContext): RuleContextData {
     defaultSeverity,
     allowUnknownBoundaries,
     enforceBoundaries,
+    skipIndexFiles,
+    maxRelativeDepth,
     barrelFileName,
     fileExtensions,
     cwd,

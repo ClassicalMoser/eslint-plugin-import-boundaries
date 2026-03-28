@@ -23,6 +23,8 @@ export interface RuleVisitorOptions {
   defaultSeverity?: 'error' | 'warn';
   allowUnknownBoundaries: boolean;
   enforceBoundaries: boolean;
+  skipIndexFiles: boolean;
+  maxRelativeDepth: number;
   barrelFileName: string;
   fileExtensions: string[];
 }
@@ -44,6 +46,9 @@ export function createRuleVisitors(
     defaultSeverity,
     allowUnknownBoundaries,
     enforceBoundaries,
+    skipIndexFiles,
+    maxRelativeDepth,
+    barrelFileName,
     fileExtensions,
   } = options;
 
@@ -62,6 +67,15 @@ export function createRuleVisitors(
 
     const { fileDir, fileBoundary } = fileData;
     if (!fileDir) return;
+
+    // Skip index files when skipIndexFiles is enabled
+    // Index files have their own rules (no-wildcard-barrel, index-sibling-only)
+    if (skipIndexFiles) {
+      const filename = context.filename ?? context.getFilename?.() ?? '';
+      const basename = filename.split('/').pop() ?? '';
+      const basenameWithoutExt = basename.replace(/\.[^.]+$/, '');
+      if (basenameWithoutExt === barrelFileName) return;
+    }
 
     // Create ESLint adapters (infrastructure layer)
     const reporter = new ESLintReporter(context, node);
@@ -82,6 +96,7 @@ export function createRuleVisitors(
       allowUnknownBoundaries,
       isTypeOnly,
       skipBoundaryRules: !enforceBoundaries, // Invert: enforceBoundaries=false means skip rules
+      maxRelativeDepth,
       fileExtensions,
     });
   }

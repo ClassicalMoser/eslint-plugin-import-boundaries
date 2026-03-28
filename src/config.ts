@@ -1,0 +1,65 @@
+/**
+ * Configuration helpers for import-boundaries.
+ *
+ * These utilities allow you to define your boundaries in a separate
+ * TypeScript or JSON file with full type safety, then import them
+ * into your ESLint config.
+ *
+ * @example TypeScript config file (boundaries.config.ts):
+ * ```typescript
+ * import { defineConfig } from 'eslint-plugin-import-boundaries';
+ *
+ * export default defineConfig({
+ *   rootDir: 'src',
+ *   boundaries: [
+ *     { identifier: 'domain',         dir: 'domain',         allowImportsFrom: [] },
+ *     { identifier: 'application',    dir: 'application',    allowImportsFrom: ['domain'] },
+ *     { identifier: 'infrastructure', dir: 'infrastructure', allowImportsFrom: ['domain'] },
+ *   ],
+ * });
+ * ```
+ *
+ * @example ESLint config (eslint.config.ts):
+ * ```typescript
+ * import importBoundaries from 'eslint-plugin-import-boundaries';
+ * import boundariesConfig from './boundaries.config';
+ *
+ * export default [
+ *   {
+ *     plugins: { 'import-boundaries': importBoundaries },
+ *     rules: {
+ *       'import-boundaries/enforce': ['error', boundariesConfig],
+ *     },
+ *   },
+ * ];
+ * ```
+ *
+ * @example JSON config file (boundaries.json):
+ * ```json
+ * {
+ *   "rootDir": "src",
+ *   "boundaries": [
+ *     { "identifier": "domain",      "dir": "domain",      "allowImportsFrom": [] },
+ *     { "identifier": "application", "dir": "application", "allowImportsFrom": ["domain"] }
+ *   ]
+ * }
+ * ```
+ * Then in eslint.config.js:
+ * ```javascript
+ * import boundariesConfig from './boundaries.json' with { type: 'json' };
+ * ```
+ */
+
+import type { RuleOptions } from '@shared';
+
+/**
+ * Define a type-safe boundaries configuration.
+ * This is a pure identity function — it exists solely to provide type inference
+ * and IDE autocompletion when defining your config in a separate TS file.
+ *
+ * @param config - The rule options to type-check
+ * @returns The same config object unchanged
+ */
+export function defineConfig(config: RuleOptions): RuleOptions {
+  return config;
+}

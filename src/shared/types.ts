@@ -54,9 +54,10 @@ export interface RuleOptions {
   defaultSeverity?: 'error' | 'warn'; // Default severity for violations (if not set, uses rule-level severity)
   allowUnknownBoundaries?: boolean; // Allow imports from paths not in any boundary (default: false)
   enforceBoundaries?: boolean; // Enforce boundary allow/deny rules (default: true). When false, boundary rules are skipped but path format is still enforced.
-  testFilePatterns?: string[]; // Patterns to detect test files (default: common test patterns)
+  skipIndexFiles?: boolean; // Skip all checking for index files (default: false). Enable when using index-sibling-only rule to avoid conflicts.
   // Note: barrelFileName is not configurable - index files must be named 'index' to match runtime module resolution
   fileExtensions?: string[]; // File extensions to recognize (default: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'])
+  maxRelativeDepth?: number; // Maximum number of '../' segments allowed in same-boundary imports (default: 1). Imports requiring more '../' segments use alias/absolute path instead.
 }
 
 /**

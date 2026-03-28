@@ -16,6 +16,7 @@ export function calculateDistantPath(
   fileBoundary: Boundary,
   rootDir: string,
   crossBoundaryStyle: 'alias' | 'absolute',
+  maxRelativeDepth: number = 1,
 ): string {
   // If first differing segment is at fileParts.length, it's a sibling (same parent directory)
   // This includes siblings at boundary root level (fileParts.length === 0, firstDifferingIndex === 0)
@@ -27,7 +28,7 @@ export function calculateDistantPath(
 
   // Top-level: target is at boundary root level (targetParts.length === 1)
   // AND file is in a subdirectory (fileParts.length > 0)
-  // Use alias/absolute path (prefer alias even if ../ would work)
+  // Always use alias/absolute path regardless of maxRelativeDepth (architectural boundary)
   // Note: If both are at root (fileParts.length === 0), they're siblings, handled above
   const isTopLevel = targetParts.length === 1 && fileParts.length > 0;
   if (isTopLevel) {
@@ -39,13 +40,14 @@ export function calculateDistantPath(
     );
   }
 
-  // If first differing segment is at fileParts.length - 1, it's in our parent's directory (cousin)
-  if (firstDifferingIndex === fileParts.length - 1) {
-    // Cousin (parent's sibling, non-top-level) → ../segment (barrel file)
-    return `../${firstDifferingSegment}`;
+  // Calculate number of '../' steps needed to reach the differing segment
+  const steps = fileParts.length - firstDifferingIndex;
+  if (steps <= maxRelativeDepth) {
+    // Within allowed relative depth: use relative path (e.g., ../segment or ../../segment)
+    return '../'.repeat(steps) + firstDifferingSegment;
   }
 
-  // Otherwise: requires >1 ../ → @boundary/segment (first differing segment only)
+  // Exceeds maxRelativeDepth → use alias/absolute path (first differing segment only)
   return choosePathFormat(
     fileBoundary,
     firstDifferingSegment,

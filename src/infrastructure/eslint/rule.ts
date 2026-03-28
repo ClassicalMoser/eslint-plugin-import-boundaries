@@ -46,6 +46,8 @@ export const rule: Rule.RuleModule = {
       defaultSeverity: ruleContext.defaultSeverity,
       allowUnknownBoundaries: ruleContext.allowUnknownBoundaries,
       enforceBoundaries: ruleContext.enforceBoundaries,
+      skipIndexFiles: ruleContext.skipIndexFiles,
+      maxRelativeDepth: ruleContext.maxRelativeDepth,
       barrelFileName: ruleContext.barrelFileName,
       fileExtensions: ruleContext.fileExtensions,
     });

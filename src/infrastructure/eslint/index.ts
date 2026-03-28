@@ -9,13 +9,15 @@ export { createFixerFactory, toESLintReportFixer } from './fixerAdapter';
 
 export { ESLintReporter } from './reporterAdapter';
 
-export { rule } from './rule';
+export { rule as enforceRule } from './rule';
 
 export {
   createFileDataGetter,
   extractRuleOptions,
   type RuleContextData,
 } from './ruleContext';
+
+export { indexSiblingOnlyRule, noWildcardBarrelRule } from './rules';
 
 export { ruleMessages, ruleSchema } from './ruleSchema';
 

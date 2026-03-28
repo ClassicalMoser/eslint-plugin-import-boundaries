@@ -35,7 +35,7 @@ export function resolveTargetPath(
       barrelFileName,
       fileExtensions,
     );
-  } else if (rawSpec.startsWith(rootDir)) {
+  } else if (rawSpec === rootDir || rawSpec.startsWith(`${rootDir}/`)) {
     return resolveAbsoluteImport(rawSpec, cwd, barrelFileName, fileExtensions);
   } else {
     return resolveBareImport(

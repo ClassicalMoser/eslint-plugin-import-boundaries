@@ -46,6 +46,7 @@ export function calculateSameBoundaryPath(
   rootDir: string,
   barrelFileName: string,
   crossBoundaryStyle: 'alias' | 'absolute',
+  maxRelativeDepth: number = 1,
 ): string | null {
   // Resolve both to boundary-relative paths (as arrays)
   const targetRelativeToBoundary = path.relative(
@@ -91,5 +92,6 @@ export function calculateSameBoundaryPath(
     fileBoundary,
     rootDir,
     crossBoundaryStyle,
+    maxRelativeDepth,
   );
 }

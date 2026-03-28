@@ -43,6 +43,14 @@ This rule provides **automated architectural boundary enforcement with determini
 - **Test-ready**: Flexible configuration for test files (skip boundary rules while maintaining fixable and deterministic path format)
 - **Circular Dependency Prevention**: Blocks imports from ancestor directories
 
+## Plugin Rules
+
+| Rule | Description | Fixable |
+|------|-------------|---------|
+| [`import-boundaries/enforce`](#quick-start) | Enforces deterministic import paths and architectural boundary rules | ✅ Auto-fixable |
+| [`import-boundaries/no-wildcard-barrel`](#no-wildcard-barrel) | Disallows `export *` in index files — exports must be explicit | ❌ Manual fix |
+| [`import-boundaries/index-sibling-only`](#index-sibling-only) | In index files, all imports must be direct siblings (`./file.ts` format) | ❌ Manual fix |
+
 ## Quick Start
 
 ```bash
@@ -371,6 +379,11 @@ Here's a complete configuration example with all boundary rules:
   enforceBoundaries: true,         // Enforce boundary rules (default: true)
   allowUnknownBoundaries: false,    // Allow imports outside boundaries (default: false)
   fileExtensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'], // Extensions to recognize (default: all common JS/TS extensions)
+  skipIndexFiles: false,            // Skip enforce rule entirely for index/barrel files (default: false)
+                                    // Use when also enabling index-sibling-only rule (avoids rule conflicts in index files)
+  maxRelativeDepth: 1,              // Maximum '../' segments allowed in same-boundary imports (default: 1)
+                                    // 0 = always use alias/absolute; 2 = allow ../../segment; etc.
+                                    // Top-level boundary root imports always use alias/absolute regardless.
 }
 ```
 
@@ -473,6 +486,124 @@ export default [
 - **Alias:** Set `crossBoundaryStyle: 'alias'` and add `alias` to each boundary. Import paths like `@domain`, `@application`. Requires path aliases in your build (TypeScript `paths`, Vite `resolve.alias`, etc.). Use when you want shorter paths and already have aliases configured.
 
 When using `crossBoundaryStyle: 'absolute'`, the `alias` property in boundary definitions is optional. When using `alias`, every boundary must have an `alias` property.
+
+### Type-Safe Config with `defineConfig()`
+
+For TypeScript projects, you can define your boundaries in a separate `.ts` file with full type inference using the exported `defineConfig()` helper:
+
+```typescript
+// boundaries.config.ts
+import { defineConfig } from 'eslint-plugin-import-boundaries';
+
+export default defineConfig({
+  rootDir: 'src',
+  boundaries: [
+    { identifier: '@domain',         dir: 'domain',         allowImportsFrom: [] },
+    { identifier: '@application',    dir: 'application',    allowImportsFrom: ['@domain'] },
+    { identifier: '@infrastructure', dir: 'infrastructure', allowImportsFrom: ['@domain'] },
+  ],
+});
+```
+
+```typescript
+// eslint.config.ts
+import importBoundaries from 'eslint-plugin-import-boundaries';
+import boundariesConfig from './boundaries.config';
+
+export default [
+  {
+    plugins: { 'import-boundaries': importBoundaries },
+    rules: {
+      'import-boundaries/enforce': ['error', boundariesConfig],
+    },
+  },
+];
+```
+
+`defineConfig()` is a zero-overhead identity function — it exists only to provide TypeScript type inference and IDE autocompletion. You can also use plain JSON (`boundaries.json` with `import ... with { type: 'json' }`) if you don't need TypeScript.
+
+## Index File Rules
+
+Two companion rules enforce discipline within index (barrel) files. These apply only to index files (`index.ts` by default, or your configured `barrelFileName`).
+
+### no-wildcard-barrel
+
+**Rule:** `import-boundaries/no-wildcard-barrel`
+
+Disallows wildcard exports (`export * from '...'` and `export * as Foo from '...'`) in index files. Every export must be explicit.
+
+**Why:** Wildcard exports break tree shaking, bloat bundles, and make your directory's public API invisible. Explicit named exports document exactly what each directory exposes.
+
+```typescript
+// ❌ Bad (in index.ts):
+export * from './army';
+export * as Army from './army';
+
+// ✅ Good (in index.ts):
+export { Army } from './army.ts';              // flat file sibling
+export { createSoldier, Soldier } from './soldier.ts';
+export { Entity } from './entities';           // directory sibling (hits entities/index.ts)
+```
+
+```javascript
+// eslint.config.js
+rules: {
+  'import-boundaries/no-wildcard-barrel': 'error',
+  // Optional: use a custom barrel file name
+  // 'import-boundaries/no-wildcard-barrel': ['error', { barrelFileName: 'barrel' }],
+}
+```
+
+**Not auto-fixable** — requires intentional export decisions.
+
+### index-sibling-only
+
+**Rule:** `import-boundaries/index-sibling-only`
+
+In index files, every import and re-export must reference a direct sibling file in `./filename.ext` format — with an explicit file extension, in the same directory (no `../` or nested paths).
+
+**Why:** Index files are directory interfaces, not escape hatches. They should only expose what lives directly in their directory. Importing from parents, subdirectories, or external paths bypasses the architectural boundary model.
+
+```typescript
+// ❌ Bad (in index.ts):
+import { foo } from '../parent';          // above current directory
+import { bar } from './subdir/deep';      // nested path — not allowed
+import { qux } from 'src/domain';         // external boundary
+
+// ✅ Good (in index.ts):
+export { Army } from './army.ts';         // flat file sibling (explicit extension)
+export { Entity } from './entities';      // directory sibling (hits entities/index.ts)
+export { Soldier } from './soldier.ts';
+export type { SoldierOptions } from './soldier.ts';
+```
+
+```javascript
+// eslint.config.js
+rules: {
+  'import-boundaries/index-sibling-only': 'error',
+  // Optional: use a custom barrel file name
+  // 'import-boundaries/index-sibling-only': ['error', { barrelFileName: 'barrel' }],
+}
+```
+
+**Not auto-fixable** — requires intentional import decisions.
+
+### Using All Three Rules Together
+
+When combining `enforce` + `index-sibling-only`, use `skipIndexFiles: true` on the `enforce` rule so they apply to disjoint sets of files (index files handled by `index-sibling-only`, everything else by `enforce`):
+
+```javascript
+// eslint.config.js
+rules: {
+  'import-boundaries/enforce': ['error', {
+    rootDir: 'src',
+    boundaries,
+    skipIndexFiles: true,  // Let index-sibling-only handle index files
+  }],
+  'import-boundaries/no-wildcard-barrel': 'error',
+  'import-boundaries/index-sibling-only': 'error',
+}
+```
 
 ## How It Works
 
