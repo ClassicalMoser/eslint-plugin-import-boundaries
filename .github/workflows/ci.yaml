@@ -1,9 +1,6 @@
-# Full CI flow for the project
 name: Continuous Integration
 
 on:
-  # master branch will not accept if any failed
-  # staging branch will accept regardless of the status of the jobs
   pull_request:
     branches:
       - development
@@ -20,103 +17,60 @@ jobs:
   format:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      # Set up Node.js environment
-      - name: Set up Node.js environment
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20.16.0
+          node-version: '22'
 
-      # Install pnpm
-      - name: Install pnpm
-        run: npm install -g pnpm@9.7
-
-      # Cache Node.js dependencies
-      - name: Cache Node.js dependencies
-        uses: actions/cache@v3
+      - uses: pnpm/action-setup@v4
         with:
-          path: node_modules
-          key: cache-node-modules-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            cache-node-modules-
+          version: latest
 
-      # Install dependencies
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      # Run Prettier
       - name: Run Prettier
         run: pnpm format:check
 
   typecheck:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      # Set up Node.js environment
-      - name: Set up Node.js environment
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20.16.0
+          node-version: '22'
 
-      # Install pnpm
-      - name: Install pnpm
-        run: npm install -g pnpm@9.7
-
-      # Cache Node.js dependencies
-      - name: Cache Node.js dependencies
-        uses: actions/cache@v3
+      - uses: pnpm/action-setup@v4
         with:
-          path: node_modules
-          key: cache-node-modules-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            cache-node-modules-
+          version: latest
 
-      # Install dependencies
       - name: Install dependencies
-        run: pnpm install:ci
+        run: pnpm install --frozen-lockfile
 
-      # Run Typecheck
       - name: Run Typecheck
         run: pnpm typecheck
 
   lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      # Set up Node.js environment
-      - name: Set up Node.js environment
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20.16.0
+          node-version: '22'
 
-      # Install pnpm
-      - name: Install pnpm
-        run: npm install -g pnpm@9.7
-
-      # Cache Node.js dependencies
-      - name: Cache Node.js dependencies
-        uses: actions/cache@v3
+      - uses: pnpm/action-setup@v4
         with:
-          path: node_modules
-          key: cache-node-modules-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            cache-node-modules-
+          version: latest
 
-      # Install dependencies
       - name: Install dependencies
-        run: pnpm install:ci
+        run: pnpm install --frozen-lockfile
 
-      # Build (required for ESLint to import the plugin)
       - name: Build
         run: pnpm build
 
-      # Run ESLint
       - name: Run ESLint
         run: pnpm lint
 
@@ -124,65 +78,37 @@ jobs:
     runs-on: ubuntu-latest
     needs: [format, typecheck, lint]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      # Set up Node.js environment
-      - name: Set up Node.js environment
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20.16.0
+          node-version: '22'
 
-      # Install pnpm
-      - name: Install pnpm
-        run: npm install -g pnpm@9.7
-
-      # Cache Node.js dependencies
-      - name: Cache Node.js dependencies
-        uses: actions/cache@v3
+      - uses: pnpm/action-setup@v4
         with:
-          path: node_modules
-          key: cache-node-modules-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            cache-node-modules-
+          version: latest
 
-      # Install dependencies
       - name: Install dependencies
-        run: pnpm install:ci
+        run: pnpm install --frozen-lockfile
 
-        # Run the test suite
       - name: Run tests
         run: pnpm test
 
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      # Set up Node.js environment
-      - name: Set up Node.js environment
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20.16.0
+          node-version: '22'
 
-      # Install pnpm
-      - name: Install pnpm
-        run: npm install -g pnpm@9.7
-
-      # Cache Node.js dependencies
-      - name: Cache Node.js dependencies
-        uses: actions/cache@v3
+      - uses: pnpm/action-setup@v4
         with:
-          path: node_modules
-          key: cache-node-modules-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            cache-node-modules-
+          version: latest
 
-      # Install dependencies
       - name: Install dependencies
-        run: pnpm install:ci
+        run: pnpm install --frozen-lockfile
 
-      # Run build
       - name: Run build
         run: pnpm build
