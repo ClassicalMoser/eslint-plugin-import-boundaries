@@ -75,17 +75,17 @@ describe('classifyBarrelImport', () => {
     });
   });
 
-  describe('missing extension (no-ext)', () => {
-    it('should classify ./sibling (no ext) as no-ext', () => {
-      expect(classifyBarrelImport('./sibling')).toBe('no-ext');
+  describe('directory references (no extension) — valid sibling dirs', () => {
+    it('should classify ./sibling (no ext) as valid — directory reference', () => {
+      expect(classifyBarrelImport('./sibling')).toBe('valid');
     });
 
-    it('should classify ./army as no-ext', () => {
-      expect(classifyBarrelImport('./army')).toBe('no-ext');
+    it('should classify ./army as valid — directory reference', () => {
+      expect(classifyBarrelImport('./army')).toBe('valid');
     });
 
-    it('should classify ./utils as no-ext', () => {
-      expect(classifyBarrelImport('./utils')).toBe('no-ext');
+    it('should classify ./entities as valid — directory reference', () => {
+      expect(classifyBarrelImport('./entities')).toBe('valid');
     });
   });
 

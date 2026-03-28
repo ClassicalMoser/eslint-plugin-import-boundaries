@@ -26,11 +26,16 @@ export function isBarrelFile(
  * Classify a raw import specifier for use in barrel files.
  *
  * Returns:
- * - 'valid'        ./file.ts — correct direct sibling with extension
- * - 'no-ext'       ./file — sibling but missing file extension
+ * - 'valid'        ./file.ts  — explicit flat-file sibling with extension
+ *                  ./dir      — directory reference (no extension = hits dir/index.ts)
  * - 'not-sibling'  anything else (../x, ./sub/x, absolute, alias)
+ *
+ * NOTE: both `./name` (directory reference) and `./name.ext` (flat file) are valid.
+ * Without file I/O we cannot distinguish them, and both are legitimate in an index
+ * file: `./name.ext` re-exports a flat sibling file, `./name` re-exports a sibling
+ * directory's barrel. Only depth > 0 and upward traversal are rejected.
  */
-export type ImportClassification = 'valid' | 'no-ext' | 'not-sibling';
+export type ImportClassification = 'valid' | 'not-sibling';
 
 export function classifyBarrelImport(spec: string): ImportClassification {
   if (!spec.startsWith('./')) {
@@ -42,11 +47,6 @@ export function classifyBarrelImport(spec: string): ImportClassification {
   // No subdirectory allowed: must not contain '/'
   if (rest.includes('/')) {
     return 'not-sibling';
-  }
-
-  // Must have an explicit file extension
-  if (!rest.includes('.')) {
-    return 'no-ext';
   }
 
   return 'valid';

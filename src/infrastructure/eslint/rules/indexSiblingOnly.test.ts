@@ -21,7 +21,6 @@ describe('index-sibling-only rule', () => {
 
     it('should have the expected message IDs', () => {
       expect(rule.meta?.messages).toHaveProperty('notSibling');
-      expect(rule.meta?.messages).toHaveProperty('missingExtension');
     });
 
     it('should accept optional barrelFileName option', () => {
