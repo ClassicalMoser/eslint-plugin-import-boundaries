@@ -5,6 +5,8 @@
 
 export const DEFAULT_BARREL_FILE_NAME = 'index';
 
+const FILE_EXT_RE = /\.[^.]+$/;
+
 /**
  * Returns true if the given filename is a barrel (index) file.
  * Checks by comparing the basename (without extension) to barrelFileName.
@@ -18,7 +20,7 @@ export function isBarrelFile(
   barrelFileName: string,
 ): boolean {
   const basename = filename.split('/').pop() ?? '';
-  const basenameWithoutExt = basename.replace(/\.[^.]+$/, '');
+  const basenameWithoutExt = basename.replace(FILE_EXT_RE, '');
   return basenameWithoutExt === barrelFileName;
 }
 

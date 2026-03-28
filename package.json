@@ -50,8 +50,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "validate:fix": "pnpm run lint:fix && pnpm run format && pnpm run typecheck",
-    "validate:check": "pnpm run lint && pnpm run format:check && pnpm run typecheck",
+    "validate:fix": "pnpm run build && pnpm run lint:fix && pnpm run format && pnpm run typecheck",
+    "validate:check": "pnpm run build && pnpm run lint && pnpm run format:check && pnpm run typecheck",
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
@@ -64,18 +64,18 @@
     "eslint": ">=9.0.0"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^6.5.1",
-    "@stryker-mutator/core": "^9.4.0",
-    "@stryker-mutator/typescript-checker": "^9.4.0",
-    "@stryker-mutator/vitest-runner": "^9.4.0",
-    "@types/node": "^24.10.2",
-    "@vitest/coverage-v8": "^4.0.15",
-    "eslint": "^9.39.1",
+    "@antfu/eslint-config": "^7.7.3",
+    "@stryker-mutator/core": "^9.6.0",
+    "@stryker-mutator/typescript-checker": "^9.6.0",
+    "@stryker-mutator/vitest-runner": "^9.6.0",
+    "@types/node": "^25.5.0",
+    "@vitest/coverage-v8": "^4.1.2",
+    "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import-boundaries": "link:",
-    "prettier": "^3.7.4",
+    "prettier": "^3.8.1",
     "tsdown": "^0.21.7",
-    "typescript": "^5.9.3",
-    "vitest": "4.0.15"
+    "typescript": "^6.0.2",
+    "vitest": "4.1.2"
   }
 }

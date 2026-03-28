@@ -5,6 +5,8 @@
 import type { Boundary } from '@shared';
 import path from 'node:path';
 
+const BACKSLASH_RE = /\\/g;
+
 /**
  * Format a path as a forward-slash path relative to rootDir.
  */
@@ -12,7 +14,7 @@ export function formatAbsolutePath(
   rootDir: string,
   ...pathSegments: string[]
 ): string {
-  return path.join(rootDir, ...pathSegments).replace(/\\/g, '/');
+  return path.join(rootDir, ...pathSegments).replace(BACKSLASH_RE, '/');
 }
 
 /**
@@ -34,7 +36,7 @@ export function absoluteToRelativePath(
   // Get relative path from file directory
   const relativeFromFile = path.relative(fileDir, targetPath);
   // Normalize to forward slashes
-  const normalized = relativeFromFile.replace(/\\/g, '/');
+  const normalized = relativeFromFile.replace(BACKSLASH_RE, '/');
 
   // Ensure it starts with ./ if it's in the same directory or a subdirectory
   // (Node.js requires explicit relative paths)
@@ -59,7 +61,7 @@ export function absoluteToRelativePath(
       } else {
         // Normalize dirname: replace backslashes
         // Since result already starts with ./ or ../ (from line 42-44), dirname preserves it
-        result = dirname.replace(/\\/g, '/');
+        result = dirname.replace(BACKSLASH_RE, '/');
       }
     }
   }

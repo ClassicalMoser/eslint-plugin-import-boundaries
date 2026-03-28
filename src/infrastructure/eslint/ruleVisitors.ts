@@ -9,6 +9,8 @@ import { handleImport } from '@application';
 import { createFixerFactory } from './fixerAdapter';
 import { ESLintReporter } from './reporterAdapter';
 
+const FILE_EXT_RE = /\.[^.]+$/;
+
 /**
  * Options for creating rule visitors.
  */
@@ -73,7 +75,7 @@ export function createRuleVisitors(
     if (skipIndexFiles) {
       const filename = context.filename ?? context.getFilename?.() ?? '';
       const basename = filename.split('/').pop() ?? '';
-      const basenameWithoutExt = basename.replace(/\.[^.]+$/, '');
+      const basenameWithoutExt = basename.replace(FILE_EXT_RE, '');
       if (basenameWithoutExt === barrelFileName) return;
     }
 

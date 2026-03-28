@@ -6,6 +6,8 @@
 import type { ASTNode } from '@ports';
 import type { Rule } from 'eslint';
 
+const SURROUNDING_QUOTES_RE = /^['"]|['"]$/g;
+
 /**
  * Adapt an ESLint node to the ASTNode port interface.
  */
@@ -15,7 +17,7 @@ export function adaptESLintNode(node: Rule.Node): ASTNode {
       // Case 1: Standard import statement (import ... from 'path')
       if ('source' in node && node.source) {
         const source = node.source as { value?: string; raw?: string };
-        return source.value ?? source.raw?.replace(/^['"]|['"]$/g, '') ?? null;
+        return source.value ?? source.raw?.replace(SURROUNDING_QUOTES_RE, '') ?? null;
       }
       // Case 2: Dynamic import or require() call
       if (
@@ -24,7 +26,7 @@ export function adaptESLintNode(node: Rule.Node): ASTNode {
         node.arguments[0]
       ) {
         const arg = node.arguments[0] as { value?: string; raw?: string };
-        return arg.value ?? arg.raw?.replace(/^['"]|['"]$/g, '') ?? null;
+        return arg.value ?? arg.raw?.replace(SURROUNDING_QUOTES_RE, '') ?? null;
       }
       return null;
     },

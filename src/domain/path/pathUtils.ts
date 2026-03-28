@@ -4,6 +4,9 @@
  */
 
 import path from 'node:path';
+
+const QUERY_HASH_RE = /[?#]/;
+
 import {
   hasExtensionsFilter,
   hasFileExtension,
@@ -106,7 +109,7 @@ export function isNonCodeSpecifier(
   fileExtensions: string[],
 ): boolean {
   // Strip query/hash (Vite-style ./file.svg?url or ./file.svg#named)
-  const specWithoutQuery = rawSpec.split(/[?#]/)[0];
+  const specWithoutQuery = rawSpec.split(QUERY_HASH_RE)[0];
   const ext = path.extname(specWithoutQuery);
   if (!hasFileExtension(ext)) return false;
   return !isExtensionInFilter(ext, fileExtensions);
