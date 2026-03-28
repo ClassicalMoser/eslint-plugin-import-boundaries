@@ -47,8 +47,11 @@ export default antfu(
           rootDir: 'src',
           boundaries,
           crossBoundaryStyle: 'alias',
+          skipIndexFiles: true,
         },
       ],
+      'import-boundaries/no-wildcard-barrel': 'error',
+      'import-boundaries/index-sibling-only': 'error',
     },
   },
   {
@@ -61,8 +64,11 @@ export default antfu(
           boundaries,
           crossBoundaryStyle: 'alias',
           enforceBoundaries: false,
+          skipIndexFiles: true,
         },
       ],
+      'import-boundaries/no-wildcard-barrel': 'error',
+      'import-boundaries/index-sibling-only': 'error',
     },
   },
   {

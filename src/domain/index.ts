@@ -4,16 +4,48 @@
  */
 
 // Boundary detection and rules
-export * from './boundary';
+export {
+  checkAliasSubpath,
+  checkBoundaryRules,
+  getBoundaryIdentifier,
+  getFileData,
+  resolveToBoundary,
+} from './boundary';
 
 // Path utilities
-export * from './path';
+export {
+  absoluteToRelativePath,
+  choosePathFormat,
+  formatAbsolutePath,
+  getBarrelPath,
+  getBasenameWithoutExt,
+  hasExtension,
+  isInsideDir,
+  isNonCodeSpecifier,
+  pathToParts,
+} from './path';
 
 // Path calculation
-export * from './pathCalculation';
+export {
+  calculateBoundaryRootPath,
+  calculateCrossBoundaryPath,
+  calculateDistantPath,
+  calculateSameBoundaryPath,
+  calculateSameDirectoryPath,
+  checkAncestorBarrel,
+} from './pathCalculation';
 
 // Path resolution
-export * from './pathResolution';
+export {
+  extractBareImportSubpath,
+  findMatchingBoundary,
+  resolveAbsoluteImport,
+  resolveAliasImport,
+  resolveBareImport,
+  resolveRelativeImport,
+  resolveTarget,
+  resolveTargetPath,
+} from './pathResolution';
 
 // Relationship detection
-export * from './relationship';
+export { calculateCorrectImportPath } from './relationship';

@@ -33,8 +33,8 @@
 
 import type { Rule } from 'eslint';
 import {
-  DEFAULT_BARREL_FILE_NAME,
   classifyBarrelImport,
+  DEFAULT_BARREL_FILE_NAME,
   isBarrelFile,
 } from './barrelFileHelpers';
 
