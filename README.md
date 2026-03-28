@@ -45,11 +45,11 @@ This rule provides **automated architectural boundary enforcement with determini
 
 ## Plugin Rules
 
-| Rule | Description | Fixable |
-|------|-------------|---------|
-| [`import-boundaries/enforce`](#quick-start) | Enforces deterministic import paths and architectural boundary rules | ✅ Auto-fixable |
-| [`import-boundaries/no-wildcard-barrel`](#no-wildcard-barrel) | Disallows `export *` in index files — exports must be explicit | ❌ Manual fix |
-| [`import-boundaries/index-sibling-only`](#index-sibling-only) | In index files, all imports must be direct siblings (`./file.ts` format) | ❌ Manual fix |
+| Rule                                                          | Description                                                              | Fixable         |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------ | --------------- |
+| [`import-boundaries/enforce`](#quick-start)                   | Enforces deterministic import paths and architectural boundary rules     | ✅ Auto-fixable |
+| [`import-boundaries/no-wildcard-barrel`](#no-wildcard-barrel) | Disallows `export *` in index files — exports must be explicit           | ❌ Manual fix   |
+| [`import-boundaries/index-sibling-only`](#index-sibling-only) | In index files, all imports must be direct siblings (`./file.ts` format) | ❌ Manual fix   |
 
 ## Quick Start
 
@@ -498,9 +498,17 @@ import { defineConfig } from 'eslint-plugin-import-boundaries';
 export default defineConfig({
   rootDir: 'src',
   boundaries: [
-    { identifier: '@domain',         dir: 'domain',         allowImportsFrom: [] },
-    { identifier: '@application',    dir: 'application',    allowImportsFrom: ['@domain'] },
-    { identifier: '@infrastructure', dir: 'infrastructure', allowImportsFrom: ['@domain'] },
+    { identifier: '@domain', dir: 'domain', allowImportsFrom: [] },
+    {
+      identifier: '@application',
+      dir: 'application',
+      allowImportsFrom: ['@domain'],
+    },
+    {
+      identifier: '@infrastructure',
+      dir: 'infrastructure',
+      allowImportsFrom: ['@domain'],
+    },
   ],
 });
 ```
@@ -540,9 +548,9 @@ export * from './army';
 export * as Army from './army';
 
 // ✅ Good (in index.ts):
-export { Army } from './army.ts';              // flat file sibling
+export { Army } from './army.ts'; // flat file sibling
 export { createSoldier, Soldier } from './soldier.ts';
-export { Entity } from './entities';           // directory sibling (hits entities/index.ts)
+export { Entity } from './entities'; // directory sibling (hits entities/index.ts)
 ```
 
 ```javascript
@@ -566,13 +574,13 @@ In index files, every import and re-export must reference a direct sibling file 
 
 ```typescript
 // ❌ Bad (in index.ts):
-import { foo } from '../parent';          // above current directory
-import { bar } from './subdir/deep';      // nested path — not allowed
-import { qux } from 'src/domain';         // external boundary
+import { foo } from '../parent'; // above current directory
+import { bar } from './subdir/deep'; // nested path — not allowed
+import { qux } from 'src/domain'; // external boundary
 
 // ✅ Good (in index.ts):
-export { Army } from './army.ts';         // flat file sibling (explicit extension)
-export { Entity } from './entities';      // directory sibling (hits entities/index.ts)
+export { Army } from './army.ts'; // flat file sibling (explicit extension)
+export { Entity } from './entities'; // directory sibling (hits entities/index.ts)
 export { Soldier } from './soldier.ts';
 export type { SoldierOptions } from './soldier.ts';
 ```

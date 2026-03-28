@@ -42,9 +42,9 @@ export const rule: Rule.RuleModule = {
     ],
     messages: {
       noWildcardExport:
-        "Wildcard export 'export * from \"{{source}}\"' is not allowed in index files. Use explicit named exports instead: 'export { Name } from \"{{source}}\"'.",
+        'Wildcard export \'export * from "{{source}}"\' is not allowed in index files. Use explicit named exports instead: \'export { Name } from "{{source}}"\'.',
       noWildcardNamespaceExport:
-        "Wildcard namespace export 'export * as {{name}} from \"{{source}}\"' is not allowed in index files. Use explicit named exports instead.",
+        'Wildcard namespace export \'export * as {{name}} from "{{source}}"\' is not allowed in index files. Use explicit named exports instead.',
     },
   },
 

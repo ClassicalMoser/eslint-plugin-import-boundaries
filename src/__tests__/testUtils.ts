@@ -162,4 +162,3 @@ export function createMockPorts(options?: {
     createFixer: fixerFactoryFactory(),
   };
 }
-

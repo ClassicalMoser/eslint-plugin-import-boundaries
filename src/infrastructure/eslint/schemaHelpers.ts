@@ -82,7 +82,10 @@ export const ruleSchema: Rule.RuleMetaData['schema'] = [
       allowUnknownBoundaries: withDefault(schemaProps.boolean, false),
       enforceBoundaries: withDefault(schemaProps.boolean, true),
       skipIndexFiles: withDefault(schemaProps.boolean, false),
-      maxRelativeDepth: withDefault({ type: 'integer', minimum: 0 } as unknown as SchemaProperty, 1),
+      maxRelativeDepth: withDefault(
+        { type: 'integer', minimum: 0 } as unknown as SchemaProperty,
+        1,
+      ),
       fileExtensions: withDefault(schemaProps.stringArray, [
         '.ts',
         '.tsx',

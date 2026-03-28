@@ -1,5 +1,9 @@
 // ESLint plugins must export an object with a 'rules' property
-import { enforceRule, indexSiblingOnlyRule, noWildcardBarrelRule } from './infrastructure';
+import {
+  enforceRule,
+  indexSiblingOnlyRule,
+  noWildcardBarrelRule,
+} from './infrastructure';
 
 export { defineConfig } from './config.js';
 // Re-export types for use in typed config files (boundaries.config.ts)

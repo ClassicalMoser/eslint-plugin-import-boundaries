@@ -7,10 +7,7 @@ import type { Boundary } from '@shared';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { createBoundary } from '../../__tests__/boundaryTestHelpers.js';
-import {
-  checkAliasSubpath,
-  getFileData,
-} from './boundaryDetection';
+import { checkAliasSubpath, getFileData } from './boundaryDetection';
 
 describe('boundaryDetection', () => {
   const cwd = '/project';
@@ -253,8 +250,12 @@ describe('boundaryDetection', () => {
 
       expect(result.isValid).toBe(true);
       expect(result.fileBoundary).toBe(deepBoundary);
-      expect(result.fileBoundary?.absDir.length).toBeGreaterThan(midBoundary.absDir.length);
-      expect(result.fileBoundary?.absDir.length).toBeGreaterThan(rootBoundary.absDir.length);
+      expect(result.fileBoundary?.absDir.length).toBeGreaterThan(
+        midBoundary.absDir.length,
+      );
+      expect(result.fileBoundary?.absDir.length).toBeGreaterThan(
+        rootBoundary.absDir.length,
+      );
     });
   });
 });
