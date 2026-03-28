@@ -57,6 +57,7 @@ export interface RuleOptions {
   skipIndexFiles?: boolean; // Skip all checking for index files (default: false). Enable when using index-sibling-only rule to avoid conflicts.
   // Note: barrelFileName is not configurable - index files must be named 'index' to match runtime module resolution
   fileExtensions?: string[]; // File extensions to recognize (default: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'])
+  maxRelativeDepth?: number; // Maximum number of '../' segments allowed in same-boundary imports (default: 1). Imports requiring more '../' segments use alias/absolute path instead.
 }
 
 /**

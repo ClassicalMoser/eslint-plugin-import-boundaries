@@ -24,6 +24,7 @@ export interface RuleVisitorOptions {
   allowUnknownBoundaries: boolean;
   enforceBoundaries: boolean;
   skipIndexFiles: boolean;
+  maxRelativeDepth: number;
   barrelFileName: string;
   fileExtensions: string[];
 }
@@ -46,6 +47,7 @@ export function createRuleVisitors(
     allowUnknownBoundaries,
     enforceBoundaries,
     skipIndexFiles,
+    maxRelativeDepth,
     barrelFileName,
     fileExtensions,
   } = options;
@@ -94,6 +96,7 @@ export function createRuleVisitors(
       allowUnknownBoundaries,
       isTypeOnly,
       skipBoundaryRules: !enforceBoundaries, // Invert: enforceBoundaries=false means skip rules
+      maxRelativeDepth,
       fileExtensions,
     });
   }

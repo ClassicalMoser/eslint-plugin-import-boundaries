@@ -138,4 +138,74 @@ describe('distantPathCalculation', () => {
       expect(result).toBe('@entities/target');
     });
   });
+
+  describe('maxRelativeDepth', () => {
+    it('should use alias path for cousin when maxRelativeDepth is 0', () => {
+      const targetParts = ['parent', 'cousin'];
+      const fileParts = ['parent', 'sibling'];
+      const result = calculateDistantPath(
+        targetParts,
+        fileParts,
+        1,
+        'cousin',
+        entitiesBoundary,
+        rootDir,
+        'alias',
+        0, // maxRelativeDepth: 0 means never use relative paths
+      );
+
+      expect(result).toBe('@entities/cousin');
+    });
+
+    it('should use relative path for 2-step import when maxRelativeDepth is 2', () => {
+      const targetParts = ['level1', 'target'];
+      const fileParts = ['level1', 'level2', 'other'];
+      const result = calculateDistantPath(
+        targetParts,
+        fileParts,
+        1, // steps = fileParts.length - firstDifferingIndex = 3 - 1 = 2
+        'target',
+        entitiesBoundary,
+        rootDir,
+        'alias',
+        2, // maxRelativeDepth: 2 allows ../../
+      );
+
+      expect(result).toBe('../../target');
+    });
+
+    it('should use alias path for 3-step import when maxRelativeDepth is 2', () => {
+      const targetParts = ['level1', 'target'];
+      const fileParts = ['level1', 'level2', 'level3', 'other'];
+      const result = calculateDistantPath(
+        targetParts,
+        fileParts,
+        1, // steps = 4 - 1 = 3, exceeds maxRelativeDepth
+        'target',
+        entitiesBoundary,
+        rootDir,
+        'alias',
+        2,
+      );
+
+      expect(result).toBe('@entities/target');
+    });
+
+    it('should still use alias for top-level import regardless of maxRelativeDepth', () => {
+      const targetParts = ['topLevel'];
+      const fileParts = ['subdir'];
+      const result = calculateDistantPath(
+        targetParts,
+        fileParts,
+        0, // top-level: target at root, file in subdir
+        'topLevel',
+        entitiesBoundary,
+        rootDir,
+        'alias',
+        99, // even with very high maxRelativeDepth, top-level uses alias
+      );
+
+      expect(result).toBe('@entities/topLevel');
+    });
+  });
 });

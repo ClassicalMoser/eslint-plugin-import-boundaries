@@ -34,6 +34,7 @@ export function calculateCorrectImportPath(
   crossBoundaryStyle: 'alias' | 'absolute' = DEFAULT_CROSS_BOUNDARY_STYLE,
   barrelFileName: string = DEFAULT_BARREL_FILE_NAME,
   fileExtensions: string[] = getDefaultFileExtensions(),
+  maxRelativeDepth: number = 1,
 ): string | null {
   // Resolve target path
   const { targetAbs, targetDir } = resolveTargetPath(
@@ -93,6 +94,7 @@ export function calculateCorrectImportPath(
     rootDir,
     barrelFileName,
     crossBoundaryStyle,
+    maxRelativeDepth,
   );
 }
 

@@ -20,6 +20,7 @@ export interface RuleContextData {
   allowUnknownBoundaries: boolean;
   enforceBoundaries: boolean;
   skipIndexFiles: boolean;
+  maxRelativeDepth: number;
   barrelFileName: string;
   fileExtensions: string[];
   cwd: string;
@@ -44,6 +45,7 @@ export function extractRuleOptions(context: Rule.RuleContext): RuleContextData {
     allowUnknownBoundaries = false,
     enforceBoundaries = true,
     skipIndexFiles = false,
+    maxRelativeDepth = 1,
     fileExtensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
   } = options;
   // barrelFileName is not configurable - must be 'index' to match runtime module resolution
@@ -86,6 +88,7 @@ export function extractRuleOptions(context: Rule.RuleContext): RuleContextData {
     allowUnknownBoundaries,
     enforceBoundaries,
     skipIndexFiles,
+    maxRelativeDepth,
     barrelFileName,
     fileExtensions,
     cwd,

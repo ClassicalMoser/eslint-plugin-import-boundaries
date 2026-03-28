@@ -46,6 +46,7 @@ export interface HandleImportOptions {
   allowUnknownBoundaries?: boolean;
   isTypeOnly?: boolean;
   skipBoundaryRules?: boolean;
+  maxRelativeDepth?: number;
   fileExtensions?: string[];
 }
 
@@ -71,6 +72,7 @@ export function handleImport(options: HandleImportOptions): boolean {
     allowUnknownBoundaries = defaults.allowUnknownBoundaries,
     isTypeOnly = defaults.isTypeOnly,
     skipBoundaryRules = defaults.skipBoundaryRules,
+    maxRelativeDepth = 1,
     fileExtensions = defaults.fileExtensions,
   } = options;
 
@@ -149,6 +151,7 @@ export function handleImport(options: HandleImportOptions): boolean {
     crossBoundaryStyle,
     'index', // barrelFileName is not configurable - must be 'index' to match runtime
     fileExtensions,
+    maxRelativeDepth,
   );
 
   if (isNullPath(correctPath)) {

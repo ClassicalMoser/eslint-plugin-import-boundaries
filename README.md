@@ -381,6 +381,9 @@ Here's a complete configuration example with all boundary rules:
   fileExtensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'], // Extensions to recognize (default: all common JS/TS extensions)
   skipIndexFiles: false,            // Skip enforce rule entirely for index/barrel files (default: false)
                                     // Use when also enabling index-sibling-only rule (avoids rule conflicts in index files)
+  maxRelativeDepth: 1,              // Maximum '../' segments allowed in same-boundary imports (default: 1)
+                                    // 0 = always use alias/absolute; 2 = allow ../../segment; etc.
+                                    // Top-level boundary root imports always use alias/absolute regardless.
 }
 ```
 
