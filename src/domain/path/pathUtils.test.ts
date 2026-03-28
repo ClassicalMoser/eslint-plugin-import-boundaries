@@ -5,7 +5,12 @@
 
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { getBasenameWithoutExt, hasExtension, isInsideDir } from './pathUtils';
+import {
+  getBasenameWithoutExt,
+  hasExtension,
+  isInsideDir,
+  isNonCodeSpecifier,
+} from './pathUtils';
 
 describe('pathUtils', () => {
   describe('isInsideDir', () => {
@@ -105,6 +110,50 @@ describe('pathUtils', () => {
     it('should return full basename if no extension', () => {
       expect(getBasenameWithoutExt('/a/b/file')).toBe('file');
       expect(getBasenameWithoutExt('/a/b/dir')).toBe('dir');
+    });
+  });
+
+  describe('isNonCodeSpecifier', () => {
+    const codeExtensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'];
+
+    it('should return true for asset extensions', () => {
+      expect(isNonCodeSpecifier('./logo.png', codeExtensions)).toBe(true);
+      expect(isNonCodeSpecifier('./icon.svg', codeExtensions)).toBe(true);
+      expect(isNonCodeSpecifier('./styles.css', codeExtensions)).toBe(true);
+      expect(isNonCodeSpecifier('../assets/bg.jpg', codeExtensions)).toBe(true);
+      expect(isNonCodeSpecifier('./data.json', codeExtensions)).toBe(true);
+      expect(isNonCodeSpecifier('./font.woff2', codeExtensions)).toBe(true);
+    });
+
+    it('should return false for code extensions', () => {
+      expect(isNonCodeSpecifier('./file.ts', codeExtensions)).toBe(false);
+      expect(isNonCodeSpecifier('./file.tsx', codeExtensions)).toBe(false);
+      expect(isNonCodeSpecifier('./file.js', codeExtensions)).toBe(false);
+      expect(isNonCodeSpecifier('./file.jsx', codeExtensions)).toBe(false);
+      expect(isNonCodeSpecifier('./file.mjs', codeExtensions)).toBe(false);
+      expect(isNonCodeSpecifier('./file.cjs', codeExtensions)).toBe(false);
+    });
+
+    it('should return false for extensionless specifiers', () => {
+      expect(isNonCodeSpecifier('./utils', codeExtensions)).toBe(false);
+      expect(isNonCodeSpecifier('lodash', codeExtensions)).toBe(false);
+      expect(isNonCodeSpecifier('../parent', codeExtensions)).toBe(false);
+      expect(isNonCodeSpecifier('@domain', codeExtensions)).toBe(false);
+    });
+
+    it('should strip Vite-style query parameters', () => {
+      expect(isNonCodeSpecifier('./icon.svg?url', codeExtensions)).toBe(true);
+      expect(isNonCodeSpecifier('./img.png?inline', codeExtensions)).toBe(true);
+    });
+
+    it('should strip hash fragments', () => {
+      expect(isNonCodeSpecifier('./icon.svg#id', codeExtensions)).toBe(true);
+    });
+
+    it('should respect custom fileExtensions', () => {
+      const withVue = ['.ts', '.js', '.vue'];
+      expect(isNonCodeSpecifier('./App.vue', withVue)).toBe(false);
+      expect(isNonCodeSpecifier('./logo.png', withVue)).toBe(true);
     });
   });
 });

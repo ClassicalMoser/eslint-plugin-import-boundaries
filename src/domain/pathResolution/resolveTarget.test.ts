@@ -269,4 +269,64 @@ describe('resolveTarget', () => {
       );
     });
   });
+
+  describe('non-code extension imports', () => {
+    it('should resolve .png as a literal file, not a directory', () => {
+      const spec = 'assets/icon.png';
+
+      const result = resolveTarget(
+        baseDir,
+        spec,
+        barrelFileName,
+        fileExtensions,
+      );
+
+      expect(result.targetAbs).toBe(path.resolve(baseDir, 'assets/icon.png'));
+      expect(result.targetDir).toBe(path.resolve(baseDir, 'assets'));
+    });
+
+    it('should resolve .svg as a literal file', () => {
+      const spec = './logo.svg';
+
+      const result = resolveTarget(
+        baseDir,
+        spec,
+        barrelFileName,
+        fileExtensions,
+      );
+
+      expect(result.targetAbs).toBe(path.resolve(baseDir, 'logo.svg'));
+      expect(result.targetDir).toBe(baseDir);
+    });
+
+    it('should resolve .css as a literal file', () => {
+      const spec = 'styles/main.css';
+
+      const result = resolveTarget(
+        baseDir,
+        spec,
+        barrelFileName,
+        fileExtensions,
+      );
+
+      expect(result.targetAbs).toBe(path.resolve(baseDir, 'styles/main.css'));
+      expect(result.targetDir).toBe(path.resolve(baseDir, 'styles'));
+    });
+
+    it('should resolve .json as a literal file', () => {
+      const spec = '../data.json';
+
+      const result = resolveTarget(
+        baseDir,
+        spec,
+        barrelFileName,
+        fileExtensions,
+      );
+
+      expect(result.targetAbs).toBe(
+        path.resolve(path.dirname(baseDir), 'data.json'),
+      );
+      expect(result.targetDir).toBe(path.dirname(baseDir));
+    });
+  });
 });

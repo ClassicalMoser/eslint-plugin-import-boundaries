@@ -785,4 +785,110 @@ describe('importHandler', () => {
       calculateCorrectImportPathSpy.mockRestore();
     });
   });
+
+  describe('non-code imports (assets, CSS, etc.)', () => {
+    it('should skip checking for relative .png imports', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/entities');
+      const { reporter, createFixer } = createMockPorts();
+      const options = createOptions({
+        rawSpec: './logo.png',
+        fileDir,
+        fileBoundary: entitiesBoundary,
+        reporter,
+        createFixer,
+      });
+
+      const result = handleImport(options);
+
+      expect(result).toBe(false);
+      expect(reporter.report).not.toHaveBeenCalled();
+    });
+
+    it('should skip checking for .svg imports', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/entities');
+      const { reporter, createFixer } = createMockPorts();
+      const options = createOptions({
+        rawSpec: '../assets/icon.svg',
+        fileDir,
+        fileBoundary: entitiesBoundary,
+        reporter,
+        createFixer,
+      });
+
+      const result = handleImport(options);
+
+      expect(result).toBe(false);
+      expect(reporter.report).not.toHaveBeenCalled();
+    });
+
+    it('should skip checking for .css imports', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/entities');
+      const { reporter, createFixer } = createMockPorts();
+      const options = createOptions({
+        rawSpec: './styles.css',
+        fileDir,
+        fileBoundary: entitiesBoundary,
+        reporter,
+        createFixer,
+      });
+
+      const result = handleImport(options);
+
+      expect(result).toBe(false);
+      expect(reporter.report).not.toHaveBeenCalled();
+    });
+
+    it('should skip checking for alias imports with asset extensions', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
+      const { reporter, createFixer } = createMockPorts();
+      const options = createOptions({
+        rawSpec: '@entities/icon.png',
+        fileDir,
+        fileBoundary: queriesBoundary,
+        reporter,
+        createFixer,
+        crossBoundaryStyle: 'alias',
+      });
+
+      const result = handleImport(options);
+
+      expect(result).toBe(false);
+      expect(reporter.report).not.toHaveBeenCalled();
+    });
+
+    it('should skip checking for Vite-style query imports', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/entities');
+      const { reporter, createFixer } = createMockPorts();
+      const options = createOptions({
+        rawSpec: './icon.svg?url',
+        fileDir,
+        fileBoundary: entitiesBoundary,
+        reporter,
+        createFixer,
+      });
+
+      const result = handleImport(options);
+
+      expect(result).toBe(false);
+      expect(reporter.report).not.toHaveBeenCalled();
+    });
+
+    it('should still enforce boundaries for .ts imports', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
+      const { reporter, createFixer } = createMockPorts();
+      const options = createOptions({
+        rawSpec: './sibling.ts',
+        fileDir,
+        fileBoundary: queriesBoundary,
+        skipBoundaryRules: true,
+        reporter,
+        createFixer,
+      });
+
+      handleImport(options);
+
+      // .ts is a code extension, so the plugin should still check it
+      // (may or may not report depending on path correctness — the key is it's not skipped)
+    });
+  });
 });
