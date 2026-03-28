@@ -8,6 +8,7 @@ import type { Rule } from 'eslint';
 import path from 'node:path';
 import process from 'node:process';
 import { getFileData } from '@domain';
+import { DEFAULTS } from '@shared';
 
 /**
  * Validated and resolved rule context.
@@ -38,15 +39,15 @@ export function extractRuleOptions(context: Rule.RuleContext): RuleContextData {
   }
   const options: RuleOptions = context.options[0];
   const {
-    rootDir = 'src',
+    rootDir = DEFAULTS.rootDir,
     boundaries,
-    crossBoundaryStyle = 'absolute',
+    crossBoundaryStyle = DEFAULTS.crossBoundaryStyle,
     defaultSeverity,
-    allowUnknownBoundaries = false,
-    enforceBoundaries = true,
-    skipIndexFiles = false,
-    maxRelativeDepth = 1,
-    fileExtensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
+    allowUnknownBoundaries = DEFAULTS.allowUnknownBoundaries,
+    enforceBoundaries = DEFAULTS.enforceBoundaries,
+    skipIndexFiles = DEFAULTS.skipIndexFiles,
+    maxRelativeDepth = DEFAULTS.maxRelativeDepth,
+    fileExtensions = [...DEFAULTS.fileExtensions],
   } = options;
   // barrelFileName is not configurable - must be 'index' to match runtime module resolution
   const barrelFileName = 'index';

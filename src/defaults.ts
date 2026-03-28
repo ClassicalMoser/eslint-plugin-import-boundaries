@@ -4,6 +4,7 @@
  */
 
 import type { RuleOptions } from '@shared';
+import { DEFAULTS } from '@shared';
 
 /**
  * Default hexagonal architecture (ports and adapters) configuration.
@@ -30,8 +31,8 @@ export function hexagonalDefaults(
   overrides: Partial<RuleOptions> = {},
 ): RuleOptions {
   const defaults: RuleOptions = {
-    rootDir: 'src',
-    crossBoundaryStyle: 'absolute',
+    rootDir: DEFAULTS.rootDir,
+    crossBoundaryStyle: DEFAULTS.crossBoundaryStyle,
     boundaries: [
       {
         identifier: '@domain',
@@ -104,8 +105,8 @@ export function simpleDefaults(
   overrides: Partial<RuleOptions> = {},
 ): RuleOptions {
   const defaults: RuleOptions = {
-    rootDir: 'src',
-    crossBoundaryStyle: 'absolute',
+    rootDir: DEFAULTS.rootDir,
+    crossBoundaryStyle: DEFAULTS.crossBoundaryStyle,
     boundaries: [
       { identifier: '@domain', dir: 'domain', alias: '@domain' },
       { identifier: '@application', dir: 'application', alias: '@application' },

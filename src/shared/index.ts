@@ -3,6 +3,7 @@
  * No dependencies - just type definitions.
  */
 
+export { DEFAULTS } from './types';
 export type {
   AliasSubpathCheck,
   Boundary,

@@ -4,6 +4,7 @@
  */
 
 import type { Boundary } from '@shared';
+import { DEFAULTS } from '@shared';
 import { resolveAbsoluteImport } from './absoluteImportResolution';
 import { resolveAliasImport } from './aliasImportResolution';
 import { resolveBareImport } from './bareImportResolution';
@@ -18,8 +19,8 @@ export function resolveTargetPath(
   boundaries: Boundary[],
   rootDir: string,
   cwd: string,
-  barrelFileName: string = 'index',
-  fileExtensions: string[] = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
+  barrelFileName: string = DEFAULTS.barrelFileName,
+  fileExtensions: string[] = [...DEFAULTS.fileExtensions],
 ): { targetAbs: string; targetDir: string } {
   if (rawSpec.startsWith('@')) {
     return resolveAliasImport(

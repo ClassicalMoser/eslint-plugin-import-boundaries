@@ -3,25 +3,27 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { DEFAULTS } from '@shared';
 import {
   DEFAULT_BARREL_FILE_NAME,
   DEFAULT_CROSS_BOUNDARY_STYLE,
-  DEFAULT_FILE_EXTENSIONS,
   getDefaultFileExtensions,
 } from './relationshipDetectionDefaults';
 
 describe('relationshipDetectionDefaults', () => {
   describe('constants', () => {
-    it('should export default cross boundary style', () => {
+    it('should delegate cross boundary style from shared DEFAULTS', () => {
+      expect(DEFAULT_CROSS_BOUNDARY_STYLE).toBe(DEFAULTS.crossBoundaryStyle);
       expect(DEFAULT_CROSS_BOUNDARY_STYLE).toBe('absolute');
     });
 
-    it('should export default barrel file name', () => {
+    it('should delegate barrel file name from shared DEFAULTS', () => {
+      expect(DEFAULT_BARREL_FILE_NAME).toBe(DEFAULTS.barrelFileName);
       expect(DEFAULT_BARREL_FILE_NAME).toBe('index');
     });
 
-    it('should export default file extensions', () => {
-      expect(DEFAULT_FILE_EXTENSIONS).toEqual([
+    it('should have default file extensions in shared DEFAULTS', () => {
+      expect(DEFAULTS.fileExtensions).toEqual([
         '.ts',
         '.tsx',
         '.js',
@@ -46,11 +48,11 @@ describe('relationshipDetectionDefaults', () => {
       expect(result1).toEqual(result2);
     });
 
-    it('should not mutate the original constant', () => {
+    it('should not mutate the shared DEFAULTS', () => {
       const result = getDefaultFileExtensions();
       result.push('.d.ts');
 
-      expect(DEFAULT_FILE_EXTENSIONS).not.toContain('.d.ts');
+      expect([...DEFAULTS.fileExtensions]).not.toContain('.d.ts');
       expect(result).toContain('.d.ts');
     });
   });

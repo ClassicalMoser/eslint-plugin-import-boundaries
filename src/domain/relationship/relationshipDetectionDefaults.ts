@@ -1,23 +1,17 @@
 /**
  * Default values for relationship detection.
- * Extracted to reduce mutation opportunities and improve testability.
+ * Delegates to DEFAULTS from shared — single source of truth.
  */
 
-export const DEFAULT_CROSS_BOUNDARY_STYLE = 'absolute' as const;
-export const DEFAULT_BARREL_FILE_NAME = 'index';
-export const DEFAULT_FILE_EXTENSIONS = [
-  '.ts',
-  '.tsx',
-  '.js',
-  '.jsx',
-  '.mjs',
-  '.cjs',
-] as const;
+import { DEFAULTS } from '@shared';
+
+export const DEFAULT_CROSS_BOUNDARY_STYLE = DEFAULTS.crossBoundaryStyle;
+export const DEFAULT_BARREL_FILE_NAME = DEFAULTS.barrelFileName;
 
 /**
  * Get default file extensions as a new array.
  * Returns a new array each time to avoid mutation issues.
  */
 export function getDefaultFileExtensions(): string[] {
-  return [...DEFAULT_FILE_EXTENSIONS];
+  return [...DEFAULTS.fileExtensions];
 }

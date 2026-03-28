@@ -3,11 +3,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { DEFAULTS } from '@shared';
 import {
-  DEFAULT_ALLOW_UNKNOWN_BOUNDARIES,
-  DEFAULT_BARREL_FILE_NAME,
-  DEFAULT_CROSS_BOUNDARY_STYLE,
-  DEFAULT_FILE_EXTENSIONS,
   DEFAULT_IS_TYPE_ONLY,
   DEFAULT_SKIP_BOUNDARY_RULES,
   getImportHandlerDefaults,
@@ -15,12 +12,12 @@ import {
 
 describe('importHandlerDefaults', () => {
   describe('constants', () => {
-    it('should export default cross boundary style', () => {
-      expect(DEFAULT_CROSS_BOUNDARY_STYLE).toBe('absolute');
+    it('should have default cross boundary style in shared DEFAULTS', () => {
+      expect(DEFAULTS.crossBoundaryStyle).toBe('absolute');
     });
 
-    it('should export default allow unknown boundaries', () => {
-      expect(DEFAULT_ALLOW_UNKNOWN_BOUNDARIES).toBe(false);
+    it('should have default allow unknown boundaries in shared DEFAULTS', () => {
+      expect(DEFAULTS.allowUnknownBoundaries).toBe(false);
     });
 
     it('should export default is type only', () => {
@@ -31,12 +28,12 @@ describe('importHandlerDefaults', () => {
       expect(DEFAULT_SKIP_BOUNDARY_RULES).toBe(false);
     });
 
-    it('should export default barrel file name', () => {
-      expect(DEFAULT_BARREL_FILE_NAME).toBe('index');
+    it('should have default barrel file name in shared DEFAULTS', () => {
+      expect(DEFAULTS.barrelFileName).toBe('index');
     });
 
-    it('should export default file extensions', () => {
-      expect(DEFAULT_FILE_EXTENSIONS).toEqual([
+    it('should have default file extensions in shared DEFAULTS', () => {
+      expect(DEFAULTS.fileExtensions).toEqual([
         '.ts',
         '.tsx',
         '.js',

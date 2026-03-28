@@ -1,21 +1,12 @@
 /**
  * Default values for import handler options.
- * Extracted to reduce mutation opportunities and improve testability.
+ * Delegates to DEFAULTS from shared — single source of truth.
  */
 
-export const DEFAULT_CROSS_BOUNDARY_STYLE = 'absolute' as const;
-export const DEFAULT_ALLOW_UNKNOWN_BOUNDARIES = false;
+import { DEFAULTS } from '@shared';
+
 export const DEFAULT_IS_TYPE_ONLY = false;
 export const DEFAULT_SKIP_BOUNDARY_RULES = false;
-export const DEFAULT_BARREL_FILE_NAME = 'index';
-export const DEFAULT_FILE_EXTENSIONS = [
-  '.ts',
-  '.tsx',
-  '.js',
-  '.jsx',
-  '.mjs',
-  '.cjs',
-] as const;
 
 /**
  * Get default values for import handler options.
@@ -23,11 +14,11 @@ export const DEFAULT_FILE_EXTENSIONS = [
  */
 export function getImportHandlerDefaults() {
   return {
-    crossBoundaryStyle: DEFAULT_CROSS_BOUNDARY_STYLE,
-    allowUnknownBoundaries: DEFAULT_ALLOW_UNKNOWN_BOUNDARIES,
+    crossBoundaryStyle: DEFAULTS.crossBoundaryStyle,
+    allowUnknownBoundaries: DEFAULTS.allowUnknownBoundaries,
     isTypeOnly: DEFAULT_IS_TYPE_ONLY,
     skipBoundaryRules: DEFAULT_SKIP_BOUNDARY_RULES,
-    barrelFileName: DEFAULT_BARREL_FILE_NAME,
-    fileExtensions: [...DEFAULT_FILE_EXTENSIONS],
+    barrelFileName: DEFAULTS.barrelFileName,
+    fileExtensions: [...DEFAULTS.fileExtensions],
   };
 }

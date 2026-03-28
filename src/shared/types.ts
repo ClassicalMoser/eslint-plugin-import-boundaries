@@ -61,6 +61,20 @@ export interface RuleOptions {
 }
 
 /**
+ * Canonical defaults — single source of truth for all layers.
+ */
+export const DEFAULTS = {
+  crossBoundaryStyle: 'absolute' as const,
+  rootDir: 'src',
+  allowUnknownBoundaries: false,
+  enforceBoundaries: true,
+  skipIndexFiles: false,
+  maxRelativeDepth: 1,
+  barrelFileName: 'index',
+  fileExtensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'] as const,
+} as const;
+
+/**
  * Alias subpath check result.
  */
 export interface AliasSubpathCheck {

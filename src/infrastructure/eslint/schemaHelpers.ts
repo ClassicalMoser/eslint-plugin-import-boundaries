@@ -4,6 +4,7 @@
  */
 
 import type { Rule } from 'eslint';
+import { DEFAULTS } from '@shared';
 
 // Type for schema properties - simplified to avoid complex union indexing
 type SchemaProperty =
@@ -76,23 +77,24 @@ export const ruleSchema: Rule.RuleMetaData['schema'] = [
       },
       crossBoundaryStyle: withDefault(
         stringEnum(['alias', 'absolute']),
-        'absolute',
+        DEFAULTS.crossBoundaryStyle,
       ),
       defaultSeverity: stringEnum(['error', 'warn']),
-      allowUnknownBoundaries: withDefault(schemaProps.boolean, false),
-      enforceBoundaries: withDefault(schemaProps.boolean, true),
-      skipIndexFiles: withDefault(schemaProps.boolean, false),
+      allowUnknownBoundaries: withDefault(
+        schemaProps.boolean,
+        DEFAULTS.allowUnknownBoundaries,
+      ),
+      enforceBoundaries: withDefault(
+        schemaProps.boolean,
+        DEFAULTS.enforceBoundaries,
+      ),
+      skipIndexFiles: withDefault(schemaProps.boolean, DEFAULTS.skipIndexFiles),
       maxRelativeDepth: withDefault(
         { type: 'integer', minimum: 0 } as unknown as SchemaProperty,
-        1,
+        DEFAULTS.maxRelativeDepth,
       ),
       fileExtensions: withDefault(schemaProps.stringArray, [
-        '.ts',
-        '.tsx',
-        '.js',
-        '.jsx',
-        '.mjs',
-        '.cjs',
+        ...DEFAULTS.fileExtensions,
       ]),
     },
     required: ['boundaries'],
