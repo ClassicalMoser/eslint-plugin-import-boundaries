@@ -82,6 +82,37 @@ export function getBasenameWithoutExt(filePath: string): string {
 }
 
 /**
+ * Check if an import specifier refers to a non-code module (e.g. .png, .svg, .css).
+ * Strips Vite-style query/hash suffixes before checking the extension.
+ *
+ * A specifier is "non-code" when it has a file extension that is NOT in the
+ * configured fileExtensions list. Specifiers with no extension at all (e.g.
+ * bare 'lodash' or directory './utils') are NOT considered non-code.
+ *
+ * @param rawSpec - The raw import specifier
+ * @param fileExtensions - Array of recognized code extensions
+ * @returns true if the specifier has a non-code extension
+ *
+ * Examples:
+ * - isNonCodeSpecifier('./logo.png', ['.ts', '.js']) => true
+ * - isNonCodeSpecifier('./styles.css', ['.ts', '.js']) => true
+ * - isNonCodeSpecifier('./icon.svg?url', ['.ts', '.js']) => true  (Vite query stripped)
+ * - isNonCodeSpecifier('./utils', ['.ts', '.js']) => false  (no extension)
+ * - isNonCodeSpecifier('./file.ts', ['.ts', '.js']) => false  (code extension)
+ * - isNonCodeSpecifier('lodash', ['.ts', '.js']) => false  (no extension)
+ */
+export function isNonCodeSpecifier(
+  rawSpec: string,
+  fileExtensions: string[],
+): boolean {
+  // Strip query/hash (Vite-style ./file.svg?url or ./file.svg#named)
+  const specWithoutQuery = rawSpec.split(/[?#]/)[0];
+  const ext = path.extname(specWithoutQuery);
+  if (!hasFileExtension(ext)) return false;
+  return !isExtensionInFilter(ext, fileExtensions);
+}
+
+/**
  * Convert a relative path string to an array of path segments.
  * Filters out empty segments and current directory markers ('.').
  *

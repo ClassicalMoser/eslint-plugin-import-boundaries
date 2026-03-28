@@ -12,5 +12,6 @@ export {
   getBasenameWithoutExt,
   hasExtension,
   isInsideDir,
+  isNonCodeSpecifier,
   pathToParts,
 } from './pathUtils';

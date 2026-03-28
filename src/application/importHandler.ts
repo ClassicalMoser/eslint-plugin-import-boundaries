@@ -8,6 +8,7 @@ import type { Fixer, Reporter } from '@ports';
 import type { Boundary } from '@shared';
 import {
   calculateCorrectImportPath,
+  isNonCodeSpecifier,
   resolveTargetPath,
   resolveToBoundary,
 } from '@domain';
@@ -72,6 +73,11 @@ export function handleImport(options: HandleImportOptions): boolean {
     skipBoundaryRules = defaults.skipBoundaryRules,
     fileExtensions = defaults.fileExtensions,
   } = options;
+
+  // Skip non-code imports (e.g. .png, .svg, .css) — not subject to boundary rules
+  if (isNonCodeSpecifier(rawSpec, fileExtensions)) {
+    return false;
+  }
 
   // Resolve target path first to determine if it's internal or external
   // (this handles aliases, relative, absolute, and bare imports)

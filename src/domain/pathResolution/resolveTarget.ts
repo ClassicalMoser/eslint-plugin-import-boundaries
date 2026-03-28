@@ -37,9 +37,18 @@ export function resolveTarget(
   barrelFileName: string,
   fileExtensions: string[],
 ): { targetAbs: string; targetDir: string } {
-  // Check if specifier has a file extension
+  // Check if specifier has a recognized code extension
   if (!hasExtension(spec, fileExtensions)) {
-    // No extension → treat as directory, resolve to barrel file
+    // Has a non-code extension (e.g. .png, .css, .svg) → treat as literal file
+    if (hasExtension(spec)) {
+      const targetAbs = path.resolve(baseDir, spec);
+      return {
+        targetAbs,
+        targetDir: path.dirname(targetAbs),
+      };
+    }
+
+    // No extension at all → treat as directory, resolve to barrel file
     const targetDir = path.resolve(baseDir, spec);
     return {
       targetAbs: getBarrelPath(targetDir, barrelFileName, fileExtensions),
