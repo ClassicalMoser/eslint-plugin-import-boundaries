@@ -51,7 +51,7 @@ export function extractRuleOptions(context: Rule.RuleContext): RuleContextData {
   } = options;
   // barrelFileName is not configurable - must be 'index' to match runtime module resolution
   const barrelFileName = 'index';
-  const cwd = context.getCwd?.() ?? process.cwd();
+  const cwd = process.cwd();
 
   // Validate: aliases are required when crossBoundaryStyle is 'alias'
   if (crossBoundaryStyle === 'alias') {
@@ -110,7 +110,7 @@ export function createFileDataGetter(
     if (cache.data) return cache.data;
 
     // Get filename from context, with fallbacks for different ESLint versions
-    const filename = context.filename ?? context.getFilename?.() ?? '<unknown>';
+    const filename = context.filename || '<unknown>';
 
     // Use the module function to get file data
     cache.data = getFileData(filename, boundaries);

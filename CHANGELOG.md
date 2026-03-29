@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-03-28
+
+### Bug Fixes
+
+- **Non-code imports ignored**: Imports whose specifiers look like asset or style modules (e.g. `.png`, `.svg`, `.css`, including Vite-style `?url` / `#` suffixes) are skipped so boundary and path-format rules do not apply to them.
+- **ESLint 10 types**: Rule code uses `context.filename` and `process.cwd()` instead of removed `getFilename` / `getCwd` APIs on the typed `RuleContext`, so the package type-checks cleanly against current ESLint.
+
+### Improvements
+
+- README configuration reference and examples clarified (including explicit `crossBoundaryStyle` in samples).
+- `tsconfig.json`: `noEmit`, `types: ["node"]`, tighter `include`, and path aliases without deprecated `baseUrl`.
+- Test utilities restored under `src/__tests__/` (`boundaryTestHelpers`, `testUtils`).
+- Satisfy `e18e/prefer-static-regex` by hoisting a few regex literals to module scope.
+
 ## [0.5.0] - 2025-12-12
 
 ### Breaking Changes

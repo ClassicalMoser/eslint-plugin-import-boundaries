@@ -296,7 +296,12 @@ export default [
     rules: {
       'import-boundaries/enforce': [
         'error',
-        { rootDir: 'src', crossBoundaryStyle: 'alias', boundaries, enforceBoundaries: false },
+        {
+          rootDir: 'src',
+          crossBoundaryStyle: 'alias',
+          boundaries,
+          enforceBoundaries: false,
+        },
       ],
     },
   },
@@ -304,7 +309,10 @@ export default [
     files: ['src/**/*.ts'],
     ignores: ['**/*.test.ts', '**/*.spec.ts', '**/__tests__/**/*.ts'],
     rules: {
-      'import-boundaries/enforce': ['error', { rootDir: 'src', crossBoundaryStyle: 'alias', boundaries }],
+      'import-boundaries/enforce': [
+        'error',
+        { rootDir: 'src', crossBoundaryStyle: 'alias', boundaries },
+      ],
     },
   },
 ];
@@ -326,7 +334,12 @@ export default defineConfig({
   rootDir: 'src',
   crossBoundaryStyle: 'alias',
   boundaries: [
-    { identifier: '@domain', dir: 'domain', alias: '@domain', allowImportsFrom: [] },
+    {
+      identifier: '@domain',
+      dir: 'domain',
+      alias: '@domain',
+      allowImportsFrom: [],
+    },
     {
       identifier: '@application',
       dir: 'application',

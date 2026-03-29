@@ -5,7 +5,7 @@
 import type { Boundary } from '@shared';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { createBoundary } from '../../src/__tests__/boundaryTestHelpers.js';
+import { createBoundary } from '../__tests__/boundaryTestHelpers.js';
 import {
   isNullPath,
   isUnknownBoundary,

@@ -53,7 +53,7 @@ export const rule: Rule.RuleModule = {
     const barrelFileName: string =
       options.barrelFileName ?? DEFAULT_BARREL_FILE_NAME;
 
-    const filename = context.filename ?? context.getFilename?.() ?? '';
+    const filename = context.filename;
     if (!isBarrelFile(filename, barrelFileName)) {
       return {}; // Not an index file - no checks needed
     }

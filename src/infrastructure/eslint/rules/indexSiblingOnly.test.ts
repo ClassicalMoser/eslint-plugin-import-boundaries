@@ -37,7 +37,6 @@ describe('index-sibling-only rule', () => {
     it('should return an empty object for non-index files', () => {
       const fakeContext = {
         filename: '/project/src/domain/army.ts',
-        getFilename: () => '/project/src/domain/army.ts',
         options: [],
         report: () => {},
       };
@@ -50,7 +49,6 @@ describe('index-sibling-only rule', () => {
     it('should register all relevant listeners for index.ts', () => {
       const fakeContext = {
         filename: '/project/src/domain/index.ts',
-        getFilename: () => '/project/src/domain/index.ts',
         options: [],
         report: () => {},
       };
@@ -64,7 +62,6 @@ describe('index-sibling-only rule', () => {
     it('should use custom barrelFileName when provided', () => {
       const fakeContext = {
         filename: '/project/src/domain/barrel.ts',
-        getFilename: () => '/project/src/domain/barrel.ts',
         options: [{ barrelFileName: 'barrel' }],
         report: () => {},
       };
@@ -75,7 +72,6 @@ describe('index-sibling-only rule', () => {
     it('should NOT register listeners for index.ts when barrelFileName is barrel', () => {
       const fakeContext = {
         filename: '/project/src/domain/index.ts',
-        getFilename: () => '/project/src/domain/index.ts',
         options: [{ barrelFileName: 'barrel' }],
         report: () => {},
       };

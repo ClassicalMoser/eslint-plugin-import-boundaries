@@ -73,7 +73,7 @@ export function createRuleVisitors(
     // Skip index files when skipIndexFiles is enabled
     // Index files have their own rules (no-wildcard-barrel, index-sibling-only)
     if (skipIndexFiles) {
-      const filename = context.filename ?? context.getFilename?.() ?? '';
+      const filename = context.filename;
       const basename = filename.split('/').pop() ?? '';
       const basenameWithoutExt = basename.replace(FILE_EXT_RE, '');
       if (basenameWithoutExt === barrelFileName) return;

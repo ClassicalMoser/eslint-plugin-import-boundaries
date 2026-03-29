@@ -5,8 +5,6 @@
 
 import path from 'node:path';
 
-const QUERY_HASH_RE = /[?#]/;
-
 import {
   hasExtensionsFilter,
   hasFileExtension,
@@ -17,6 +15,8 @@ import {
   isOutsidePath,
   isTruthy,
 } from './pathUtilsHelpers';
+
+const QUERY_HASH_RE = /[?#]/;
 
 /**
  * Check if a path is inside a directory.

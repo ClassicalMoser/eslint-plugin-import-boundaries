@@ -17,7 +17,9 @@ export function adaptESLintNode(node: Rule.Node): ASTNode {
       // Case 1: Standard import statement (import ... from 'path')
       if ('source' in node && node.source) {
         const source = node.source as { value?: string; raw?: string };
-        return source.value ?? source.raw?.replace(SURROUNDING_QUOTES_RE, '') ?? null;
+        return (
+          source.value ?? source.raw?.replace(SURROUNDING_QUOTES_RE, '') ?? null
+        );
       }
       // Case 2: Dynamic import or require() call
       if (
