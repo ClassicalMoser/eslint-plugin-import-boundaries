@@ -7,6 +7,7 @@ import type { Boundary, FileData } from '@shared';
 import type { Rule } from 'eslint';
 import { handleImport } from '@application';
 import { createFixerFactory } from './fixerAdapter';
+import { inferCrossBoundaryStyleFromFilename } from './ruleContext';
 import { ESLintReporter } from './reporterAdapter';
 
 const FILE_EXT_RE = /\.[^.]+$/;
@@ -21,7 +22,7 @@ export interface RuleVisitorOptions {
   rootDir: string;
   boundaries: Boundary[];
   cwd: string;
-  crossBoundaryStyle: 'alias' | 'absolute';
+  crossBoundaryStyle?: 'alias' | 'absolute';
   defaultSeverity?: 'error' | 'warn';
   allowUnknownBoundaries: boolean;
   enforceBoundaries: boolean;
@@ -54,6 +55,9 @@ export function createRuleVisitors(
     fileExtensions,
   } = options;
 
+  /** When auto `crossBoundaryStyle` would be `alias` but boundaries lack aliases, skip import checks for this file (config error already reported on Program). */
+  let skipImportsThisFile = false;
+
   /**
    * Wrapper function that prepares file data and calls the main import handler.
    * Creates ESLint adapters and passes them to the application layer.
@@ -63,6 +67,8 @@ export function createRuleVisitors(
     rawSpec: string,
     isTypeOnly: boolean = false,
   ): void {
+    if (skipImportsThisFile) return;
+
     const fileData = getFileData();
     // Skip if we can't determine file location
     if (!fileData.isValid) return;
@@ -83,6 +89,9 @@ export function createRuleVisitors(
     const reporter = new ESLintReporter(context, node);
     const createFixer = createFixerFactory(node);
 
+    const effectiveCrossBoundaryStyle =
+      crossBoundaryStyle ?? inferCrossBoundaryStyleFromFilename(context.filename);
+
     // Call application layer with ports (Dependency Inversion)
     handleImport({
       rawSpec,
@@ -93,7 +102,7 @@ export function createRuleVisitors(
       cwd,
       reporter,
       createFixer,
-      crossBoundaryStyle,
+      crossBoundaryStyle: effectiveCrossBoundaryStyle,
       defaultSeverity,
       allowUnknownBoundaries,
       isTypeOnly,
@@ -108,8 +117,26 @@ export function createRuleVisitors(
      * Called once per file, before processing any imports.
      * Used to clear caches for new file.
      */
-    Program() {
+    Program(node: Rule.Node) {
       clearCache();
+      skipImportsThisFile = false;
+
+      if (crossBoundaryStyle === undefined) {
+        const inferred = inferCrossBoundaryStyleFromFilename(context.filename);
+        if (inferred === 'alias') {
+          const missing = boundaries.filter((b) => !b.alias);
+          if (missing.length > 0) {
+            context.report({
+              node,
+              messageId: 'missingBoundaryAliasesForTypeScript',
+              data: {
+                dirs: missing.map((b) => b.dir).join(', '),
+              },
+            });
+            skipImportsThisFile = true;
+          }
+        }
+      }
     },
 
     /**

@@ -13,7 +13,6 @@ import {
 import { resolveTargetPath } from '@domain/pathResolution';
 import {
   DEFAULT_BARREL_FILE_NAME,
-  DEFAULT_CROSS_BOUNDARY_STYLE,
   getDefaultFileExtensions,
 } from './relationshipDetectionDefaults';
 import {
@@ -31,7 +30,7 @@ export function calculateCorrectImportPath(
   boundaries: Boundary[],
   rootDir: string,
   cwd: string,
-  crossBoundaryStyle: 'alias' | 'absolute' = DEFAULT_CROSS_BOUNDARY_STYLE,
+  crossBoundaryStyle: 'alias' | 'absolute',
   barrelFileName: string = DEFAULT_BARREL_FILE_NAME,
   fileExtensions: string[] = getDefaultFileExtensions(),
   maxRelativeDepth: number = 1,

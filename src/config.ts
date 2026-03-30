@@ -11,10 +11,11 @@
  *
  * export default defineConfig({
  *   rootDir: 'src',
+ *   crossBoundaryStyle: 'alias',
  *   boundaries: [
- *     { identifier: 'domain',         dir: 'domain',         allowImportsFrom: [] },
- *     { identifier: 'application',    dir: 'application',    allowImportsFrom: ['domain'] },
- *     { identifier: 'infrastructure', dir: 'infrastructure', allowImportsFrom: ['domain'] },
+ *     { identifier: 'domain',         dir: 'domain',         alias: '@domain',         allowImportsFrom: [] },
+ *     { identifier: 'application',    dir: 'application',    alias: '@application',    allowImportsFrom: ['domain'] },
+ *     { identifier: 'infrastructure', dir: 'infrastructure', alias: '@infrastructure', allowImportsFrom: ['domain'] },
  *   ],
  * });
  * ```
@@ -38,9 +39,10 @@
  * ```json
  * {
  *   "rootDir": "src",
+ *   "crossBoundaryStyle": "alias",
  *   "boundaries": [
- *     { "identifier": "domain",      "dir": "domain",      "allowImportsFrom": [] },
- *     { "identifier": "application", "dir": "application", "allowImportsFrom": ["domain"] }
+ *     { "identifier": "domain",      "dir": "domain",      "alias": "@domain",      "allowImportsFrom": [] },
+ *     { "identifier": "application", "dir": "application", "alias": "@application", "allowImportsFrom": ["domain"] }
  *   ]
  * }
  * ```

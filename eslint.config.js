@@ -46,7 +46,6 @@ export default antfu(
         {
           rootDir: 'src',
           boundaries,
-          crossBoundaryStyle: 'alias',
           skipIndexFiles: true,
         },
       ],
@@ -62,7 +61,6 @@ export default antfu(
         {
           rootDir: 'src',
           boundaries,
-          crossBoundaryStyle: 'alias',
           enforceBoundaries: false,
           skipIndexFiles: true,
         },

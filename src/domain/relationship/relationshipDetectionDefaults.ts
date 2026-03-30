@@ -5,7 +5,6 @@
 
 import { DEFAULTS } from '@shared';
 
-export const DEFAULT_CROSS_BOUNDARY_STYLE = DEFAULTS.crossBoundaryStyle;
 export const DEFAULT_BARREL_FILE_NAME = DEFAULTS.barrelFileName;
 
 /**

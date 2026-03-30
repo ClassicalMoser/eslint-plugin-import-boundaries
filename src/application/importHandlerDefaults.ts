@@ -14,7 +14,6 @@ export const DEFAULT_SKIP_BOUNDARY_RULES = false;
  */
 export function getImportHandlerDefaults() {
   return {
-    crossBoundaryStyle: DEFAULTS.crossBoundaryStyle,
     allowUnknownBoundaries: DEFAULTS.allowUnknownBoundaries,
     isTypeOnly: DEFAULT_IS_TYPE_ONLY,
     skipBoundaryRules: DEFAULT_SKIP_BOUNDARY_RULES,

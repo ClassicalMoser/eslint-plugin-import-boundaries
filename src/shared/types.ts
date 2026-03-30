@@ -48,7 +48,8 @@ export interface BoundaryConfig {
 export interface RuleOptions {
   rootDir?: string; // Root directory (defaults to 'src')
   boundaries: BoundaryConfig[]; // Array of boundary definitions
-  crossBoundaryStyle?: 'alias' | 'absolute'; // Style for cross-boundary imports (default: 'absolute')
+  /** Omit to infer per file: `.ts`/`.tsx`/`.mts`/`.cts` → `alias`, JS extensions → `absolute`. */
+  crossBoundaryStyle?: 'alias' | 'absolute';
   // 'alias': Use alias paths like @entities
   // 'absolute': Use absolute paths relative to rootDir like src/domain/entities
   defaultSeverity?: 'error' | 'warn'; // Default severity for violations (if not set, uses rule-level severity)
@@ -64,7 +65,7 @@ export interface RuleOptions {
  * Canonical defaults — single source of truth for all layers.
  */
 export const DEFAULTS = {
-  crossBoundaryStyle: 'absolute' as const,
+  crossBoundaryStyle: undefined as 'alias' | 'absolute' | undefined,
   rootDir: 'src',
   allowUnknownBoundaries: false,
   enforceBoundaries: true,

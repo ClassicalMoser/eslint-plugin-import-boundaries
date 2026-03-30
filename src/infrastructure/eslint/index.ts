@@ -14,6 +14,7 @@ export { rule as enforceRule } from './rule';
 export {
   createFileDataGetter,
   extractRuleOptions,
+  inferCrossBoundaryStyleFromFilename,
   type RuleContextData,
 } from './ruleContext';
 

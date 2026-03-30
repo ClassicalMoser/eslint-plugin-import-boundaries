@@ -16,7 +16,8 @@ import { DEFAULTS } from '@shared';
 export interface RuleContextData {
   rootDir: string;
   boundaries: Boundary[];
-  crossBoundaryStyle: 'alias' | 'absolute';
+  /** From options only; omit means infer per linted file from its extension. */
+  crossBoundaryStyle?: 'alias' | 'absolute';
   defaultSeverity?: 'error' | 'warn';
   allowUnknownBoundaries: boolean;
   enforceBoundaries: boolean;
@@ -25,6 +26,18 @@ export interface RuleContextData {
   barrelFileName: string;
   fileExtensions: string[];
   cwd: string;
+}
+
+const TS_STYLE_EXTS = new Set(['.ts', '.tsx', '.mts', '.cts']);
+
+/**
+ * When `crossBoundaryStyle` is omitted from rule options, pick a style from the linted file.
+ * TypeScript-family extensions use `alias` (typical `paths` / bundler aliases). JavaScript and
+ * everything else use `absolute` (no TS path mapping; root-relative paths are the usual story).
+ */
+export function inferCrossBoundaryStyleFromFilename(filename: string): 'alias' | 'absolute' {
+  const ext = path.extname(filename).toLowerCase();
+  return TS_STYLE_EXTS.has(ext) ? 'alias' : 'absolute';
 }
 
 /**
@@ -41,7 +54,7 @@ export function extractRuleOptions(context: Rule.RuleContext): RuleContextData {
   const {
     rootDir = DEFAULTS.rootDir,
     boundaries,
-    crossBoundaryStyle = DEFAULTS.crossBoundaryStyle,
+    crossBoundaryStyle,
     defaultSeverity,
     allowUnknownBoundaries = DEFAULTS.allowUnknownBoundaries,
     enforceBoundaries = DEFAULTS.enforceBoundaries,
@@ -49,6 +62,7 @@ export function extractRuleOptions(context: Rule.RuleContext): RuleContextData {
     maxRelativeDepth = DEFAULTS.maxRelativeDepth,
     fileExtensions = [...DEFAULTS.fileExtensions],
   } = options;
+
   // barrelFileName is not configurable - must be 'index' to match runtime module resolution
   const barrelFileName = 'index';
   const cwd = process.cwd();

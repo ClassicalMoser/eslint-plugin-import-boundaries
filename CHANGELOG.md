@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Improvements
 
-- README configuration reference and examples clarified (including explicit `crossBoundaryStyle` in samples).
+- **`crossBoundaryStyle` optional with per-file default**: If omitted, `.ts`/`.tsx`/`.mts`/`.cts` files use `alias`; `.js`/`.jsx`/`.mjs`/`.cjs` (and other extensions) use `absolute`. TypeScript files still require an `alias` on every boundary when this default applies; a dedicated lint message explains missing aliases. Set `crossBoundaryStyle` explicitly to force one style for all files.
+- README documents automatic style and when to set the option explicitly.
 - `tsconfig.json`: `noEmit`, `types: ["node"]`, tighter `include`, and path aliases without deprecated `baseUrl`.
 - Test utilities restored under `src/__tests__/` (`boundaryTestHelpers`, `testUtils`).
 - Satisfy `e18e/prefer-static-regex` by hoisting a few regex literals to module scope.

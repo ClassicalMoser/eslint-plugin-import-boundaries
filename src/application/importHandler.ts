@@ -41,7 +41,7 @@ export interface HandleImportOptions {
   cwd: string;
   reporter: Reporter;
   createFixer: (newPath: string) => Fixer; // Factory function to create fixers
-  crossBoundaryStyle?: 'alias' | 'absolute';
+  crossBoundaryStyle: 'alias' | 'absolute';
   defaultSeverity?: 'error' | 'warn';
   allowUnknownBoundaries?: boolean;
   isTypeOnly?: boolean;
@@ -67,7 +67,7 @@ export function handleImport(options: HandleImportOptions): boolean {
     cwd,
     reporter,
     createFixer,
-    crossBoundaryStyle = defaults.crossBoundaryStyle,
+    crossBoundaryStyle,
     defaultSeverity,
     allowUnknownBoundaries = defaults.allowUnknownBoundaries,
     isTypeOnly = defaults.isTypeOnly,

@@ -6,15 +6,13 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULTS } from '@shared';
 import {
   DEFAULT_BARREL_FILE_NAME,
-  DEFAULT_CROSS_BOUNDARY_STYLE,
   getDefaultFileExtensions,
 } from './relationshipDetectionDefaults';
 
 describe('relationshipDetectionDefaults', () => {
   describe('constants', () => {
-    it('should delegate cross boundary style from shared DEFAULTS', () => {
-      expect(DEFAULT_CROSS_BOUNDARY_STYLE).toBe(DEFAULTS.crossBoundaryStyle);
-      expect(DEFAULT_CROSS_BOUNDARY_STYLE).toBe('absolute');
+    it('should not have a default for crossBoundaryStyle', () => {
+      expect(DEFAULTS.crossBoundaryStyle).toBeUndefined();
     });
 
     it('should delegate barrel file name from shared DEFAULTS', () => {

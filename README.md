@@ -85,6 +85,15 @@ import { helper } from './helper'; // same directory -> relative
 import { uc } from '@application/use-cases'; // distant same-boundary -> alias with subpath
 ```
 
+### Omitting `crossBoundaryStyle` (per-file default)
+
+If you leave `crossBoundaryStyle` out of the rule options, the style is chosen from the **linted file’s extension**:
+
+- **TypeScript** (`.ts`, `.tsx`, `.mts`, `.cts`) → `alias` — matches typical `compilerOptions.paths` / bundler alias setups.
+- **JavaScript** (`.js`, `.jsx`, `.mjs`, `.cjs`) and anything else → `absolute` — no TS path mapping; `rootDir` + `dir` style paths are the usual default.
+
+For TypeScript files under this auto mode, **every boundary must have an `alias`**; otherwise you get one config error per file. Set `crossBoundaryStyle: 'absolute'` explicitly if you lint `.ts` without aliases.
+
 ---
 
 ## Configuration Reference
@@ -95,7 +104,7 @@ import { uc } from '@application/use-cases'; // distant same-boundary -> alias w
 | ------------------------ | ----------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------ |
 | `rootDir`                | `string`                | `'src'`                                          | Root directory for resolving boundary paths                                          |
 | `boundaries`             | `BoundaryConfig[]`      | _required_                                       | Array of boundary definitions (see below)                                            |
-| `crossBoundaryStyle`     | `'alias' \| 'absolute'` | _required_                                       | How cross-boundary imports are written                                               |
+| `crossBoundaryStyle`     | `'alias' \| 'absolute'` | _see below_                                      | Omit to infer from file extension (TS → `alias`, JS → `absolute`); set to force one style for all files |
 | `defaultSeverity`        | `'error' \| 'warn'`     | rule-level                                       | Default severity for violations                                                      |
 | `enforceBoundaries`      | `boolean`               | `true`                                           | Check allow/deny rules. `false` = skip rules but still enforce path format           |
 | `allowUnknownBoundaries` | `boolean`               | `false`                                          | Allow imports from paths outside all boundaries                                      |
@@ -332,7 +341,7 @@ import { defineConfig } from 'eslint-plugin-import-boundaries';
 
 export default defineConfig({
   rootDir: 'src',
-  crossBoundaryStyle: 'alias',
+  // crossBoundaryStyle optional — omit for per-file default (TS → alias)
   boundaries: [
     {
       identifier: '@domain',
