@@ -2,6 +2,7 @@
  * Boundary configuration for this codebase.
  * Enforces hexagonal architecture with functional core, imperative shell.
  */
+import type { BoundaryConfig } from './src/shared/types.ts';
 
 /**
  * Hexagonal architecture boundaries for this ESLint plugin.
@@ -13,15 +14,7 @@
  * - infrastructure: Imperative shell (ESLint adapters)
  * - shared: Types and utilities (used by all)
  */
-export const boundaries = [
-  {
-    identifier: '@domain',
-    dir: 'domain',
-    alias: '@domain',
-    // Domain: Pure business logic (functional core)
-    // Can import types from shared, but not other layers
-    allowImportsFrom: ['@shared'],
-  },
+export const boundaries: BoundaryConfig[] = [
   {
     identifier: '@ports',
     dir: 'ports',

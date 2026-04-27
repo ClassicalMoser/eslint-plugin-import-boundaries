@@ -1,7 +1,7 @@
 import antfu from '@antfu/eslint-config';
 import prettierConfig from 'eslint-config-prettier';
 import importBoundaries from 'eslint-plugin-import-boundaries';
-import { boundaries } from './boundaries.config.js';
+import { boundaries } from './boundaries.config.ts';
 
 export default antfu(
   {
