@@ -4,10 +4,12 @@ import {
   indexSiblingOnlyRule,
   noWildcardBarrelRule,
 } from './infrastructure';
+import type { ImportBoundariesPlugin, ImportBoundariesRules } from './eslintRuleTypes.js';
 
-export { defineConfig } from './config.js';
-// Re-export types for use in typed config files (boundaries.config.ts)
-export type { BoundaryConfig, RuleOptions } from './shared';
+export { defineBoundaries, defineConfig } from './config.js';
+// Re-export types for use in typed config files (boundaries.config.ts) and eslint flat config
+export type { BarrelFileRuleOptions, BoundaryConfig, RuleOptions } from './shared';
+export type { ImportBoundariesPlugin, ImportBoundariesRules };
 
 export default {
   rules: {
@@ -15,4 +17,4 @@ export default {
     'no-wildcard-barrel': noWildcardBarrelRule,
     'index-sibling-only': indexSiblingOnlyRule,
   },
-};
+} satisfies ImportBoundariesPlugin;

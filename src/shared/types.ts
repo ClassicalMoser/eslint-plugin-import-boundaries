@@ -43,6 +43,14 @@ export interface BoundaryConfig {
 }
 
 /**
+ * Options for barrel-related rules (`no-wildcard-barrel`, `index-sibling-only`).
+ */
+export interface BarrelFileRuleOptions {
+  /** Defaults to `index` (must match runtime / `enforce` expectations). */
+  barrelFileName?: string;
+}
+
+/**
  * Rule configuration options from ESLint config.
  */
 export interface RuleOptions {

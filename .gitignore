@@ -9,3 +9,4 @@ reports
 .idea
 *.tsbuildinfo
 .stryker-tmp
+.pnpm-store

@@ -4,7 +4,7 @@
  */
 
 import type { Boundary, FileData } from '@shared';
-import type { Rule } from 'eslint';
+import type { AST, Rule } from 'eslint';
 import { handleImport } from '@application';
 import { createFixerFactory } from './fixerAdapter';
 import { inferCrossBoundaryStyleFromFilename } from './ruleContext';
@@ -117,7 +117,7 @@ export function createRuleVisitors(
      * Called once per file, before processing any imports.
      * Used to clear caches for new file.
      */
-    Program(node: Rule.Node) {
+    Program(node: AST.Program) {
       clearCache();
       skipImportsThisFile = false;
 

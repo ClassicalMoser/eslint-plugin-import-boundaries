@@ -6,6 +6,7 @@
 export { DEFAULTS } from './types';
 export type {
   AliasSubpathCheck,
+  BarrelFileRuleOptions,
   Boundary,
   BoundaryConfig,
   FileData,

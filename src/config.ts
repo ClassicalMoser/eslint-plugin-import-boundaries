@@ -5,7 +5,7 @@
  * TypeScript or JSON file with full type safety, then import them
  * into your ESLint config.
  *
- * @example TypeScript config file (boundaries.config.ts):
+ * @example Full rule options in TypeScript (boundaries.config.ts):
  * ```typescript
  * import { defineConfig } from 'eslint-plugin-import-boundaries';
  *
@@ -18,6 +18,15 @@
  *     { identifier: 'infrastructure', dir: 'infrastructure', alias: '@infrastructure', allowImportsFrom: ['domain'] },
  *   ],
  * });
+ * ```
+ *
+ * @example Boundaries only (boundaries.ts) with options in eslint.config:
+ * ```typescript
+ * import { defineBoundaries } from 'eslint-plugin-import-boundaries';
+ *
+ * export const boundaries = defineBoundaries([
+ *   { identifier: 'domain', dir: 'domain', alias: '@domain', allowImportsFrom: [] },
+ * ]);
  * ```
  *
  * @example ESLint config (eslint.config.ts):
@@ -52,7 +61,7 @@
  * ```
  */
 
-import type { RuleOptions } from '@shared';
+import type { BoundaryConfig, RuleOptions } from '@shared';
 
 /**
  * Define a type-safe boundaries configuration.
@@ -64,4 +73,17 @@ import type { RuleOptions } from '@shared';
  */
 export function defineConfig(config: RuleOptions): RuleOptions {
   return config;
+}
+
+/**
+ * Type-check only the `boundaries` array in a file such as `boundaries.ts`
+ * (when the rest of the rule options live in `eslint.config`).
+ *
+ * @param boundaries - The boundary list to validate
+ * @returns The same array, for convenient `export default defineBoundaries([...])`
+ */
+export function defineBoundaries(
+  boundaries: readonly BoundaryConfig[],
+): BoundaryConfig[] {
+  return boundaries.slice() as BoundaryConfig[];
 }
