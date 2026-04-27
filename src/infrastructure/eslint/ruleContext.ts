@@ -35,7 +35,9 @@ const TS_STYLE_EXTS = new Set(['.ts', '.tsx', '.mts', '.cts']);
  * TypeScript-family extensions use `alias` (typical `paths` / bundler aliases). JavaScript and
  * everything else use `absolute` (no TS path mapping; root-relative paths are the usual story).
  */
-export function inferCrossBoundaryStyleFromFilename(filename: string): 'alias' | 'absolute' {
+export function inferCrossBoundaryStyleFromFilename(
+  filename: string,
+): 'alias' | 'absolute' {
   const ext = path.extname(filename).toLowerCase();
   return TS_STYLE_EXTS.has(ext) ? 'alias' : 'absolute';
 }

@@ -100,17 +100,17 @@ For TypeScript files under this auto mode, **every boundary must have an `alias`
 
 ### Rule Options
 
-| Option                   | Type                    | Default                                          | Description                                                                          |
-| ------------------------ | ----------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `rootDir`                | `string`                | `'src'`                                          | Root directory for resolving boundary paths                                          |
-| `boundaries`             | `BoundaryConfig[]`      | _required_                                       | Array of boundary definitions (see below)                                            |
+| Option                   | Type                    | Default                                          | Description                                                                                             |
+| ------------------------ | ----------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `rootDir`                | `string`                | `'src'`                                          | Root directory for resolving boundary paths                                                             |
+| `boundaries`             | `BoundaryConfig[]`      | _required_                                       | Array of boundary definitions (see below)                                                               |
 | `crossBoundaryStyle`     | `'alias' \| 'absolute'` | _see below_                                      | Omit to infer from file extension (TS → `alias`, JS → `absolute`); set to force one style for all files |
-| `defaultSeverity`        | `'error' \| 'warn'`     | rule-level                                       | Default severity for violations                                                      |
-| `enforceBoundaries`      | `boolean`               | `true`                                           | Check allow/deny rules. `false` = skip rules but still enforce path format           |
-| `allowUnknownBoundaries` | `boolean`               | `false`                                          | Allow imports from paths outside all boundaries                                      |
-| `maxRelativeDepth`       | `number`                | `1`                                              | Max `../` segments before switching to boundary path                                 |
-| `skipIndexFiles`         | `boolean`               | `false`                                          | Skip checking index files (use with `index-sibling-only`)                            |
-| `fileExtensions`         | `string[]`              | `['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs']` | Extensions to recognize. Non-code imports (`.png`, `.css`, etc.) are always skipped. |
+| `defaultSeverity`        | `'error' \| 'warn'`     | rule-level                                       | Default severity for violations                                                                         |
+| `enforceBoundaries`      | `boolean`               | `true`                                           | Check allow/deny rules. `false` = skip rules but still enforce path format                              |
+| `allowUnknownBoundaries` | `boolean`               | `false`                                          | Allow imports from paths outside all boundaries                                                         |
+| `maxRelativeDepth`       | `number`                | `1`                                              | Max `../` segments before switching to boundary path                                                    |
+| `skipIndexFiles`         | `boolean`               | `false`                                          | Skip checking index files (use with `index-sibling-only`)                                               |
+| `fileExtensions`         | `string[]`              | `['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs']` | Extensions to recognize. Non-code imports (`.png`, `.css`, etc.) are always skipped.                    |
 
 ### Boundary Properties
 

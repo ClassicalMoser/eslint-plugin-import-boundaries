@@ -7,8 +7,8 @@ import type { Boundary, FileData } from '@shared';
 import type { AST, Rule } from 'eslint';
 import { handleImport } from '@application';
 import { createFixerFactory } from './fixerAdapter';
-import { inferCrossBoundaryStyleFromFilename } from './ruleContext';
 import { ESLintReporter } from './reporterAdapter';
+import { inferCrossBoundaryStyleFromFilename } from './ruleContext';
 
 const FILE_EXT_RE = /\.[^.]+$/;
 
@@ -90,7 +90,8 @@ export function createRuleVisitors(
     const createFixer = createFixerFactory(node);
 
     const effectiveCrossBoundaryStyle =
-      crossBoundaryStyle ?? inferCrossBoundaryStyleFromFilename(context.filename);
+      crossBoundaryStyle ??
+      inferCrossBoundaryStyleFromFilename(context.filename);
 
     // Call application layer with ports (Dependency Inversion)
     handleImport({
