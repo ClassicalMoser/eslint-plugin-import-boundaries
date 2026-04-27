@@ -37,8 +37,13 @@ jobs:
       - name: Run tests
         run: pnpm test
 
-      - name: Update npm to latest
-        run: npm install -g npm@latest
+      # Pinned to 11.10.0: last version that bundles `promise-retry`, which
+      # avoids the self-upgrade MODULE_NOT_FOUND regression when running over
+      # Node 22.22.2's broken bundled npm 10.9.7.
+      # Refs: actions/runner-images#13883, nodejs/node#62430, npm/cli#9152
+      # Still satisfies the >=11.5.1 requirement for npm OIDC trusted publishing.
+      - name: Update npm to a known-good 11.x
+        run: npm install -g npm@11.10.0
 
       - name: Publish to npm
         run: npm publish --access public
