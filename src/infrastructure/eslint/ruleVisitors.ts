@@ -30,6 +30,7 @@ export interface RuleVisitorOptions {
   maxRelativeDepth: number;
   barrelFileName: string;
   fileExtensions: string[];
+  rootDirAlias: string;
 }
 
 /**
@@ -53,6 +54,7 @@ export function createRuleVisitors(
     maxRelativeDepth,
     barrelFileName,
     fileExtensions,
+    rootDirAlias,
   } = options;
 
   /** When auto `crossBoundaryStyle` would be `alias` but boundaries lack aliases, skip import checks for this file (config error already reported on Program). */
@@ -110,6 +112,7 @@ export function createRuleVisitors(
       skipBoundaryRules: !enforceBoundaries, // Invert: enforceBoundaries=false means skip rules
       maxRelativeDepth,
       fileExtensions,
+      rootDirAlias,
     });
   }
 

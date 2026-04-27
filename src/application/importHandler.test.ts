@@ -786,6 +786,86 @@ describe('importHandler', () => {
     });
   });
 
+  describe('rootDirAlias (@/) resolution', () => {
+    it('should not skip @/domain/entities — it is an internal import subject to boundary rules', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
+      const { reporter, createFixer } = createMockPorts();
+      const options = createOptions({
+        rawSpec: '@/domain/events', // @/... resolves to src/domain/events → eventsBoundary
+        fileDir,
+        fileBoundary: queriesBoundary, // queries does not allow events
+        reporter,
+        createFixer,
+      });
+
+      const result = handleImport(options);
+
+      // Boundary violation must be reported (was silently skipped before)
+      expect(result).toBe(true);
+      expect(reporter.report).toHaveBeenCalled();
+      expect(reporter.hasReported('boundaryViolation')).toBe(true);
+    });
+
+    it('should fix @/domain/entities to canonical alias @entities (alias style)', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
+      const { reporter, createFixer } = createMockPorts();
+      const options = createOptions({
+        rawSpec: '@/domain/entities', // @/... resolves to src/domain/entities → entitiesBoundary
+        fileDir,
+        fileBoundary: queriesBoundary,
+        crossBoundaryStyle: 'alias',
+        skipBoundaryRules: true, // only check path format here
+        reporter,
+        createFixer,
+      });
+
+      handleImport(options);
+
+      // Path format violation must be reported with canonical alias as expectedPath
+      expect(reporter.report).toHaveBeenCalled();
+      const violation = reporter.getLastReport();
+      expect(violation?.messageId).toBe('incorrectImportPath');
+      expect(violation?.data?.expectedPath).toBe('@entities');
+    });
+
+    it('should fix @/domain/entities to canonical absolute src/domain/entities (absolute style)', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
+      const { reporter, createFixer } = createMockPorts();
+      const options = createOptions({
+        rawSpec: '@/domain/entities',
+        fileDir,
+        fileBoundary: queriesBoundary,
+        crossBoundaryStyle: 'absolute',
+        skipBoundaryRules: true,
+        reporter,
+        createFixer,
+      });
+
+      handleImport(options);
+
+      expect(reporter.report).toHaveBeenCalled();
+      const violation = reporter.getLastReport();
+      expect(violation?.messageId).toBe('incorrectImportPath');
+      expect(violation?.data?.expectedPath).toBe('src/domain/entities');
+    });
+
+    it('should not resolve @scope/pkg as a rootDir alias (scoped npm package)', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
+      const { reporter, createFixer } = createMockPorts();
+      const options = createOptions({
+        rawSpec: '@scope/pkg', // real scoped npm package
+        fileDir,
+        reporter,
+        createFixer,
+      });
+
+      const result = handleImport(options);
+
+      expect(result).toBe(false);
+      expect(reporter.report).not.toHaveBeenCalled();
+    });
+  });
+
   describe('non-code imports (assets, CSS, etc.)', () => {
     it('should skip checking for relative .png imports', () => {
       const fileDir = path.resolve(cwd, rootDir, 'domain/entities');

@@ -93,6 +93,7 @@ export const ruleSchema: Rule.RuleMetaData['schema'] = [
       fileExtensions: withDefault(schemaProps.stringArray, [
         ...DEFAULTS.fileExtensions,
       ]),
+      rootDirAlias: withDefault(schemaProps.string, DEFAULTS.rootDirAlias),
     },
     required: ['boundaries'],
   },

@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-04-27
+
+### Features
+
+- **Root-directory alias (`rootDirAlias`)**: Recognise specifiers of the shape `@/foo` (or any configured prefix such as `~/foo`) as internal imports anchored at the source root, so they participate in boundary rules and path-format enforcement instead of being treated as external packages. Default prefix is `'@'`; set `rootDirAlias: ''` to disable, or supply a custom prefix (e.g. `'~'`). The fixer normalises matched specifiers to your existing canonical form (`@boundary` for cross-boundary alias style, `src/...` for absolute style, or `./relative` within the same boundary) — `@/...` is accepted as input only.
+
+### Deprecations
+
+- **`crossBoundaryStyle: 'absolute'`** is deprecated and will be removed in **v0.9.0**. The option emits a console deprecation warning when explicitly set. Migrate by:
+  1. Adding an `alias` to every boundary (e.g. `alias: '@entities'`).
+  2. Configuring matching `paths` in `tsconfig.json` (and your bundler) so the runtime can resolve the aliases.
+  3. Setting `crossBoundaryStyle: 'alias'` (or omitting it for `.ts`/`.tsx`/`.mts`/`.cts` files, which already default to alias style).
+
+  The plugin will keep recognising `src/...` imports as input for the foreseeable future — you'll just get them auto-fixed to `@boundary` form.
+
+### Improvements
+
+- Tightened the `rootDirAlias` dispatcher contract so unconventional prefix values (e.g. `rootDirAlias: 'foo'`) cannot capture unrelated bare imports such as `foobar`. Match requires exact equality with the alias or a trailing `/`.
+
 ## [0.7.0] - 2026-04-27
 
 ### Features

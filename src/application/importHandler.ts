@@ -12,6 +12,7 @@ import {
   resolveTargetPath,
   resolveToBoundary,
 } from '@domain';
+import { DEFAULTS } from '@shared';
 import { detectAndReportAncestorBarrel, isExternalPackage } from './detection';
 import { handleUnknownBoundary } from './handling';
 import { getImportHandlerDefaults } from './importHandlerDefaults';
@@ -48,6 +49,7 @@ export interface HandleImportOptions {
   skipBoundaryRules?: boolean;
   maxRelativeDepth?: number;
   fileExtensions?: string[];
+  rootDirAlias?: string;
 }
 
 /**
@@ -74,6 +76,7 @@ export function handleImport(options: HandleImportOptions): boolean {
     skipBoundaryRules = defaults.skipBoundaryRules,
     maxRelativeDepth = 1,
     fileExtensions = defaults.fileExtensions,
+    rootDirAlias = DEFAULTS.rootDirAlias,
   } = options;
 
   // Skip non-code imports (e.g. .png, .svg, .css) — not subject to boundary rules
@@ -91,6 +94,7 @@ export function handleImport(options: HandleImportOptions): boolean {
     cwd,
     'index', // barrelFileName is not configurable - must be 'index' to match runtime
     fileExtensions,
+    rootDirAlias,
   );
 
   // Skip checking for external packages (node_modules, etc.)
@@ -152,6 +156,7 @@ export function handleImport(options: HandleImportOptions): boolean {
     'index', // barrelFileName is not configurable - must be 'index' to match runtime
     fileExtensions,
     maxRelativeDepth,
+    rootDirAlias,
   );
 
   if (isNullPath(correctPath)) {

@@ -25,6 +25,7 @@ export interface RuleContextData {
   maxRelativeDepth: number;
   barrelFileName: string;
   fileExtensions: string[];
+  rootDirAlias: string;
   cwd: string;
 }
 
@@ -40,6 +41,29 @@ export function inferCrossBoundaryStyleFromFilename(
 ): 'alias' | 'absolute' {
   const ext = path.extname(filename).toLowerCase();
   return TS_STYLE_EXTS.has(ext) ? 'alias' : 'absolute';
+}
+
+/**
+ * Module-level dedupe set so the deprecation warning fires once per ESLint
+ * process, not once per linted file. Reset is exposed for tests.
+ */
+const emittedDeprecations = new Set<string>();
+
+export function _resetDeprecationWarningsForTest(): void {
+  emittedDeprecations.clear();
+}
+
+function warnAbsoluteStyleDeprecated(): void {
+  const key = 'crossBoundaryStyle:absolute';
+  if (emittedDeprecations.has(key)) return;
+  emittedDeprecations.add(key);
+  // eslint-disable-next-line no-console -- deprecation notice is intentionally a warning
+  console.warn(
+    "[eslint-plugin-import-boundaries] DEPRECATION: crossBoundaryStyle: 'absolute' " +
+      'will be removed in v0.9.0. Migrate to alias-based imports (configure an `alias` ' +
+      'on each boundary and let TypeScript/bundler `paths` resolve them). See CHANGELOG ' +
+      'for migration guidance.',
+  );
 }
 
 /**
@@ -63,11 +87,30 @@ export function extractRuleOptions(context: Rule.RuleContext): RuleContextData {
     skipIndexFiles = DEFAULTS.skipIndexFiles,
     maxRelativeDepth = DEFAULTS.maxRelativeDepth,
     fileExtensions = [...DEFAULTS.fileExtensions],
+    rootDirAlias = DEFAULTS.rootDirAlias,
   } = options;
 
   // barrelFileName is not configurable - must be 'index' to match runtime module resolution
   const barrelFileName = 'index';
   const cwd = process.cwd();
+
+  // Validate rootDirAlias: must not start with '.' or '/'
+  if (
+    rootDirAlias &&
+    (rootDirAlias.startsWith('.') || rootDirAlias.startsWith('/'))
+  ) {
+    throw new Error(
+      `'rootDirAlias' must not start with '.' or '/'. Got: '${rootDirAlias}'`,
+    );
+  }
+
+  // Deprecation: 'absolute' style is being removed in v0.9.0.
+  // Only warn when explicitly set; the omitted/inferred path is also affected
+  // but we'll surface that through CHANGELOG/README guidance to avoid noise
+  // for users who simply haven't opted in to a style yet.
+  if (crossBoundaryStyle === 'absolute') {
+    warnAbsoluteStyleDeprecated();
+  }
 
   // Validate: aliases are required when crossBoundaryStyle is 'alias'
   if (crossBoundaryStyle === 'alias') {
@@ -108,6 +151,7 @@ export function extractRuleOptions(context: Rule.RuleContext): RuleContextData {
     maxRelativeDepth,
     barrelFileName,
     fileExtensions,
+    rootDirAlias,
     cwd,
   };
 }

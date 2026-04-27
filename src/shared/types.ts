@@ -67,6 +67,7 @@ export interface RuleOptions {
   // Note: barrelFileName is not configurable - index files must be named 'index' to match runtime module resolution
   fileExtensions?: string[]; // File extensions to recognize (default: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'])
   maxRelativeDepth?: number; // Maximum number of '../' segments allowed in same-boundary imports (default: 1). Imports requiring more '../' segments use alias/absolute path instead.
+  rootDirAlias?: string; // Alias prefix that maps to the root directory (e.g. '@' for `@/foo` → `src/foo`). Set to '' to disable. Default: '@'.
 }
 
 /**
@@ -81,6 +82,7 @@ export const DEFAULTS = {
   maxRelativeDepth: 1,
   barrelFileName: 'index',
   fileExtensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'] as const,
+  rootDirAlias: '@',
 } as const;
 
 /**

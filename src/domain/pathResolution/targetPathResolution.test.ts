@@ -227,4 +227,132 @@ describe('targetPathResolution', () => {
       );
     });
   });
+
+  describe('rootDir alias (@/) resolution', () => {
+    it('should resolve @/domain/entities via rootDirAlias when no boundary alias matches', () => {
+      const boundaries = [entitiesBoundary];
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
+      const result = resolveTargetPath(
+        '@/domain/entities',
+        fileDir,
+        boundaries,
+        rootDir,
+        cwd,
+      );
+
+      expect(result.targetAbs).toBe(
+        path.resolve(cwd, rootDir, 'domain/entities', 'index.ts'),
+      );
+      expect(result.targetDir).toBe(
+        path.resolve(cwd, rootDir, 'domain/entities'),
+      );
+    });
+
+    it('should let boundary alias @entities win over rootDir alias for @entities/army', () => {
+      const boundaries = [entitiesBoundary];
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
+      const result = resolveTargetPath(
+        '@entities/army',
+        fileDir,
+        boundaries,
+        rootDir,
+        cwd,
+      );
+
+      // Boundary alias resolution wins — not rootDir alias
+      expect(result.targetAbs).toBe(
+        path.join(entitiesBoundary.absDir, 'army', 'index.ts'),
+      );
+      expect(result.targetDir).toBe(path.join(entitiesBoundary.absDir, 'army'));
+    });
+
+    it('should return empty strings for @scope/pkg (scoped npm package, not rootDir alias)', () => {
+      const boundaries = [entitiesBoundary];
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
+      const result = resolveTargetPath(
+        '@scope/pkg',
+        fileDir,
+        boundaries,
+        rootDir,
+        cwd,
+      );
+
+      // No boundary alias matches, and @scope/pkg doesn't start with '@/'
+      expect(result.targetAbs).toBe('');
+      expect(result.targetDir).toBe('');
+    });
+
+    it('should resolve with custom rootDirAlias', () => {
+      const boundaries = [entitiesBoundary];
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
+      const result = resolveTargetPath(
+        '~/domain/entities',
+        fileDir,
+        boundaries,
+        rootDir,
+        cwd,
+        'index',
+        ['.ts'],
+        '~',
+      );
+
+      expect(result.targetAbs).toBe(
+        path.resolve(cwd, rootDir, 'domain/entities', 'index.ts'),
+      );
+      expect(result.targetDir).toBe(
+        path.resolve(cwd, rootDir, 'domain/entities'),
+      );
+    });
+
+    it('should NOT resolve @/foo when custom rootDirAlias is ~', () => {
+      const boundaries = [entitiesBoundary];
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries');
+      const result = resolveTargetPath(
+        '@/foo',
+        fileDir,
+        boundaries,
+        rootDir,
+        cwd,
+        'index',
+        ['.ts'],
+        '~',
+      );
+
+      // @/foo with alias ~ should fall through as external
+      expect(result.targetAbs).toBe('');
+      expect(result.targetDir).toBe('');
+    });
+
+    it('should NOT misinterpret prefix-only matches when rootDirAlias is unconventional', () => {
+      // Regression test for the dispatcher's tight-match contract:
+      // with rootDirAlias='foo', a bare import like 'foobar' must not enter
+      // the alias branch — it should fall through to bare-import resolution.
+      const utilsBoundary = createBoundary(
+        {
+          dir: 'foobar',
+          alias: '@utils',
+          allowImportsFrom: [],
+        },
+        { cwd, rootDir },
+      );
+      const boundaries = [utilsBoundary];
+      const fileDir = path.resolve(cwd, rootDir, 'foobar');
+      const result = resolveTargetPath(
+        'foobar',
+        fileDir,
+        boundaries,
+        rootDir,
+        cwd,
+        'index',
+        ['.ts'],
+        'foo',
+      );
+
+      // Should resolve via bare-import → matching boundary dir, not via rootDirAlias
+      expect(result.targetAbs).toBe(
+        path.join(utilsBoundary.absDir, 'index.ts'),
+      );
+      expect(result.targetDir).toBe(utilsBoundary.absDir);
+    });
+  });
 });

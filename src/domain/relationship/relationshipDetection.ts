@@ -11,6 +11,7 @@ import {
   calculateSameBoundaryPath,
 } from '@domain/pathCalculation';
 import { resolveTargetPath } from '@domain/pathResolution';
+import { DEFAULTS } from '@shared';
 import {
   DEFAULT_BARREL_FILE_NAME,
   getDefaultFileExtensions,
@@ -34,6 +35,7 @@ export function calculateCorrectImportPath(
   barrelFileName: string = DEFAULT_BARREL_FILE_NAME,
   fileExtensions: string[] = getDefaultFileExtensions(),
   maxRelativeDepth: number = 1,
+  rootDirAlias: string = DEFAULTS.rootDirAlias,
 ): string | null {
   // Resolve target path
   const { targetAbs, targetDir } = resolveTargetPath(
@@ -44,6 +46,7 @@ export function calculateCorrectImportPath(
     cwd,
     barrelFileName,
     fileExtensions,
+    rootDirAlias,
   );
 
   // Resolve target to nearest boundary (even if it has no rules)

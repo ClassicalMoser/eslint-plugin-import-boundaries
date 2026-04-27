@@ -50,6 +50,7 @@ export const rule: Rule.RuleModule = {
       maxRelativeDepth: ruleContext.maxRelativeDepth,
       barrelFileName: ruleContext.barrelFileName,
       fileExtensions: ruleContext.fileExtensions,
+      rootDirAlias: ruleContext.rootDirAlias,
     });
   },
 };
