@@ -1,21 +1,58 @@
 /**
- * Type definitions for the boundary-alias-vs-relative ESLint rule.
+ * Type definitions for `import-boundaries/enforce` and related rules.
  */
 
 /**
- * Represents a boundary configuration with its directory and optional alias.
- * absDir is computed at rule initialization for efficient path comparisons.
+ * Resolved boundary record used at lint time.
+ *
+ * Built from {@link BoundaryConfig} plus derived fields (`absDir`).
  */
 export interface Boundary {
-  identifier: string; // Canonical boundary identifier - used for allow/deny rules and error messages (independent of path style). Required.
-  dir: string; // Relative directory path (e.g., 'domain/entities')
-  alias?: string; // Import alias (e.g., '@entities') - optional when crossBoundaryStyle is 'absolute'
-  absDir: string; // Absolute resolved directory path
-  allowImportsFrom?: string[]; // Array of boundary identifiers that can be imported from
-  denyImportsFrom?: string[]; // Array of boundary identifiers that cannot be imported from
-  allowTypeImportsFrom?: string[]; // Array of boundary identifiers that can be imported as types (overrides allowImportsFrom for type-only imports)
-  nestedPathFormat?: 'alias' | 'relative' | 'inherit'; // Path format for nested boundaries
-  severity?: 'error' | 'warn'; // Severity for violations in this boundary
+  /**
+   * Stable label used in allow/deny lists and diagnostics.
+   *
+   * Often matches `alias` (for example `'@domain'`), but may differ when you want a readable identifier separate from import spelling.
+   */
+  identifier: string;
+  /** Directory path relative to {@link RuleOptions.rootDir}. */
+  dir: string;
+  /**
+   * Import alias prefix when using alias-style paths (for example `'@domain'`).
+   *
+   * Optional when `crossBoundaryStyle` is `'absolute'` (deprecated).
+   */
+  alias?: string;
+  /** Absolute filesystem path for `dir`, computed once when the rule initializes. */
+  absDir: string;
+  /**
+   * Identifiers this boundary may import from (deny-by-default when used alone).
+   *
+   * Identifiers refer to other boundaries' {@link Boundary.identifier} values.
+   */
+  allowImportsFrom?: string[];
+  /**
+   * Identifiers this boundary must not import from (allow-by-default when used alone).
+   *
+   * If both allow and deny lists are present, deny wins on conflicts.
+   */
+  denyImportsFrom?: string[];
+  /**
+   * Identifiers allowed for `import type` even when value imports are denied.
+   *
+   * Overrides {@link allowImportsFrom} for type-only imports.
+   */
+  allowTypeImportsFrom?: string[];
+  /**
+   * When this boundary is nested inside another boundary and imports from its parent,
+   * choose how to spell that parent import.
+   *
+   * - `'inherit'` – follow the active cross-boundary style (`alias` vs `absolute`).
+   * - `'relative'` – prefer `../...` into the parent directory.
+   * - `'alias'` – prefer the parent's alias path.
+   */
+  nestedPathFormat?: 'alias' | 'relative' | 'inherit';
+  /** Override severity for violations originating from files in this boundary. */
+  severity?: 'error' | 'warn';
 }
 
 /**
@@ -29,45 +66,123 @@ export interface FileData {
 }
 
 /**
- * Boundary definition with optional allow/deny rules.
+ * One boundary entry in user configuration.
+ *
+ * Files resolve to the **deepest** matching `dir` when boundaries nest.
  */
 export interface BoundaryConfig {
-  identifier: string; // Canonical boundary identifier - used for allow/deny rules and error messages. Required.
-  dir: string; // Relative directory path (e.g., 'domain/entities')
-  alias?: string; // Import alias (e.g., '@entities') - required when crossBoundaryStyle is 'alias', optional when 'absolute'
-  allowImportsFrom?: string[]; // Array of boundary identifiers that can be imported from
-  denyImportsFrom?: string[]; // Array of boundary identifiers that cannot be imported from
-  allowTypeImportsFrom?: string[]; // Array of boundary identifiers that can be imported as types (overrides allowImportsFrom for type-only imports)
-  nestedPathFormat?: 'alias' | 'relative' | 'inherit'; // Path format for nested boundaries
-  severity?: 'error' | 'warn'; // Severity for violations in this boundary (default: 'error')
+  /**
+   * Stable label used in allow/deny lists and diagnostics.
+   *
+   * Convention: match {@link alias} when using alias imports (for example both `'@domain'`).
+   */
+  identifier: string;
+  /** Directory path under {@link RuleOptions.rootDir} (for example `'domain'` or `'application/internal'`). */
+  dir: string;
+  /**
+   * Import alias prefix for this boundary (for example `'@domain'`).
+   *
+   * Required when `crossBoundaryStyle` is `'alias'`, or when inference picks alias style for TypeScript files.
+   */
+  alias?: string;
+  /**
+   * Identifiers this boundary may import from (deny-by-default when used alone).
+   *
+   * Values are other boundaries' {@link identifier} strings.
+   */
+  allowImportsFrom?: string[];
+  /**
+   * Identifiers this boundary must not import from (allow-by-default when used alone).
+   *
+   * If both allow and deny lists are present, deny wins on conflicts.
+   */
+  denyImportsFrom?: string[];
+  /**
+   * Identifiers allowed for `import type` even when value imports are denied.
+   *
+   * Overrides {@link allowImportsFrom} for type-only imports.
+   */
+  allowTypeImportsFrom?: string[];
+  /**
+   * When this nested boundary imports from its parent boundary, choose import spelling.
+   *
+   * See {@link Boundary.nestedPathFormat} for semantics.
+   */
+  nestedPathFormat?: 'alias' | 'relative' | 'inherit';
+  /** Per-boundary severity override (defaults to rule severity). */
+  severity?: 'error' | 'warn';
 }
 
 /**
  * Options for barrel-related rules (`no-wildcard-barrel`, `index-sibling-only`).
  */
 export interface BarrelFileRuleOptions {
-  /** Defaults to `index` (must match runtime / `enforce` expectations). */
+  /**
+   * Basename of index files to treat as directory interfaces (without extension).
+   *
+   * Must stay `'index'` to match runtime module resolution and `enforce` behavior.
+   */
   barrelFileName?: string;
 }
 
 /**
- * Rule configuration options from ESLint config.
+ * Options for `import-boundaries/enforce`.
  */
 export interface RuleOptions {
-  rootDir?: string; // Root directory (defaults to 'src')
-  boundaries: BoundaryConfig[]; // Array of boundary definitions
-  /** Omit to infer per file: `.ts`/`.tsx`/`.mts`/`.cts` → `alias`, JS extensions → `absolute`. */
+  /**
+   * Source root directory containing boundary folders.
+   *
+   * Defaults to `'src'`.
+   */
+  rootDir?: string;
+  /** Boundary definitions; at least one entry is required. */
+  boundaries: BoundaryConfig[];
+  /**
+   * Cross-boundary import spelling style.
+   *
+   * Omit to infer from the linted file extension (TypeScript → `alias`, JavaScript → `absolute`).
+   *
+   * @deprecated `'absolute'` is deprecated and scheduled for removal in v0.9.0; prefer alias imports with matching TS/bundler path mappings.
+   */
   crossBoundaryStyle?: 'alias' | 'absolute';
-  // 'alias': Use alias paths like @entities
-  // 'absolute': Use absolute paths relative to rootDir like src/domain/entities
-  defaultSeverity?: 'error' | 'warn'; // Default severity for violations (if not set, uses rule-level severity)
-  allowUnknownBoundaries?: boolean; // Allow imports from paths not in any boundary (default: false)
-  enforceBoundaries?: boolean; // Enforce boundary allow/deny rules (default: true). When false, boundary rules are skipped but path format is still enforced.
-  skipIndexFiles?: boolean; // Skip all checking for index files (default: false). Enable when using index-sibling-only rule to avoid conflicts.
-  // Note: barrelFileName is not configurable - index files must be named 'index' to match runtime module resolution
-  fileExtensions?: string[]; // File extensions to recognize (default: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'])
-  maxRelativeDepth?: number; // Maximum number of '../' segments allowed in same-boundary imports (default: 1). Imports requiring more '../' segments use alias/absolute path instead.
-  rootDirAlias?: string; // Alias prefix that maps to the root directory (e.g. '@' for `@/foo` → `src/foo`). Set to '' to disable. Default: '@'.
+  /** Default severity for boundary violations when not overridden per-boundary. */
+  defaultSeverity?: 'error' | 'warn';
+  /**
+   * Allow imports whose resolved targets fall outside every configured boundary directory.
+   *
+   * Default `false` reports unknown-boundary imports.
+   */
+  allowUnknownBoundaries?: boolean;
+  /**
+   * When `false`, skip allow/deny checks but still enforce canonical import paths.
+   *
+   * Useful for tests or gradual rollout.
+   */
+  enforceBoundaries?: boolean;
+  /**
+   * Skip `enforce` entirely for index files (`index.*`).
+   *
+   * Pair with `index-sibling-only` / `no-wildcard-barrel` to avoid overlapping checks.
+   */
+  skipIndexFiles?: boolean;
+  /**
+   * Extensions treated as code imports for boundary and path rules.
+   *
+   * Non-code specifiers (assets, styles, query strings) are skipped separately.
+   */
+  fileExtensions?: string[];
+  /**
+   * Maximum number of `../` segments allowed before switching to boundary-root style paths.
+   *
+   * Default `1`.
+   */
+  maxRelativeDepth?: number;
+  /**
+   * Recognise root-relative alias imports like `@/foo` as `<rootDir>/foo`.
+   *
+   * Set to `''` to disable. Default `'@'`.
+   */
+  rootDirAlias?: string;
 }
 
 /**
@@ -86,7 +201,12 @@ export const DEFAULTS = {
 } as const;
 
 /**
- * Alias subpath check result.
+ * Result of detecting whether an alias import includes a disallowed subpath
+ * (for example `'@domain/foo'` vs boundary root `'@domain'`).
+ *
+ * Used inside domain helpers; not part of the public configuration surface.
+ *
+ * @internal
  */
 export interface AliasSubpathCheck {
   isSubpath: boolean;

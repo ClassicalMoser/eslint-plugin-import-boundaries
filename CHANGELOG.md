@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2026-04-28
+
+### Bug Fixes
+
+- **`boundaryViolation` message**: Template and report data now read correctly in English (`Cannot import from '<imported boundary>' into '<file boundary>'`). Placeholders `from` / `into` match semantics; message `data.to` is renamed to `data.into` for tooling that reads rule message data.
+
+### Removed
+
+- **`require()` in `enforce`**: CommonJS `require()` calls are no longer visited. Only ES `import`/`export` and dynamic `import()` participate in boundary and path rules.
+
+### Documentation
+
+- README rewrite (positioning, setup, TypeScript types, compatibility, non-goals).
+- JSDoc on exported configuration types in `src/shared/types.ts`.
+- Remove `HEXAGONAL_DEFAULTS.md` (superseded by README).
+
 ## [0.8.0] - 2026-04-27
 
 ### Features
