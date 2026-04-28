@@ -57,8 +57,8 @@ export function validateBoundaryRules(
     reporter,
     messageId: 'boundaryViolation',
     data: {
-      from: getBoundaryIdentifier(fileBoundary),
-      to: getBoundaryIdentifier(targetBoundary),
+      from: getBoundaryIdentifier(targetBoundary),
+      into: getBoundaryIdentifier(fileBoundary),
       reason: violation.reason,
     },
     fileBoundary,

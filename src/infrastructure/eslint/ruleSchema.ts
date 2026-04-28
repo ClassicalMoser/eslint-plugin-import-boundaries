@@ -16,7 +16,8 @@ export const ruleMessages: Rule.RuleMetaData['messages'] = {
     "Cannot import from ancestor directory '{{boundaryIdentifier}}'. This would create a circular dependency. Import from the specific file or directory instead.",
   unknownBoundaryImport:
     "Cannot import from '{{path}}' - path is outside all configured boundaries. Add this path to boundaries configuration or set 'allowUnknownBoundaries: true'.",
-  boundaryViolation: "Cannot import from '{{to}}' to '{{from}}': {{reason}}",
+  boundaryViolation:
+    "Cannot import from '{{from}}' into '{{into}}': {{reason}}",
   missingBoundaryAliasesForTypeScript:
     "When 'crossBoundaryStyle' is omitted, TypeScript files use alias paths; every boundary must have an 'alias'. Missing for: {{dirs}}.",
 };

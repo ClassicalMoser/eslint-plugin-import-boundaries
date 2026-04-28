@@ -12,7 +12,7 @@ export interface ViolationData {
   boundaryIdentifier?: string; // Canonical boundary identifier (independent of path style)
   path?: string;
   from?: string;
-  to?: string;
+  into?: string;
   reason?: string;
 }
 

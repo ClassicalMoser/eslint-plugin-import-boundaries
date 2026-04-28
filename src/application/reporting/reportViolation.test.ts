@@ -49,7 +49,7 @@ describe('reportViolation', () => {
       reportViolation({
         reporter: mockReporter,
         messageId: 'boundaryViolation',
-        data: { from: '@entities', to: '@queries', reason: 'not allowed' },
+        data: { from: '@entities', into: '@queries', reason: 'not allowed' },
         fileBoundary,
         defaultSeverity: 'error',
       });

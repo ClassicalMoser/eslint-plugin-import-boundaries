@@ -63,8 +63,8 @@ describe('boundaryRuleValidation', () => {
       expect(reporter.report).toHaveBeenCalled();
       const violation = reporter.getLastReport();
       expect(violation?.messageId).toBe('boundaryViolation');
-      expect(violation?.data?.from).toBe('@queries');
-      expect(violation?.data?.to).toBe('@events');
+      expect(violation?.data?.from).toBe('@events');
+      expect(violation?.data?.into).toBe('@queries');
     });
 
     it('should not report when boundary rule allows import', () => {

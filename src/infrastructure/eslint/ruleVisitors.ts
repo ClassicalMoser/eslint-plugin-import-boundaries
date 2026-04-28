@@ -170,22 +170,6 @@ export function createRuleVisitors(
     },
 
     /**
-     * Handle CommonJS require() calls: require('path')
-     * These are always value imports (not type-only)
-     */
-    CallExpression(node) {
-      if (
-        node.callee.type === 'Identifier' &&
-        node.callee.name === 'require' &&
-        node.arguments.length === 1 &&
-        node.arguments[0]?.type === 'Literal' &&
-        typeof node.arguments[0].value === 'string'
-      ) {
-        handleImportStatement(node, node.arguments[0].value, false);
-      }
-    },
-
-    /**
      * Handle ES6 export statements with 'from': export { ... } from 'path'
      * Only checks re-exports (those with a source), not local exports
      */
