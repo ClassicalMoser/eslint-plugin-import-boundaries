@@ -72,6 +72,7 @@ export default antfu(
   {
     ignores: [
       'pnpm-lock.yaml',
+      'pnpm-workspace.yaml',
       'node_modules/**',
       'coverage/**',
       '.stryker-tmp/**',
