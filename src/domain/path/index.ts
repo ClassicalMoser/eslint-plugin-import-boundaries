@@ -7,6 +7,7 @@ export {
   absoluteToRelativePath,
   choosePathFormat,
   formatAbsolutePath,
+  getBoundaryImportSubpath,
 } from './pathFormatting';
 export {
   getBasenameWithoutExt,

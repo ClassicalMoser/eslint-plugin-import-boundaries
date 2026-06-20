@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] - 2026-06-19
+
+### Bug Fixes
+
+- **Distant same-boundary alias paths**: When a distant import falls back to alias or absolute form (beyond `maxRelativeDepth`), the fixer now preserves the full boundary-relative subpath (e.g. `@interface/http/route-definitions`) instead of collapsing to a single segment (e.g. `@interface/route-definitions`), which could point at a nonexistent module tree. Relative paths for nested targets (e.g. `../cousin/nested`) and ancestor file imports on the same branch are corrected as well.
+
+### Documentation
+
+- README: distant same-boundary imports documented as `@boundary/full/subpath`.
+
 ## [0.8.1] - 2026-04-28
 
 ### Bug Fixes

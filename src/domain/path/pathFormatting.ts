@@ -4,6 +4,7 @@
 
 import type { Boundary } from '@shared';
 import path from 'node:path';
+import { getBasenameWithoutExt } from './pathUtils';
 
 const BACKSLASH_RE = /\\/g;
 
@@ -68,6 +69,36 @@ export function absoluteToRelativePath(
   // Note: If no extension, result already starts with ./ from line 42-44, so no additional check needed
 
   return result;
+}
+
+/**
+ * Compute the full boundary-relative import subpath for a resolved target.
+ *
+ * @example
+ * // File import: interface/http/route-definitions.ts → 'http/route-definitions'
+ * // Directory import: interface/http/route-definitions/index.ts → 'http/route-definitions'
+ * // Boundary root file: interface/getLine.ts → 'getLine'
+ */
+export function getBoundaryImportSubpath(
+  targetAbs: string,
+  targetDir: string,
+  boundary: Boundary,
+  barrelFileName: string,
+): string {
+  const relativeDir = path
+    .relative(boundary.absDir, targetDir)
+    .replace(BACKSLASH_RE, '/');
+  const basename = getBasenameWithoutExt(targetAbs);
+
+  if (basename === barrelFileName) {
+    return relativeDir === '.' ? '' : relativeDir;
+  }
+
+  if (!relativeDir || relativeDir === '.') {
+    return basename;
+  }
+
+  return `${relativeDir}/${basename}`;
 }
 
 /**

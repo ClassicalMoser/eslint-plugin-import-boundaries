@@ -10,6 +10,7 @@ import {
   absoluteToRelativePath,
   choosePathFormat,
   formatAbsolutePath,
+  getBoundaryImportSubpath,
 } from './pathFormatting';
 
 describe('pathFormatting', () => {
@@ -44,7 +45,72 @@ describe('pathFormatting', () => {
     });
   });
 
+  describe('getBoundaryImportSubpath', () => {
+    it('should return full subpath for nested file import', () => {
+      const targetDir = path.resolve(
+        cwd,
+        rootDir,
+        'domain',
+        'entities',
+        'http',
+      );
+      const targetAbs = path.join(targetDir, 'route-definitions.ts');
+      const result = getBoundaryImportSubpath(
+        targetAbs,
+        targetDir,
+        boundary,
+        'index',
+      );
+
+      expect(result).toBe('http/route-definitions');
+    });
+
+    it('should return directory subpath for barrel import', () => {
+      const targetDir = path.resolve(
+        cwd,
+        rootDir,
+        'domain',
+        'entities',
+        'http',
+        'route-definitions',
+      );
+      const targetAbs = path.join(targetDir, 'index.ts');
+      const result = getBoundaryImportSubpath(
+        targetAbs,
+        targetDir,
+        boundary,
+        'index',
+      );
+
+      expect(result).toBe('http/route-definitions');
+    });
+
+    it('should return basename for boundary root file', () => {
+      const targetDir = boundary.absDir;
+      const targetAbs = path.join(targetDir, 'getLine.ts');
+      const result = getBoundaryImportSubpath(
+        targetAbs,
+        targetDir,
+        boundary,
+        'index',
+      );
+
+      expect(result).toBe('getLine');
+    });
+  });
+
   describe('choosePathFormat', () => {
+    it('should use multi-segment subpath for alias style', () => {
+      const result = choosePathFormat(
+        boundary,
+        'http/route-definitions',
+        rootDir,
+        'alias',
+      );
+
+      expect(result).toBe('@entities/http/route-definitions');
+    });
+
     it('should use alias when available and crossBoundaryStyle is alias', () => {
       const result = choosePathFormat(boundary, 'army', rootDir, 'alias');
 

@@ -262,7 +262,7 @@ Canonical choice depends on relationship:
 
 - Same directory -> `./sibling`
 - Nearby cousin (within `maxRelativeDepth`) -> `../cousin`
-- Distant target (beyond `maxRelativeDepth`) -> `@boundary/segment`
+- Distant target (beyond `maxRelativeDepth`) -> `@boundary/full/subpath`
 - Own boundary root from inside that boundary -> forbidden (ancestor-directory cycle risk)
 
 `maxRelativeDepth` defaults to `1`.

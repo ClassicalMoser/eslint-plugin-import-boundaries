@@ -376,7 +376,77 @@ describe('relationshipDetection', () => {
       );
 
       // Should use alias since it requires >1 ../
-      expect(result).toBe('@queries/otherLevel1');
+      expect(result).toBe('@queries/level1/otherLevel1');
+    });
+
+    it('should preserve full subpath for deeply nested same-boundary alias imports', () => {
+      const interfaceBoundary = createBoundary(
+        {
+          dir: 'interface',
+          alias: '@interface',
+          allowImportsFrom: [],
+        },
+        { cwd, rootDir },
+      );
+      const boundaries = [interfaceBoundary];
+      const fileDir = path.resolve(
+        cwd,
+        rootDir,
+        'interface',
+        'http',
+        'a',
+        'b',
+        'c',
+        'd',
+      );
+      const fileBoundary = interfaceBoundary;
+
+      const result = calculateCorrectImportPath(
+        '@interface/http/route-definitions',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'alias',
+      );
+
+      expect(result).toBe('@interface/http/route-definitions');
+    });
+
+    it('should use full alias subpath when relative import exceeds maxRelativeDepth', () => {
+      const interfaceBoundary = createBoundary(
+        {
+          dir: 'interface',
+          alias: '@interface',
+          allowImportsFrom: [],
+        },
+        { cwd, rootDir },
+      );
+      const boundaries = [interfaceBoundary];
+      const fileDir = path.resolve(
+        cwd,
+        rootDir,
+        'interface',
+        'http',
+        'a',
+        'b',
+        'c',
+        'd',
+      );
+      const fileBoundary = interfaceBoundary;
+
+      const result = calculateCorrectImportPath(
+        '../../../../route-definitions',
+        fileDir,
+        fileBoundary,
+        boundaries,
+        rootDir,
+        cwd,
+        'alias',
+      );
+
+      expect(result).toBe('@interface/http/route-definitions');
     });
 
     it('should handle boundary root correctly', () => {

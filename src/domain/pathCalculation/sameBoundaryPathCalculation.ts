@@ -12,7 +12,6 @@ import { calculateBoundaryRootPath } from './boundaryRootPathCalculation';
 import { calculateDistantPath } from './distantPathCalculation';
 import {
   areBothPathsExhausted,
-  hasValidFirstDifferingSegment,
   isBoundaryRoot,
 } from './sameBoundaryPathCalculationHelpers';
 import { calculateSameDirectoryPath } from './sameDirectoryPathCalculation';
@@ -78,19 +77,15 @@ export function calculateSameBoundaryPath(
     return calculateSameDirectoryPath(targetAbs, barrelFileName);
   }
 
-  // Get first differing segment (only - we assume barrel files)
-  const firstDifferingSegment = targetParts[firstDifferingIndex];
-  if (!hasValidFirstDifferingSegment(firstDifferingSegment)) {
-    return null;
-  }
-
   return calculateDistantPath(
     targetParts,
     fileParts,
     firstDifferingIndex,
-    firstDifferingSegment,
+    targetAbs,
+    targetDir,
     fileBoundary,
     rootDir,
+    barrelFileName,
     crossBoundaryStyle,
     maxRelativeDepth,
   );
