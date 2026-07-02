@@ -9,5 +9,4 @@ export { extractBareImportSubpath } from './bareImportSubpathExtraction';
 export { findMatchingBoundary } from './boundaryMatching';
 export { resolveRelativeImport } from './relativeImportResolution';
 export { resolveTarget } from './resolveTarget';
-export { resolveRootDirAliasImport } from './rootDirAliasImportResolution';
 export { resolveTargetPath } from './targetPathResolution';

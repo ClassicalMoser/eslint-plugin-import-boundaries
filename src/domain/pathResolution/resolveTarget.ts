@@ -48,8 +48,15 @@ export function resolveTarget(
       };
     }
 
-    // No extension at all → treat as directory, resolve to barrel file
-    const targetDir = path.resolve(baseDir, spec);
+    // No extension at all → treat as directory, resolve to barrel file.
+    // When the final segment is the barrel file name (e.g. `./index`, `../index`,
+    // `@boundary/index`), resolve to that segment's parent directory barrel — not
+    // a nested directory literally named `index`.
+    const resolved = path.resolve(baseDir, spec);
+    const targetDir =
+      path.basename(resolved) === barrelFileName
+        ? path.dirname(resolved)
+        : resolved;
     return {
       targetAbs: getBarrelPath(targetDir, barrelFileName, fileExtensions),
       targetDir,

@@ -66,6 +66,36 @@ describe('resolveTarget', () => {
       expect(result.targetDir).toBe(path.resolve(baseDir, 'entities'));
     });
 
+    it('should resolve parent directory index file to parent barrel', () => {
+      const spec = '../index';
+
+      const result = resolveTarget(
+        baseDir,
+        spec,
+        barrelFileName,
+        fileExtensions,
+      );
+
+      expect(result.targetAbs).toBe(
+        path.join(path.dirname(baseDir), 'index.ts'),
+      );
+      expect(result.targetDir).toBe(path.dirname(baseDir));
+    });
+
+    it('should resolve index segment to parent directory barrel', () => {
+      const spec = 'entities/index';
+
+      const result = resolveTarget(
+        baseDir,
+        spec,
+        barrelFileName,
+        fileExtensions,
+      );
+
+      expect(result.targetAbs).toBe(path.join(baseDir, 'entities', 'index.ts'));
+      expect(result.targetDir).toBe(path.resolve(baseDir, 'entities'));
+    });
+
     it('should handle parent directory specifiers', () => {
       const spec = '../application';
 

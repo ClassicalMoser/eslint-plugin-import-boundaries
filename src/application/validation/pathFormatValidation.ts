@@ -4,12 +4,16 @@
 
 import type { Fixer, Reporter } from '@ports';
 import type { Boundary } from '@shared';
+import { reportAncestorDirectoryImport } from '@application/detection';
 import { reportViolation } from '@application/reporting';
+import { checkAncestorBarrel } from '@domain';
 
 export interface PathFormatValidationOptions {
   rawSpec: string;
   correctPath: string;
   fileBoundary: Boundary | null;
+  rootDir: string;
+  crossBoundaryStyle: 'alias' | 'absolute';
   reporter: Reporter;
   createFixer: (newPath: string) => Fixer;
   defaultSeverity?: 'error' | 'warn';
@@ -31,10 +35,25 @@ export function validatePathFormat(
     rawSpec,
     correctPath,
     fileBoundary,
+    rootDir,
+    crossBoundaryStyle,
     reporter,
     createFixer,
     defaultSeverity,
   } = options;
+
+  // Never auto-fix to an ancestor directory import — that form is forbidden
+  if (
+    fileBoundary &&
+    checkAncestorBarrel(correctPath, fileBoundary, rootDir, crossBoundaryStyle)
+  ) {
+    reportAncestorDirectoryImport({
+      fileBoundary,
+      reporter,
+      defaultSeverity,
+    });
+    return true;
+  }
 
   // Check if current path is correct - no violation if it matches
   if (rawSpec === correctPath) {

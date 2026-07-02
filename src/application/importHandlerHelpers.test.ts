@@ -10,7 +10,6 @@ import {
   isNullPath,
   isUnknownBoundary,
   isValidPath,
-  shouldDetectAncestorBarrel,
   shouldValidateAliasSubpath,
   shouldValidateBoundaryRules,
 } from './importHandlerHelpers';
@@ -76,33 +75,6 @@ describe('importHandlerHelpers', () => {
 
     it('should return false when both boundaries are null', () => {
       expect(shouldValidateBoundaryRules(false, null, null)).toBe(false);
-    });
-  });
-
-  describe('shouldDetectAncestorBarrel', () => {
-    const boundary: Boundary = createBoundary(
-      {
-        dir: 'domain/entities',
-        alias: '@entities',
-        allowImportsFrom: [],
-      },
-      { cwd, rootDir },
-    );
-
-    it('should return true when correctPath is null and fileBoundary exists', () => {
-      expect(shouldDetectAncestorBarrel(null, boundary)).toBe(true);
-    });
-
-    it('should return false when correctPath is not null', () => {
-      expect(shouldDetectAncestorBarrel('@entities', boundary)).toBe(false);
-    });
-
-    it('should return false when fileBoundary is null', () => {
-      expect(shouldDetectAncestorBarrel(null, null)).toBe(false);
-    });
-
-    it('should return false when correctPath is not null and fileBoundary is null', () => {
-      expect(shouldDetectAncestorBarrel('@entities', null)).toBe(false);
     });
   });
 

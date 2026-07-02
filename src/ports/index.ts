@@ -3,8 +3,6 @@
  * No dependencies - just interfaces that infrastructure implements.
  */
 
-export type { ASTNode } from './astNode';
-
 export type {
   Fixer,
   FixResult,

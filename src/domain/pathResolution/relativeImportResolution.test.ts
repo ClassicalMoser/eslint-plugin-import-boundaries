@@ -56,5 +56,17 @@ describe('relativeImportResolution', () => {
       );
       expect(result.targetDir).toBe(path.join(cwd, rootDir, 'domain/queries'));
     });
+
+    it('should resolve parent directory index file to parent barrel', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
+      const result = resolveRelativeImport('../index', fileDir, 'index', [
+        '.ts',
+      ]);
+
+      expect(result.targetAbs).toBe(
+        path.join(cwd, rootDir, 'domain/queries', 'index.ts'),
+      );
+      expect(result.targetDir).toBe(path.join(cwd, rootDir, 'domain/queries'));
+    });
   });
 });

@@ -9,7 +9,6 @@ import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMockPorts } from '../__tests__/testUtils.js';
 import * as domain from '@domain';
-import * as detection from './detection';
 import * as validation from './validation';
 import { handleImport } from './importHandler';
 
@@ -286,6 +285,79 @@ describe('importHandler', () => {
     });
   });
 
+  describe('ancestor directory imports', () => {
+    it('should report ancestor directory import for ./index', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
+      const { reporter, createFixer } = createMockPorts();
+      const options = createOptions({
+        rawSpec: './index',
+        fileDir,
+        skipBoundaryRules: true,
+        reporter,
+        createFixer,
+      });
+
+      const result = handleImport(options);
+
+      expect(result).toBe(true);
+      expect(reporter.hasReported('ancestorBarrelImport')).toBe(true);
+      expect(reporter.hasReported('incorrectImportPath')).toBe(false);
+    });
+
+    it('should report ancestor directory import for ../index', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
+      const { reporter, createFixer } = createMockPorts();
+      const options = createOptions({
+        rawSpec: '../index',
+        fileDir,
+        skipBoundaryRules: true,
+        reporter,
+        createFixer,
+      });
+
+      const result = handleImport(options);
+
+      expect(result).toBe(true);
+      expect(reporter.hasReported('ancestorBarrelImport')).toBe(true);
+    });
+
+    it('should report ancestor directory import for rootDir alias to own boundary', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
+      const { reporter, createFixer } = createMockPorts();
+      const options = createOptions({
+        rawSpec: '@/domain/queries',
+        fileDir,
+        skipBoundaryRules: true,
+        reporter,
+        createFixer,
+      });
+
+      const result = handleImport(options);
+
+      expect(result).toBe(true);
+      expect(reporter.hasReported('ancestorBarrelImport')).toBe(true);
+      const violation = reporter.getLastReport();
+      expect(violation?.fix).toBeUndefined();
+    });
+
+    it('should report ancestor directory import for @boundary/index alias subpath', () => {
+      const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
+      const { reporter, createFixer } = createMockPorts();
+      const options = createOptions({
+        rawSpec: '@queries/index',
+        fileDir,
+        skipBoundaryRules: true,
+        reporter,
+        createFixer,
+      });
+
+      const result = handleImport(options);
+
+      expect(result).toBe(true);
+      expect(reporter.hasReported('ancestorBarrelImport')).toBe(true);
+    });
+  });
+
   describe('defensive return false', () => {
     it('should return false when calculateCorrectImportPath returns null but fileBoundary is null', () => {
       // This tests the defensive code path when correctPath is null but fileBoundary is null
@@ -317,42 +389,31 @@ describe('importHandler', () => {
       calculateCorrectImportPathSpy.mockRestore();
     });
 
-    it('should return false when calculateCorrectImportPath returns null, fileBoundary exists, but detectAndReportAncestorBarrel returns false', () => {
-      // This tests the defensive code path when correctPath is null, fileBoundary exists,
-      // but detectAndReportAncestorBarrel returns false (line 147-163)
+    it('should return true when calculateCorrectImportPath returns null and fileBoundary exists', () => {
       const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
 
-      // Mock calculateCorrectImportPath to return null
       const calculateCorrectImportPathSpy = vi.spyOn(
         domain,
         'calculateCorrectImportPath',
       );
       calculateCorrectImportPathSpy.mockReturnValue(null);
 
-      // Mock detectAndReportAncestorBarrel to return false
-      const detectAndReportAncestorBarrelSpy = vi.spyOn(
-        detection,
-        'detectAndReportAncestorBarrel',
-      );
-      detectAndReportAncestorBarrelSpy.mockReturnValue(false);
-
       const { reporter, createFixer } = createMockPorts();
       const options = createOptions({
-        rawSpec: './nonexistent',
+        rawSpec: './index',
         fileDir,
-        fileBoundary: queriesBoundary, // Has boundary
+        fileBoundary: queriesBoundary,
         skipBoundaryRules: true,
         reporter,
         createFixer,
       });
       const result = handleImport(options);
 
-      // Should return false when detectAndReportAncestorBarrel returns false
-      expect(result).toBe(false);
+      expect(result).toBe(true);
+      expect(reporter.hasReported('ancestorBarrelImport')).toBe(true);
       expect(calculateCorrectImportPathSpy).toHaveBeenCalled();
 
       calculateCorrectImportPathSpy.mockRestore();
-      detectAndReportAncestorBarrelSpy.mockRestore();
     });
   });
 
@@ -654,26 +715,18 @@ describe('importHandler', () => {
       calculateCorrectImportPathSpy.mockRestore();
     });
 
-    it('should handle when correctPath is null, fileBoundary exists, but detectAndReportAncestorBarrel returns false', () => {
+    it('should return true when calculateCorrectImportPath returns null and fileBoundary exists', () => {
       const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
       const { reporter, createFixer } = createMockPorts();
 
-      // Mock calculateCorrectImportPath to return null
       const calculateCorrectImportPathSpy = vi.spyOn(
         domain,
         'calculateCorrectImportPath',
       );
       calculateCorrectImportPathSpy.mockReturnValue(null);
 
-      // Mock detectAndReportAncestorBarrel to return false
-      const detectAndReportAncestorBarrelSpy = vi.spyOn(
-        detection,
-        'detectAndReportAncestorBarrel',
-      );
-      detectAndReportAncestorBarrelSpy.mockReturnValue(false);
-
       const options = createOptions({
-        rawSpec: './nonexistent',
+        rawSpec: './index',
         fileDir,
         fileBoundary: queriesBoundary,
         skipBoundaryRules: true,
@@ -682,13 +735,11 @@ describe('importHandler', () => {
       });
       const result = handleImport(options);
 
-      // Should return false (defensive path)
-      expect(result).toBe(false);
+      expect(result).toBe(true);
+      expect(reporter.hasReported('ancestorBarrelImport')).toBe(true);
       expect(calculateCorrectImportPathSpy).toHaveBeenCalled();
-      expect(detectAndReportAncestorBarrelSpy).toHaveBeenCalled();
 
       calculateCorrectImportPathSpy.mockRestore();
-      detectAndReportAncestorBarrelSpy.mockRestore();
     });
 
     it('should handle path format validation when paths match (no violation)', () => {

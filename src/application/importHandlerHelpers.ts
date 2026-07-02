@@ -37,17 +37,6 @@ export function shouldValidateBoundaryRules(
 }
 
 /**
- * Check if ancestor barrel detection should be performed.
- * Only needed when file boundary exists and correctPath is null.
- */
-export function shouldDetectAncestorBarrel(
-  correctPath: string | null,
-  fileBoundary: Boundary | null,
-): boolean {
-  return correctPath === null && fileBoundary !== null;
-}
-
-/**
  * Check if correctPath indicates an unknown boundary.
  */
 export function isUnknownBoundary(correctPath: string | null): boolean {

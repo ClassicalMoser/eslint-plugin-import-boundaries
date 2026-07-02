@@ -1,27 +1,11 @@
 /**
  * Infrastructure: ESLint adapters (imperative shell)
  * Implements ports and adapts ESLint APIs to our application layer.
+ *
+ * Adapters (fixer, reporter, rule context, visitors, schema) are internal
+ * implementation details wired together by rule.ts - not exported.
  */
-
-export { adaptESLintNode } from './astNodeAdapter';
-
-export { createFixerFactory, toESLintReportFixer } from './fixerAdapter';
-
-export { ESLintReporter } from './reporterAdapter';
 
 export { rule as enforceRule } from './rule';
 
-export {
-  createFileDataGetter,
-  extractRuleOptions,
-  inferCrossBoundaryStyleFromFilename,
-  type RuleContextData,
-} from './ruleContext';
-
 export { indexSiblingOnlyRule, noWildcardBarrelRule } from './rules';
-
-export { ruleMessages, ruleSchema } from './ruleSchema';
-
-export { createRuleVisitors, type RuleVisitorOptions } from './ruleVisitors';
-
-// Schema helpers are internal implementation details - not exported

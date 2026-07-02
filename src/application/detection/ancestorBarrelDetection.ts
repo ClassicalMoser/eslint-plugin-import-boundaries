@@ -1,56 +1,31 @@
 /**
- * Ancestor directory detection and reporting.
+ * Ancestor directory violation reporting.
  *
- * Detects imports from a boundary's own directory interface (e.g., importing '@domain'
+ * Reports imports from a boundary's own directory interface (e.g., importing '@domain'
  * from within the '@domain' boundary), which would create circular dependencies.
+ * Detection itself lives in the domain layer (checkAncestorBarrel).
  */
 
 import type { Reporter } from '@ports';
 import type { Boundary } from '@shared';
 import { reportViolation } from '@application/reporting';
 import { getBoundaryIdentifier } from '@domain';
-import { isAncestorBarrelImport } from './ancestorBarrelDetectionHelpers';
 
-export interface AncestorBarrelDetectionOptions {
-  rawSpec: string;
+export interface ReportAncestorDirectoryImportOptions {
   fileBoundary: Boundary;
-  rootDir: string;
-  crossBoundaryStyle: 'alias' | 'absolute';
   reporter: Reporter;
   defaultSeverity?: 'error' | 'warn';
 }
 
 /**
- * Detect and report ancestor directory imports (not fixable).
- *
- * An ancestor directory import occurs when a file imports from its own boundary's
- * root directory interface. This creates a circular dependency and is forbidden.
- *
- * @param options - Detection options
- * @returns true if an ancestor directory import was detected and reported, false otherwise
+ * Report an ancestor directory import violation.
+ * Not fixable — a correct fix would require knowing where exports actually live.
  */
-export function detectAndReportAncestorBarrel(
-  options: AncestorBarrelDetectionOptions,
-): boolean {
-  const {
-    rawSpec,
-    fileBoundary,
-    rootDir,
-    crossBoundaryStyle,
-    reporter,
-    defaultSeverity,
-  } = options;
+export function reportAncestorDirectoryImport(
+  options: ReportAncestorDirectoryImportOptions,
+): void {
+  const { fileBoundary, reporter, defaultSeverity } = options;
 
-  // Check if this is an ancestor directory import
-  // Alias style: rawSpec matches boundary alias (e.g., '@domain')
-  // Absolute style: rawSpec matches boundary root path (e.g., 'src/domain')
-  if (
-    !isAncestorBarrelImport(rawSpec, fileBoundary, rootDir, crossBoundaryStyle)
-  ) {
-    return false;
-  }
-
-  // Report violation - not fixable (requires knowing actual export locations)
   reportViolation({
     reporter,
     messageId: 'ancestorBarrelImport',
@@ -59,8 +34,5 @@ export function detectAndReportAncestorBarrel(
     },
     fileBoundary,
     defaultSeverity,
-    // No fix - requires knowing where exports actually live
   });
-
-  return true;
 }

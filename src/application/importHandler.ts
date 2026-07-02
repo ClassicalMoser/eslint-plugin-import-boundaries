@@ -13,14 +13,13 @@ import {
   resolveToBoundary,
 } from '@domain';
 import { DEFAULTS } from '@shared';
-import { detectAndReportAncestorBarrel, isExternalPackage } from './detection';
+import { isExternalPackage, reportAncestorDirectoryImport } from './detection';
 import { handleUnknownBoundary } from './handling';
 import { getImportHandlerDefaults } from './importHandlerDefaults';
 import {
   isNullPath,
   isUnknownBoundary,
   isValidPath,
-  shouldDetectAncestorBarrel,
   shouldValidateAliasSubpath,
   shouldValidateBoundaryRules,
 } from './importHandlerHelpers';
@@ -160,24 +159,15 @@ export function handleImport(options: HandleImportOptions): boolean {
   );
 
   if (isNullPath(correctPath)) {
-    // Check if it's ancestor directory import (not fixable)
-    // calculateCorrectImportPath returns null only for ancestor directory imports
-    if (
-      shouldDetectAncestorBarrel(correctPath, fileBoundary) &&
-      detectAndReportAncestorBarrel({
-        rawSpec,
-        fileBoundary: fileBoundary!,
-        rootDir,
-        crossBoundaryStyle,
+    // Path calculation returns null only for ancestor directory imports
+    if (fileBoundary !== null) {
+      reportAncestorDirectoryImport({
+        fileBoundary,
         reporter,
         defaultSeverity,
-      })
-    ) {
+      });
       return true;
     }
-    // Defensive: should never reach here in practice
-    // calculateCorrectImportPath only returns null for ancestor directory imports
-    // which are all handled above. This branch exists for type safety.
     return false;
   }
 
@@ -205,6 +195,8 @@ export function handleImport(options: HandleImportOptions): boolean {
     rawSpec,
     correctPath,
     fileBoundary,
+    rootDir,
+    crossBoundaryStyle,
     reporter,
     createFixer,
     defaultSeverity,

@@ -34,6 +34,8 @@ describe('pathFormatValidation', () => {
         rawSpec: '../entities',
         correctPath: '@entities',
         fileBoundary: queriesBoundary,
+        rootDir,
+        crossBoundaryStyle: 'alias',
         reporter,
         createFixer,
       });
@@ -52,6 +54,8 @@ describe('pathFormatValidation', () => {
         rawSpec: '@entities',
         correctPath: '@entities',
         fileBoundary: queriesBoundary,
+        rootDir,
+        crossBoundaryStyle: 'alias',
         reporter,
         createFixer,
       });
@@ -59,6 +63,26 @@ describe('pathFormatValidation', () => {
       expect(result).toBe(false);
       expect(reporter.report).not.toHaveBeenCalled();
       expect(reporter.hasReported('incorrectImportPath')).toBe(false);
+    });
+
+    it('should report ancestor directory import instead of auto-fixing to boundary root', () => {
+      const { reporter, createFixer } = createMockPorts();
+
+      const result = validatePathFormat({
+        rawSpec: '@/domain/queries',
+        correctPath: '@queries',
+        fileBoundary: queriesBoundary,
+        rootDir,
+        crossBoundaryStyle: 'alias',
+        reporter,
+        createFixer,
+      });
+
+      expect(result).toBe(true);
+      expect(reporter.hasReported('ancestorBarrelImport')).toBe(true);
+      expect(reporter.hasReported('incorrectImportPath')).toBe(false);
+      const violation = reporter.getLastReport();
+      expect(violation?.fix).toBeUndefined();
     });
   });
 });

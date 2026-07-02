@@ -99,7 +99,3 @@ export function calculateCorrectImportPath(
     maxRelativeDepth,
   );
 }
-
-// Re-export for backward compatibility
-export * from '@domain/pathCalculation';
-export * from '@domain/pathResolution';

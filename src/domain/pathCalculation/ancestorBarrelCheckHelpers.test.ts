@@ -41,6 +41,12 @@ describe('ancestorBarrelCheckHelpers', () => {
       );
     });
 
+    it('should return true when alias matches with index subpath', () => {
+      expect(
+        aliasMatchesAncestorBarrel(entitiesBoundary, '@entities/index'),
+      ).toBe(true);
+    });
+
     it('should return false when boundary has no alias', () => {
       const boundaryWithoutAlias: Boundary = createBoundary(
         {
@@ -69,6 +75,15 @@ describe('ancestorBarrelCheckHelpers', () => {
       expect(
         absolutePathMatchesAncestorBarrel(
           'src/domain/entities/',
+          'src/domain/entities',
+        ),
+      ).toBe(true);
+    });
+
+    it('should return true when path matches with index subpath', () => {
+      expect(
+        absolutePathMatchesAncestorBarrel(
+          'src/domain/entities/index',
           'src/domain/entities',
         ),
       ).toBe(true);

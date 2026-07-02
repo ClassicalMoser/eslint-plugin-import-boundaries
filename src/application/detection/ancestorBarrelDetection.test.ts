@@ -3,10 +3,9 @@
  */
 
 import type { Boundary } from '@shared';
-import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createBoundary, createMockPorts } from '../../__tests__/testUtils.js';
-import { detectAndReportAncestorBarrel } from './ancestorBarrelDetection';
+import { reportAncestorDirectoryImport } from './ancestorBarrelDetection';
 
 describe('ancestorBarrelDetection', () => {
   const cwd = '/project';
@@ -25,19 +24,15 @@ describe('ancestorBarrelDetection', () => {
     );
   });
 
-  describe('detectAndReportAncestorBarrel', () => {
-    it('should report ancestor barrel imports in alias style', () => {
+  describe('reportAncestorDirectoryImport', () => {
+    it('should report a non-fixable ancestorBarrelImport violation', () => {
       const { reporter } = createMockPorts();
 
-      const result = detectAndReportAncestorBarrel({
-        rawSpec: '@queries',
+      reportAncestorDirectoryImport({
         fileBoundary: queriesBoundary,
-        rootDir,
-        crossBoundaryStyle: 'alias',
         reporter,
       });
 
-      expect(result).toBe(true);
       expect(reporter.report).toHaveBeenCalled();
       const violation = reporter.getLastReport();
       expect(violation?.messageId).toBe('ancestorBarrelImport');
@@ -45,53 +40,26 @@ describe('ancestorBarrelDetection', () => {
       expect(violation?.fix).toBeUndefined();
     });
 
-    it('should report ancestor barrel imports in absolute style', () => {
+    it('should identify the boundary by dir when it has no alias', () => {
+      const noAliasBoundary = createBoundary(
+        {
+          dir: 'domain/entities',
+          allowImportsFrom: [],
+        },
+        { cwd, rootDir },
+      );
       const { reporter } = createMockPorts();
 
-      const result = detectAndReportAncestorBarrel({
-        rawSpec: 'src/domain/queries',
-        fileBoundary: queriesBoundary,
-        rootDir,
-        crossBoundaryStyle: 'absolute',
+      reportAncestorDirectoryImport({
+        fileBoundary: noAliasBoundary,
         reporter,
       });
 
-      expect(result).toBe(true);
-      expect(reporter.report).toHaveBeenCalled();
       const violation = reporter.getLastReport();
       expect(violation?.messageId).toBe('ancestorBarrelImport');
-    });
-
-    it('should report ancestor barrel imports in absolute style with trailing slash', () => {
-      const { reporter } = createMockPorts();
-
-      const result = detectAndReportAncestorBarrel({
-        rawSpec: 'src/domain/queries/',
-        fileBoundary: queriesBoundary,
-        rootDir,
-        crossBoundaryStyle: 'absolute',
-        reporter,
-      });
-
-      expect(result).toBe(true);
-      expect(reporter.report).toHaveBeenCalled();
-      const violation = reporter.getLastReport();
-      expect(violation?.messageId).toBe('ancestorBarrelImport');
-    });
-
-    it('should return false when not an ancestor barrel', () => {
-      const { reporter } = createMockPorts();
-
-      const result = detectAndReportAncestorBarrel({
-        rawSpec: '@entities',
-        fileBoundary: queriesBoundary,
-        rootDir,
-        crossBoundaryStyle: 'alias',
-        reporter,
-      });
-
-      expect(result).toBe(false);
-      expect(reporter.report).not.toHaveBeenCalled();
+      expect(violation?.data?.boundaryIdentifier).toBe(
+        noAliasBoundary.identifier,
+      );
     });
   });
 });

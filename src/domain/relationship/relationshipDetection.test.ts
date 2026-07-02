@@ -323,7 +323,7 @@ describe('relationshipDetection', () => {
       expect(result).toBeNull();
     });
 
-    it('should return @boundary/index for boundary root index (not null)', () => {
+    it('should return null for boundary root index import from subdirectory', () => {
       const boundaries = [
         entitiesBoundary,
         queriesBoundary,
@@ -332,8 +332,6 @@ describe('relationshipDetection', () => {
       const fileDir = path.resolve(cwd, rootDir, 'domain/queries', 'subdir');
       const fileBoundary = queriesBoundary;
 
-      // Importing ../index from subdir means importing queries/index.ts
-      // This is treated as a boundary root file, not an ancestor barrel
       const result = calculateCorrectImportPath(
         '../index',
         fileDir,
@@ -344,8 +342,7 @@ describe('relationshipDetection', () => {
         'alias',
       );
 
-      // The implementation treats this as a boundary root file
-      expect(result).toBe('@queries/index');
+      expect(result).toBeNull();
     });
 
     it('should handle deeply nested paths correctly', () => {

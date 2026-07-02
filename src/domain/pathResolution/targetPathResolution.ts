@@ -85,11 +85,3 @@ export function resolveTargetPath(
     );
   }
 }
-
-// Re-export for backward compatibility
-export { resolveAbsoluteImport } from './absoluteImportResolution';
-export { resolveAliasImport } from './aliasImportResolution';
-export { resolveBareImport } from './bareImportResolution';
-export { extractBareImportSubpath } from './bareImportSubpathExtraction';
-export { findMatchingBoundary } from './boundaryMatching';
-export { resolveRelativeImport } from './relativeImportResolution';

@@ -1,21 +1,13 @@
 /**
  * Infrastructure: Imperative shell (adapters)
  * Implements ports and adapts external systems (ESLint) to our application layer.
+ *
+ * Only the rules consumed by the plugin entry point are exported here;
+ * adapters and helpers are internal to the infrastructure layer.
  */
 
 export {
-  adaptESLintNode,
-  createFileDataGetter,
-  createFixerFactory,
-  createRuleVisitors,
   enforceRule,
-  ESLintReporter,
-  extractRuleOptions,
   indexSiblingOnlyRule,
   noWildcardBarrelRule,
-  ruleMessages,
-  ruleSchema,
-  toESLintReportFixer,
 } from './eslint';
-
-export type { RuleContextData, RuleVisitorOptions } from './eslint';

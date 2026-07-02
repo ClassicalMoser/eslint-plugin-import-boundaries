@@ -12,7 +12,13 @@ export function aliasMatchesAncestorBarrel(
   fileBoundary: Boundary,
   rawSpec: string,
 ): boolean {
-  return fileBoundary.alias != null && rawSpec === fileBoundary.alias;
+  if (fileBoundary.alias == null) {
+    return false;
+  }
+
+  return (
+    rawSpec === fileBoundary.alias || rawSpec === `${fileBoundary.alias}/index`
+  );
 }
 
 /**
@@ -22,5 +28,9 @@ export function absolutePathMatchesAncestorBarrel(
   rawSpec: string,
   boundaryAbsPath: string,
 ): boolean {
-  return rawSpec === boundaryAbsPath || rawSpec === `${boundaryAbsPath}/`;
+  return (
+    rawSpec === boundaryAbsPath ||
+    rawSpec === `${boundaryAbsPath}/` ||
+    rawSpec === `${boundaryAbsPath}/index`
+  );
 }
