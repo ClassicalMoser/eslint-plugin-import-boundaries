@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.3] - 2026-07-01
+
+### Bug Fixes
+
+- **Ancestor barrel `/index` variants**: Importing a file's own boundary root through an explicit `index` segment (`./index`, `../index`, `@boundary/index`, or a `rootDirAlias` form such as `@/domain/queries`) is now detected and reported as `ancestorBarrelImport`. Previously these spellings slipped past detection, and the fixer could even rewrite an import _to_ the forbidden boundary-root form. A trailing `index` segment now resolves to its parent directory's barrel instead of a nested directory literally named `index`.
+
+### Removed (internal only, no API change)
+
+- Dead code eliminated: unused config presets (`hexagonalDefaults`/`simpleDefaults`, never exported from the plugin), the unwired `ASTNode` port and its ESLint adapter, and "backward compatibility" re-exports in the domain layer. Layer barrels now export only their cross-boundary surface. The published plugin API is unchanged.
+
 ## [0.8.2] - 2026-06-19
 
 ### Bug Fixes
